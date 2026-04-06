@@ -6,9 +6,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  experimental: {
-    turbopackFileSystemCacheForDev: true  // Helps with caching even with webpack
-  }
 }
 
 export default nextConfig
