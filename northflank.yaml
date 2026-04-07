@@ -1,0 +1,25 @@
+# Northflank Service Configuration
+kind: combined
+name: performance-app
+description: "Can Shift Performance Dashboard"
+billing_plan: free
+build:
+  strategy: dockerfile
+  dockerfile_path: Dockerfile
+  context_path: .
+deployment:
+  instances: 1
+  resources:
+    plan: free
+ports:
+  - name: web
+    port: 3000
+    protocol: http
+    public: true
+env:
+  - key: PORT
+    value: "3000"
+  - key: NODE_ENV
+    value: production
+  - key: HOSTNAME
+    value: "0.0.0.0"
