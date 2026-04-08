@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Performance App</string>
+    <string name="title_activity_main">Performance App</string>
+    <string name="package_name">com.canshift.performanceapp</string>
+    <string name="custom_url_scheme">com.canshift.performanceapp</string>
+</resources>
