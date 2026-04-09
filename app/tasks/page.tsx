@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { getUserByEmail } from "@/lib/google-sheets"
 import { Header } from "@/components/layout/header"
 import { TaskDeck } from "@/components/tasks/task-deck"
+import { Plus } from "lucide-react"
 import Link from "next/link"
 
 export default async function TasksPage() {
@@ -45,6 +46,17 @@ export default async function TasksPage() {
         </div>
         
         <TaskDeck userRole={displayUser.role} userName={displayUser.name} />
+
+        {/* Floating Action Button - Positioned relative to content */}
+        {displayUser.role !== "Viewer" && (
+          <Link
+            href="/tasks/new"
+            className="fixed bottom-24 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-xl transition-transform hover:scale-110 active:scale-95 sm:right-10 lg:sticky lg:float-right lg:bottom-10 lg:mr-0 lg:mt-[-80px]"
+          >
+            <Plus className="h-8 w-8" />
+            <span className="sr-only">Add New Task</span>
+          </Link>
+        )}
       </main>
     </div>
   )

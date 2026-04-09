@@ -284,6 +284,16 @@ export default function DashboardPage() {
             <button className="flex flex-col items-center px-4 py-1 text-gray-600"><span>👤</span><span className="text-xs">Profile</span></button>
           </div>
         </div>
+
+        {/* Floating Action Button - Positioned relative to the content container */}
+        <button
+          onClick={() => router.push("/tasks/new")}
+          className="fixed bottom-20 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-xl transition-transform hover:scale-110 active:scale-95 sm:right-10 lg:sticky lg:float-right lg:bottom-10 lg:mr-0 lg:mt-[-80px]"
+        >
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
       </div>
     </div>
   );
