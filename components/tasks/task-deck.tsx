@@ -31,13 +31,13 @@ export function TaskDeck({ userRole, userName }: TaskDeckProps) {
 
   // Get unique assignees
   const assignees = useMemo(() => {
-    if (!tasks) return []
+    if (!Array.isArray(tasks)) return []
     return [...new Set(tasks.map((t) => t.name).filter(Boolean))]
   }, [tasks])
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
-    if (!tasks) return []
+    if (!Array.isArray(tasks)) return []
 
     return tasks.filter((task) => {
       // Search filter
@@ -69,8 +69,13 @@ export function TaskDeck({ userRole, userName }: TaskDeckProps) {
     }
 
     filteredTasks.forEach((task) => {
-      if (groups[task.progress]) {
-        groups[task.progress].push(task)
+      // Ensure the task progress is a valid key in the groups object
+      const progress = task.progress as TaskProgress
+      if (groups[progress]) {
+        groups[progress].push(task)
+      } else {
+        // Fallback to To-do if status is invalid or missing
+        groups["To-do"].push(task)
       }
     })
 

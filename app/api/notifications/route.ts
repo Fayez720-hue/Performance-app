@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { getNotifications, markNotificationsRead } from "@/lib/google-sheets"
 
+export const dynamic = "force-dynamic"
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)

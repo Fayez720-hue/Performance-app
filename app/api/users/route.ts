@@ -5,6 +5,8 @@ import { getUsers, createUser, updateUserRole, getUserByEmail } from "@/lib/goog
 import { userSchema } from "@/lib/validations/task"
 import { ROLE_PERMISSIONS } from "@/types/user"
 
+export const dynamic = "force-dynamic"
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)

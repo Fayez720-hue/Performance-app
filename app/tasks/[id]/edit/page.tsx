@@ -6,6 +6,10 @@ import { ROLE_PERMISSIONS } from "@/types/user"
 import { TaskForm } from "@/components/tasks/task-form"
 import { Header } from "@/components/layout/header"
 
+export async function generateStaticParams() {
+  return []
+}
+
 interface EditTaskPageProps {
   params: Promise<{ id: string }>
 }

@@ -15,8 +15,11 @@ export default async function TasksPage() {
 
   const user = await getUserByEmail(session.user.email)
   
-  if (!user) {
-    redirect("/login")
+  // If user is not found in the sheet, fallback to session data
+  const displayUser = user || {
+    email: session.user.email,
+    name: session.user.name || "Guest",
+    role: ((session.user as any).role || "Viewer") as any
   }
 
   return (
@@ -35,13 +38,13 @@ export default async function TasksPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-semibold text-foreground">Task Dashboard</h1>
           <p className="text-muted-foreground">
-            {user.role === "Team Member" 
+            {displayUser.role === "Team Member"
               ? "View and manage your assigned tasks"
               : "Manage and track all team tasks"}
           </p>
         </div>
         
-        <TaskDeck userRole={user.role} userName={user.name} />
+        <TaskDeck userRole={displayUser.role} userName={displayUser.name} />
       </main>
     </div>
   )

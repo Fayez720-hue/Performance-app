@@ -89,22 +89,23 @@ export default function DashboardPage() {
     return "bg-red-100 text-red-800";
   };
 
-  const departments = data ? ["all", ...new Set(data.employees.map(emp => emp.title))] : ["all"];
+  const departments = data?.employees ? ["all", ...new Set(data.employees.map(emp => emp.title))] : ["all"];
   
-  const departmentAverages = data?.employees.reduce((acc, emp) => {
+  const departmentAverages = data?.employees?.reduce((acc, emp) => {
+    if (!emp.title) return acc;
     if (!acc[emp.title]) {
       acc[emp.title] = { totalScore: 0, totalAdherence: 0, count: 0 };
     }
-    acc[emp.title].totalScore += emp.overallScore;
-    acc[emp.title].totalAdherence += emp.shiftAdherence;
+    acc[emp.title].totalScore += emp.overallScore || 0;
+    acc[emp.title].totalAdherence += emp.shiftAdherence || 0;
     acc[emp.title].count++;
     return acc;
-  }, {} as Record<string, { totalScore: number; totalAdherence: number; count: number }>);
+  }, {} as Record<string, { totalScore: number; totalAdherence: number; count: number }>) || {};
 
-  const departmentChartData = departmentAverages ? Object.entries(departmentAverages).map(([name, values]) => ({
+  const departmentChartData = departmentAverages ? Object.entries(departmentAverages).map(([name, values]: [string, any]) => ({
     name,
-    averageScore: Math.round(values.totalScore / values.count),
-    averageAdherence: Math.round(values.totalAdherence / values.count),
+    averageScore: Math.round(values.totalScore / (values.count || 1)),
+    averageAdherence: Math.round(values.totalAdherence / (values.count || 1)),
   })) : [];
 
   const filteredEmployees = data?.employees.filter((emp) => {
@@ -227,11 +228,11 @@ export default function DashboardPage() {
           <div className="fixed top-16 right-4 w-72 bg-white rounded-lg shadow-xl z-50 p-4">
             <div className="flex items-center gap-3 mb-4 pb-3 border-b">
               <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-blue-600 font-bold text-lg">{session.user?.name?.charAt(0) || "U"}</span>
+                <span className="text-blue-600 font-bold text-lg">{session?.user?.name?.charAt(0) || "U"}</span>
               </div>
               <div>
-                <p className="font-medium text-gray-800">{session.user?.name || "User"}</p>
-                <p className="text-xs text-gray-500">{session.user?.email}</p>
+                <p className="font-medium text-gray-800">{session?.user?.name || "User"}</p>
+                <p className="text-xs text-gray-500">{session?.user?.email}</p>
               </div>
             </div>
             <button onClick={() => signOut()} className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg">🚪 Sign Out</button>
@@ -244,18 +245,18 @@ export default function DashboardPage() {
         <div className="bg-white shadow-sm border-b rounded-lg mb-6">
           <div className="px-4 py-4">
             <h1 className="text-2xl font-bold text-gray-900">CanShift Performance Dashboard</h1>
-            <p className="text-sm text-gray-500">Real-time Analytics | {session.user?.email}</p>
+            <p className="text-sm text-gray-500">Real-time Analytics | {session?.user?.email}</p>
           </div>
         </div>
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">Total Employees</p><p className="text-xl font-bold">{data.totalEmployees}</p></div>
-          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">Average Score</p><p className="text-xl font-bold">{data.avgScore}%</p></div>
-          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">Completion Rate</p><p className="text-xl font-bold">{data.completionRate}%</p></div>
-          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">Avg Shift Adherence</p><p className="text-xl font-bold">{data.avgShiftAdherence}%</p></div>
-          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">Total Edits</p><p className="text-xl font-bold">{data.totalEdits}</p></div>
-          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">Top Performer</p><p className="text-xl font-bold truncate">{data.topPerformer}</p></div>
+          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">Total Employees</p><p className="text-xl font-bold">{data?.totalEmployees || 0}</p></div>
+          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">Average Score</p><p className="text-xl font-bold">{data?.avgScore || 0}%</p></div>
+          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">Completion Rate</p><p className="text-xl font-bold">{data?.completionRate || 0}%</p></div>
+          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">Avg Shift Adherence</p><p className="text-xl font-bold">{data?.avgShiftAdherence || 0}%</p></div>
+          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">Total Edits</p><p className="text-xl font-bold">{data?.totalEdits || 0}</p></div>
+          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">Top Performer</p><p className="text-xl font-bold truncate">{data?.topPerformer || "N/A"}</p></div>
         </div>
 
         {/* Charts */}
