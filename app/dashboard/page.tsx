@@ -244,36 +244,59 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto px-4 py-6 pt-20 pb-24">
         <div className="bg-white shadow-sm border-b rounded-lg mb-6">
           <div className="px-4 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">CanShift Performance Dashboard</h1>
-            <p className="text-sm text-gray-500">Real-time Analytics | {session?.user?.email}</p>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {(data as any).isPersonalView ? "My Performance Dashboard" : "CanShift Performance Dashboard"}
+            </h1>
+            <p className="text-sm text-gray-500">
+              {(data as any).isPersonalView ? "Your personal analytics" : "Real-time Team Analytics"} | {session?.user?.email}
+            </p>
           </div>
         </div>
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">Total Employees</p><p className="text-xl font-bold">{data?.totalEmployees || 0}</p></div>
-          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">Average Score</p><p className="text-xl font-bold">{data?.avgScore || 0}%</p></div>
+          <div className="bg-white rounded-lg shadow p-3">
+            <p className="text-xs text-gray-500">{(data as any).isPersonalView ? "Status" : "Total Employees"}</p>
+            <p className="text-xl font-bold">{(data as any).isPersonalView ? "Active" : data?.totalEmployees || 0}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">{(data as any).isPersonalView ? "My Score" : "Average Score"}</p><p className="text-xl font-bold">{data?.avgScore || 0}%</p></div>
           <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">Completion Rate</p><p className="text-xl font-bold">{data?.completionRate || 0}%</p></div>
-          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">Avg Shift Adherence</p><p className="text-xl font-bold">{data?.avgShiftAdherence || 0}%</p></div>
-          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">Total Edits</p><p className="text-xl font-bold">{data?.totalEdits || 0}</p></div>
-          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">Top Performer</p><p className="text-xl font-bold truncate">{data?.topPerformer || "N/A"}</p></div>
+          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">{(data as any).isPersonalView ? "My Adherence" : "Avg Shift Adherence"}</p><p className="text-xl font-bold">{data?.avgShiftAdherence || 0}%</p></div>
+          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">My Edits</p><p className="text-xl font-bold">{data?.totalEdits || 0}</p></div>
+          <div className="bg-white rounded-lg shadow p-3"><p className="text-xs text-gray-500">{(data as any).isPersonalView ? "Target" : "Top Performer"}</p><p className="text-xl font-bold truncate">{(data as any).isPersonalView ? "100%" : data?.topPerformer || "N/A"}</p></div>
         </div>
 
-        {/* Charts */}
+        {/* Charts - Hide Distribution chart for personal view as it's not useful for 1 person */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="font-semibold mb-3">Performance Score Distribution</h3>
+          {!(data as any).isPersonalView && (
+            <div className="bg-white rounded-lg shadow p-4">
+              <h3 className="font-semibold mb-3">Performance Score Distribution</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={data.scoreDistribution}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="range" /><YAxis /><Tooltip /><Bar dataKey="count" fill="#3b82f6" /></BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+          <div className={cn("bg-white rounded-lg shadow p-4", (data as any).isPersonalView && "lg:col-span-2")}>
+            <h3 className="font-semibold mb-3">{(data as any).isPersonalView ? "Weekly Adherence Trend" : "Department Performance"}</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data.scoreDistribution}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="range" /><YAxis /><Tooltip /><Bar dataKey="count" fill="#3b82f6" /></BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="font-semibold mb-3">Department Performance</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={departmentChartData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="name" /><YAxis domain={[0,100]} /><Tooltip /><Bar dataKey="averageScore" fill="#10b981" /></BarChart>
+              <BarChart data={(data as any).isPersonalView ? data.shiftTrend : departmentChartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey={(data as any).isPersonalView ? "week" : "name"} />
+                <YAxis domain={[0,100]} />
+                <Tooltip />
+                <Bar dataKey={(data as any).isPersonalView ? "adherence" : "averageScore"} fill="#10b981" />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
+
+        {/* Employee Table - Hide for Team Members */}
+        {!(data as any).isPersonalView && (
+          <div className="bg-white rounded-lg shadow p-4">
+            <h3 className="font-semibold mb-4">Team Performance List</h3>
+            {/* ... table content ... */}
+          </div>
+        )}
 
         {/* Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-30">

@@ -46,7 +46,34 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user }) {
-      console.log(`✅ User signed in successfully: ${user.email}`)
+      if (!user.email) return false;
+
+      const { getUserByEmail, createUser } = await import("./google-sheets");
+
+      try {
+        const existingUser = await getUserByEmail(user.email);
+
+        if (!existingUser) {
+          // Determine initial role
+          const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
+          const managerEmails = process.env.MANAGER_EMAILS?.split(",") || [];
+
+          let role: UserRole = "Team Member"; // Default to Team Member for new signups
+          if (adminEmails.includes(user.email)) role = "Admin";
+          else if (managerEmails.includes(user.email)) role = "Manager";
+
+          await createUser({
+            email: user.email,
+            name: user.name || user.email.split("@")[0],
+            role: role
+          });
+          console.log(`🆕 Created new user and sheet for: ${user.email} with role ${role}`);
+        }
+      } catch (error) {
+        console.error("Error during user onboarding:", error);
+      }
+
+      console.log(`✅ User signed in successfully: ${user.email}`);
       return true
     },
     async redirect({ url, baseUrl }) {

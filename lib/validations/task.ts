@@ -4,7 +4,7 @@ export const taskFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
   taskStartingDate: z.string().min(1, "Starting date is required"),
   task: z.string().min(1, "Task description is required"),
-  deadline: z.string().min(1, "Deadline is required"),
+  deadline: z.string().min(1, "Deadline (Date & Time) is required"),
   progress: z.enum(["To-do", "In Progress", "Review", "Completed"]),
   taskEstimatedTime: z.string().min(1, "Estimated task time is required"),
   // Optional but available

@@ -298,12 +298,52 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
 export async function createUser(user: User): Promise<void> {
   const sheets = getSheets()
+
+  // 1. Add to Employees master sheet
   await sheets.spreadsheets.values.append({
     spreadsheetId: SPREADSHEET_ID,
     range: "Employees!A:C",
     valueInputOption: "USER_ENTERED",
     requestBody: { values: [[user.email, user.name, user.role]] },
   })
+
+  // 2. If Team Member, create their personal tracking sheet
+  if (user.role === "Team Member") {
+    try {
+      // Create new sheet
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        requestBody: {
+          requests: [
+            {
+              addSheet: {
+                properties: {
+                  title: user.name,
+                },
+              },
+            },
+          ],
+        },
+      }).catch(e => console.log("Sheet might already exist:", e.message))
+
+      // Add Headers to the new sheet
+      const headers = [
+        "EMP ID", "Name", "Date", "Task", "References", "Comments", "progress",
+        "Task Starting Date", "Deadline", "Task Estimated Time", "Task Time taken",
+        "Submission Link", "Submission Date", "deadline adherence", "grading",
+        "overall score", "Task Time Stamp", "Edits", "No. of edits", "Task ID"
+      ]
+
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `'${user.name}'!A1:T1`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [headers] },
+      })
+    } catch (error) {
+      console.error("Error setting up user sheet:", error)
+    }
+  }
 }
 
 export async function updateUserRole(email: string, role: string): Promise<void> {

@@ -114,6 +114,7 @@ export function TaskDeck({ userRole, userName }: TaskDeckProps) {
         assigneeFilter={assigneeFilter}
         onAssigneeFilterChange={setAssigneeFilter}
         assignees={assignees}
+        userRole={userRole}
       />
 
       {/* Empty State */}

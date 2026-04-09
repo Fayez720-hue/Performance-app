@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { PROGRESS_OPTIONS, type TaskProgress } from "@/types/task"
+import type { UserRole } from "@/types/user"
 
 interface TaskFiltersProps {
   search: string
@@ -20,6 +21,7 @@ interface TaskFiltersProps {
   assigneeFilter: string
   onAssigneeFilterChange: (value: string) => void
   assignees: string[]
+  userRole: UserRole
 }
 
 export function TaskFilters({
@@ -30,8 +32,10 @@ export function TaskFilters({
   assigneeFilter,
   onAssigneeFilterChange,
   assignees,
+  userRole,
 }: TaskFiltersProps) {
   const hasFilters = search || progressFilter !== "all" || assigneeFilter !== "all"
+  const canSeeAllAssignees = userRole === "Admin" || userRole === "Manager" || userRole === "Viewer"
 
   function clearFilters() {
     onSearchChange("")
@@ -68,19 +72,21 @@ export function TaskFilters({
       </Select>
 
       {/* Assignee Filter */}
-      <Select value={assigneeFilter} onValueChange={onAssigneeFilterChange}>
-        <SelectTrigger className="w-full sm:w-[160px]">
-          <SelectValue placeholder="All Assignees" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All Assignees</SelectItem>
-          {assignees.map((assignee) => (
-            <SelectItem key={assignee} value={assignee}>
-              {assignee}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {canSeeAllAssignees && (
+        <Select value={assigneeFilter} onValueChange={onAssigneeFilterChange}>
+          <SelectTrigger className="w-full sm:w-[160px]">
+            <SelectValue placeholder="All Assignees" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Assignees</SelectItem>
+            {assignees.map((assignee) => (
+              <SelectItem key={assignee} value={assignee}>
+                {assignee}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
 
       {/* Clear Filters */}
       {hasFilters && (
