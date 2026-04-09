@@ -2,11 +2,17 @@
 
 import { useState, useMemo } from "react"
 import useSWR from "swr"
-import { Loader2, ClipboardX } from "lucide-react"
+import { ClipboardX, Loader2 } from "lucide-react"
 import { TaskCard } from "./task-card"
 import { TaskFilters } from "./task-filters"
 import { TaskStats } from "./task-stats"
-import { Empty } from "@/components/ui/empty"
+import {
+  Empty,
+  EmptyHeader,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyMedia,
+} from "@/components/ui/empty"
 import type { Task, TaskProgress } from "@/types/task"
 import type { UserRole } from "@/types/user"
 import { ROLE_PERMISSIONS } from "@/types/user"
@@ -84,11 +90,17 @@ export function TaskDeck({ userRole, userName }: TaskDeckProps) {
 
   if (error) {
     return (
-      <Empty
-        icon={ClipboardX}
-        title="Failed to load tasks"
-        description="There was an error loading the tasks. Please try again."
-      />
+      <Empty className="py-20">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <ClipboardX />
+          </EmptyMedia>
+          <EmptyTitle>Failed to load tasks</EmptyTitle>
+          <EmptyDescription>
+            There was an error loading the tasks. Please try again.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     )
   }
 
@@ -119,24 +131,34 @@ export function TaskDeck({ userRole, userName }: TaskDeckProps) {
 
       {/* Empty State */}
       {tasks && tasks.length === 0 && (
-        <Empty
-          icon={ClipboardX}
-          title="No tasks yet"
-          description={
-            permissions.canCreateTasks
-              ? "Create your first task to get started."
-              : "No tasks have been assigned to you yet."
-          }
-        />
+        <Empty className="py-20">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <ClipboardX />
+            </EmptyMedia>
+            <EmptyTitle>No tasks yet</EmptyTitle>
+            <EmptyDescription>
+              {permissions.canCreateTasks
+                ? "Create your first task to get started."
+                : "No tasks have been assigned to you yet."}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       )}
 
       {/* No Results */}
       {tasks && tasks.length > 0 && filteredTasks.length === 0 && (
-        <Empty
-          icon={ClipboardX}
-          title="No matching tasks"
-          description="Try adjusting your search or filters."
-        />
+        <Empty className="py-20">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <ClipboardX />
+            </EmptyMedia>
+            <EmptyTitle>No matching tasks</EmptyTitle>
+            <EmptyDescription>
+              Try adjusting your search or filters.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       )}
 
       {/* Task Grid by Status */}

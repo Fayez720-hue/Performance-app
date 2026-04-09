@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { getUsers, createUser, updateUserRole, getUserByEmail } from "@/lib/google-sheets"
+import { getUsers, createUser, updateUser, deleteUser, getUserByEmail } from "@/lib/google-sheets"
 import { userSchema } from "@/lib/validations/task"
 import { ROLE_PERMISSIONS } from "@/types/user"
 
@@ -87,16 +87,49 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json()
-    const { email, role } = body
+    const { email, name, role } = body
 
-    if (!email || !role) {
-      return NextResponse.json({ error: "Email and role are required" }, { status: 400 })
+    if (!email) {
+      return NextResponse.json({ error: "Email is required" }, { status: 400 })
     }
 
-    await updateUserRole(email, role)
-    return NextResponse.json({ message: "User role updated successfully" })
+    await updateUser(email, { name, role })
+    return NextResponse.json({ message: "User updated successfully" })
   } catch (error) {
     console.error("Error updating user:", error)
     return NextResponse.json({ error: "Failed to update user" }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const currentUser = await getUserByEmail(session.user.email)
+    if (!currentUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+
+    const permissions = ROLE_PERMISSIONS[currentUser.role]
+    if (!permissions.canManageUsers) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const email = searchParams.get("email")
+
+    if (!email) {
+      return NextResponse.json({ error: "Email is required" }, { status: 400 })
+    }
+
+    await deleteUser(email)
+    return NextResponse.json({ message: "User deleted successfully" })
+  } catch (error) {
+    console.error("Error deleting user:", error)
+    return NextResponse.json({ error: "Failed to delete user" }, { status: 500 })
   }
 }

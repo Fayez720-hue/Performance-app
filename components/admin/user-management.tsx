@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import useSWR from "swr"
-import { Loader2, Plus, Shield, UserCog, Users } from "lucide-react"
+import { Edit2, Loader2, Plus, Shield, Trash2, UserCog, Users } from "lucide-react"
 import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -43,7 +43,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Empty } from "@/components/ui/empty"
+import {
+  Empty,
+  EmptyHeader,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyMedia,
+} from "@/components/ui/empty"
 import { userSchema, type UserFormValues } from "@/lib/validations/task"
 import type { User, UserRole } from "@/types/user"
 import { cn } from "@/lib/utils"
@@ -61,7 +67,8 @@ const ROLES: UserRole[] = ["Admin", "Manager", "Team Member", "Viewer"]
 
 export function UserManagement() {
   const { data: users, error, isLoading, mutate } = useSWR<User[]>("/api/users", fetcher)
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [editingUser, setEditingUser] = useState<User | null>(null)
   const [updatingUser, setUpdatingUser] = useState<string | null>(null)
 
   const form = useForm<UserFormValues>({
@@ -73,25 +80,65 @@ export function UserManagement() {
     },
   })
 
+  // Reset form when dialog opens/closes or editing user changes
+  const handleOpenChange = (open: boolean) => {
+    setIsDialogOpen(open)
+    if (!open) {
+      setEditingUser(null)
+      form.reset({
+        email: "",
+        name: "",
+        role: "Team Member",
+      })
+    }
+  }
+
+  const handleEdit = (user: User) => {
+    setEditingUser(user)
+    form.reset({
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    })
+    setIsDialogOpen(true)
+  }
+
   async function onSubmit(values: UserFormValues) {
     try {
+      const method = editingUser ? "PUT" : "POST"
       const response = await fetch("/api/users", {
-        method: "POST",
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       })
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || "Failed to add user")
+        throw new Error(error.error || `Failed to ${editingUser ? 'update' : 'add'} user`)
       }
 
-      toast.success("User added successfully")
-      setIsAddDialogOpen(false)
-      form.reset()
+      toast.success(`User ${editingUser ? 'updated' : 'added'} successfully`)
+      handleOpenChange(false)
       mutate()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to add user")
+      toast.error(error instanceof Error ? error.message : "An error occurred")
+    }
+  }
+
+  async function handleDelete(email: string) {
+    if (!confirm("Are you sure you want to delete this user? This will remove them from the Employees list.")) return
+
+    try {
+      const response = await fetch(`/api/users?email=${encodeURIComponent(email)}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) throw new Error("Failed to delete user")
+
+      toast.success("User deleted successfully")
+      mutate()
+    } catch {
+      toast.error("Failed to delete user")
     }
   }
 
@@ -117,11 +164,17 @@ export function UserManagement() {
 
   if (error) {
     return (
-      <Empty
-        icon={Users}
-        title="Failed to load users"
-        description="There was an error loading the users. Please try again."
-      />
+      <Empty className="py-20">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <Users />
+          </EmptyMedia>
+          <EmptyTitle>Failed to load users</EmptyTitle>
+          <EmptyDescription>
+            There was an error loading the users. Please try again.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     )
   }
 
@@ -167,7 +220,7 @@ export function UserManagement() {
       <Card className="border-border bg-card">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>All Users</CardTitle>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
               <Button size="sm" className="gap-1.5">
                 <Plus className="h-4 w-4" />
@@ -176,9 +229,11 @@ export function UserManagement() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add New User</DialogTitle>
+                <DialogTitle>{editingUser ? "Edit User" : "Add New User"}</DialogTitle>
                 <DialogDescription>
-                  Add a new user to the system. They will be able to sign in with Google.
+                  {editingUser
+                    ? "Update the user's name or role."
+                    : "Add a new user to the system. They will be able to sign in with Google."}
                 </DialogDescription>
               </DialogHeader>
               <Form {...form}>
@@ -190,7 +245,11 @@ export function UserManagement() {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="user@example.com" {...field} />
+                          <Input
+                            placeholder="user@example.com"
+                            {...field}
+                            disabled={!!editingUser}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -215,7 +274,7 @@ export function UserManagement() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Role</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger className="w-full">
                               <SelectValue placeholder="Select role" />
@@ -234,10 +293,12 @@ export function UserManagement() {
                     )}
                   />
                   <div className="flex justify-end gap-3 pt-2">
-                    <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
                       Cancel
                     </Button>
-                    <Button type="submit">Add User</Button>
+                    <Button type="submit">
+                      {editingUser ? "Update User" : "Add User"}
+                    </Button>
                   </div>
                 </form>
               </Form>
@@ -283,26 +344,24 @@ export function UserManagement() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Select
-                          value={user.role}
-                          onValueChange={(value) => handleRoleChange(user.email, value as UserRole)}
-                          disabled={updatingUser === user.email}
-                        >
-                          <SelectTrigger className="w-[140px]">
-                            {updatingUser === user.email ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <SelectValue />
-                            )}
-                          </SelectTrigger>
-                          <SelectContent>
-                            {ROLES.map((role) => (
-                              <SelectItem key={role} value={role}>
-                                {role}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            onClick={() => handleEdit(user)}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => handleDelete(user.email)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )
@@ -310,11 +369,17 @@ export function UserManagement() {
               </TableBody>
             </Table>
           ) : (
-            <Empty
-              icon={Users}
-              title="No users yet"
-              description="Add your first user to get started."
-            />
+            <Empty className="py-20">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <Users />
+                </EmptyMedia>
+                <EmptyTitle>No users yet</EmptyTitle>
+                <EmptyDescription>
+                  Add your first user to get started.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           )}
         </CardContent>
       </Card>

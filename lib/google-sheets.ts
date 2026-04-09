@@ -298,8 +298,43 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
 export async function createUser(user: User): Promise<void> {
   const sheets = getSheets()
+  const users = await getUsers()
 
-  // 1. Add to Employees master sheet
+  const searchEmail = user.email?.trim().toLowerCase()
+  const searchName = user.name?.trim().toLowerCase()
+
+  // Check if user already exists by email or name
+  const existingUserIndex = users.findIndex(u =>
+    (searchEmail && u.email?.trim().toLowerCase() === searchEmail) ||
+    (searchName && u.name?.trim().toLowerCase() === searchName)
+  )
+
+  if (existingUserIndex !== -1) {
+    // User exists, update missing info if necessary
+    const existingUser = users[existingUserIndex]
+
+    const updatedEmail = existingUser.email || user.email
+    const updatedName = existingUser.name || user.name
+    const updatedRole = existingUser.role || user.role
+
+    // Only update if something actually changed/was missing
+    if (updatedEmail !== existingUser.email || updatedName !== existingUser.name || updatedRole !== existingUser.role) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `Employees!A${existingUserIndex + 2}:C${existingUserIndex + 2}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [[updatedEmail, updatedName, updatedRole]] },
+      })
+    }
+
+    // Always ensure they have a personal sheet if they are a Team Member
+    if (updatedRole === "Team Member") {
+      await ensureUserSheet(updatedName)
+    }
+    return
+  }
+
+  // New user, append to Employees master sheet
   await sheets.spreadsheets.values.append({
     spreadsheetId: SPREADSHEET_ID,
     range: "Employees!A:C",
@@ -307,46 +342,55 @@ export async function createUser(user: User): Promise<void> {
     requestBody: { values: [[user.email, user.name, user.role]] },
   })
 
-  // 2. If Team Member, create their personal tracking sheet
+  // If Team Member, create their personal tracking sheet
   if (user.role === "Team Member") {
-    try {
-      // Create new sheet
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId: SPREADSHEET_ID,
-        requestBody: {
-          requests: [
-            {
-              addSheet: {
-                properties: {
-                  title: user.name,
-                },
-              },
-            },
-          ],
-        },
-      }).catch(e => console.log("Sheet might already exist:", e.message))
-
-      // Add Headers to the new sheet
-      const headers = [
-        "EMP ID", "Name", "Date", "Task", "References", "Comments", "progress",
-        "Task Starting Date", "Deadline", "Task Estimated Time", "Task Time taken",
-        "Submission Link", "Submission Date", "deadline adherence", "grading",
-        "overall score", "Task Time Stamp", "Edits", "No. of edits", "Task ID"
-      ]
-
-      await sheets.spreadsheets.values.update({
-        spreadsheetId: SPREADSHEET_ID,
-        range: `'${user.name}'!A1:T1`,
-        valueInputOption: "USER_ENTERED",
-        requestBody: { values: [headers] },
-      })
-    } catch (error) {
-      console.error("Error setting up user sheet:", error)
-    }
+    await ensureUserSheet(user.name)
   }
 }
 
-export async function updateUserRole(email: string, role: string): Promise<void> {
+export async function ensureUserSheet(userName: string): Promise<void> {
+  const sheets = getSheets()
+  try {
+    // Create new sheet
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: {
+        requests: [
+          {
+            addSheet: {
+              properties: {
+                title: userName,
+              },
+            },
+          },
+        ],
+      },
+    }).catch(e => {
+      if (!e.message.includes("already exists")) {
+        console.error("Error creating sheet:", e.message)
+      }
+    })
+
+    // Add Headers to the sheet
+    const headers = [
+      "EMP ID", "Name", "Date", "Task", "References", "Comments", "progress",
+      "Task Starting Date", "Deadline", "Task Estimated Time", "Task Time taken",
+      "Submission Link", "Submission Date", "deadline adherence", "grading",
+      "overall score", "Task Time Stamp", "Edits", "No. of edits", "Task ID"
+    ]
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `'${userName}'!A1:T1`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [headers] },
+    })
+  } catch (error) {
+    console.error("Error setting up user sheet:", error)
+  }
+}
+
+export async function updateUser(email: string, data: { name?: string; role?: string }): Promise<void> {
   const sheets = getSheets()
   const users = await getUsers()
   const searchEmail = email.trim().toLowerCase()
@@ -354,13 +398,57 @@ export async function updateUserRole(email: string, role: string): Promise<void>
   
   if (userIndex === -1) throw new Error("User not found")
 
+  const currentUser = users[userIndex]
+  const newName = data.name || currentUser.name
+  const newRole = data.role || currentUser.role
+
+  // Update in Employees sheet
   await sheets.spreadsheets.values.update({
     spreadsheetId: SPREADSHEET_ID,
-    range: `Employees!C${userIndex + 2}`,
+    range: `Employees!A${userIndex + 2}:C${userIndex + 2}`,
     valueInputOption: "USER_ENTERED",
-    requestBody: { values: [[role]] },
+    requestBody: { values: [[searchEmail, newName, newRole]] },
+  })
+
+  // If role changed to Team Member, ensure they have a sheet
+  if (newRole === "Team Member") {
+    await ensureUserSheet(newName)
+  }
+}
+
+export async function deleteUser(email: string): Promise<void> {
+  const sheets = getSheets()
+  const users = await getUsers()
+  const searchEmail = email.trim().toLowerCase()
+  const userIndex = users.findIndex((u) => u.email.trim().toLowerCase() === searchEmail)
+
+  if (userIndex === -1) throw new Error("User not found")
+
+  // Get sheetId for Employees
+  const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID })
+  const sheet = spreadsheet.data.sheets?.find(s => s.properties?.title === "Employees")
+
+  if (!sheet?.properties?.sheetId) throw new Error("Employees sheet not found")
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId: SPREADSHEET_ID,
+    requestBody: {
+      requests: [
+        {
+          deleteDimension: {
+            range: {
+              sheetId: sheet.properties.sheetId,
+              dimension: "ROWS",
+              startIndex: userIndex + 1,
+              endIndex: userIndex + 2,
+            },
+          },
+        },
+      ],
+    },
   })
 }
+
 
 // ============ NOTIFICATIONS ============
 

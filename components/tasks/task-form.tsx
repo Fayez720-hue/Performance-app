@@ -38,9 +38,10 @@ interface TaskFormProps {
   mode: "create" | "edit"
   userRole?: string
   userName?: string
+  employees?: string[]
 }
 
-export function TaskForm({ task, mode, userRole, userName }: TaskFormProps) {
+export function TaskForm({ task, mode, userRole, userName, employees }: TaskFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -111,13 +112,28 @@ export function TaskForm({ task, mode, userRole, userName }: TaskFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Assigned To</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter name"
-                        {...field}
-                        disabled={!canEditAllFields && mode === "edit"}
-                      />
-                    </FormControl>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      disabled={!canEditAllFields && mode === "edit"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select employee" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {employees && employees.length > 0 ? (
+                          employees.map((name) => (
+                            <SelectItem key={name} value={name}>
+                              {name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value={userName || "Default"}>{userName || "Default"}</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

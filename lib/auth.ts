@@ -55,55 +55,58 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user }) {
       if (!user.email) return false;
 
-      const { getUserByEmail, createUser } = await import("./google-sheets");
+      const { createUser } = await import("./google-sheets");
 
       try {
-        const existingUser = await getUserByEmail(user.email);
+        // Determine initial role from env vars if they are being created or updated
+        const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
+        const managerEmails = process.env.MANAGER_EMAILS?.split(",") || [];
 
-        if (!existingUser) {
-          // Determine initial role
-          const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
-          const managerEmails = process.env.MANAGER_EMAILS?.split(",") || [];
+        let role: UserRole = "Team Member";
+        if (adminEmails.includes(user.email)) role = "Admin";
+        else if (managerEmails.includes(user.email)) role = "Manager";
 
-          let role: UserRole = "Team Member"; // Default to Team Member for new signups
-          if (adminEmails.includes(user.email)) role = "Admin";
-          else if (managerEmails.includes(user.email)) role = "Manager";
+        // createUser now handles both creation and updating existing entries by name/email
+        await createUser({
+          email: user.email,
+          name: user.name || user.email.split("@")[0],
+          role: role
+        });
 
-          await createUser({
-            email: user.email,
-            name: user.name || user.email.split("@")[0],
-            role: role
-          });
-          console.log(`🆕 Created new user and sheet for: ${user.email} with role ${role}`);
-        }
+        console.log(`✅ User sign-in processed for: ${user.email}`);
       } catch (error) {
         console.error("Error during user onboarding:", error);
       }
 
-      console.log(`✅ User signed in successfully: ${user.email}`);
       return true
     },
     async redirect({ url, baseUrl }) {
       console.log(`Redirecting to: ${baseUrl}/dashboard`)
       return baseUrl + "/dashboard"
     },
-    async jwt({ token, user }) {
-      if (user) {
-        let role: UserRole = "Viewer"
-        const adminEmails = process.env.ADMIN_EMAILS?.split(",") || []
-        const managerEmails = process.env.MANAGER_EMAILS?.split(",") || []
+    async jwt({ token, user: nextAuthUser }) {
+      if (nextAuthUser?.email) {
+        const { getUserByEmail } = await import("./google-sheets");
+        const dbUser = await getUserByEmail(nextAuthUser.email);
 
-        if (adminEmails.includes(user.email!)) {
-          role = "Admin"
-        } else if (managerEmails.includes(user.email!)) {
-          role = "Manager"
+        if (dbUser) {
+          token.role = dbUser.role;
+        } else {
+          // Fallback to env vars for first-time login if not in DB yet
+          let role: UserRole = "Team Member";
+          const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
+          const managerEmails = process.env.MANAGER_EMAILS?.split(",") || [];
+
+          if (adminEmails.includes(nextAuthUser.email)) role = "Admin";
+          else if (managerEmails.includes(nextAuthUser.email)) role = "Manager";
+
+          token.role = role;
         }
 
-        token.role = role
-        token.email = user.email
-        token.name = user.name
+        token.email = nextAuthUser.email;
+        token.name = nextAuthUser.name;
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
       if (session.user) {

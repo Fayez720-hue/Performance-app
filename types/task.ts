@@ -33,7 +33,7 @@ export interface TaskFormData {
   deadline: string
   taskEstimatedTime: string
   taskTimeTaken: string
-  submissionLink: string
+  submissionLink?: string
   submissionDate: string
   grading: string
   edits: string

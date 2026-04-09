@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { getUserByEmail } from "@/lib/google-sheets"
+import { getUserByEmail, getUsers } from "@/lib/google-sheets"
 import { ROLE_PERMISSIONS } from "@/types/user"
 import { TaskForm } from "@/components/tasks/task-form"
 import { Header } from "@/components/layout/header"
@@ -25,12 +25,20 @@ export default async function NewTaskPage() {
     redirect("/")
   }
 
+  const allUsers = await getUsers()
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container mx-auto max-w-3xl px-4 py-8">
-        <TaskForm mode="create" userRole={user.role} userName={user.name} />
+        <TaskForm
+          mode="create"
+          userRole={user.role}
+          userName={user.name}
+          employees={allUsers.map(u => u.name)}
+        />
       </main>
     </div>
   )
 }
+
