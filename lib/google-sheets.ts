@@ -117,6 +117,9 @@ export async function createTask(data: TaskFormData): Promise<number> {
   const sheets = getSheets()
   const timestamp = new Date().toISOString()
   
+  // Use taskStartingDate as fallback for the main 'date' column if missing
+  const displayDate = data.date || data.taskStartingDate || format(new Date(), "yyyy-MM-dd")
+
   // Calculate deadline adherence
   const deadlineAdherence = data.deadline && data.submissionDate
     ? new Date(data.submissionDate) <= new Date(data.deadline) ? "On Time" : "Late"
@@ -129,22 +132,22 @@ export async function createTask(data: TaskFormData): Promise<number> {
   const row = [
     "", // EMP ID (Column A)
     data.name, // Name (Column B)
-    data.date, // Date (Column C)
+    displayDate, // Date (Column C)
     data.task, // Task (Column D)
-    data.references, // References (Column E)
-    data.comments, // Comments (Column F)
+    data.references || "", // References (Column E)
+    data.comments || "", // Comments (Column F)
     data.progress, // progress (Column G)
     data.taskStartingDate, // Task Starting Date (Column H)
     data.deadline, // Deadline (Column I)
     data.taskEstimatedTime, // Task Estimated Time (Column J)
-    data.taskTimeTaken, // Task Time taken (Column K)
-    data.submissionLink, // Submission Link (Column L)
-    data.submissionDate, // Submission Date (Column M)
+    data.taskTimeTaken || "", // Task Time taken (Column K)
+    data.submissionLink || "", // Submission Link (Column L)
+    data.submissionDate || "", // Submission Date (Column M)
     deadlineAdherence, // deadline adherence (Column N)
-    data.grading, // grading (Column O)
+    data.grading || "", // grading (Column O)
     "", // overall score (Column P)
     timestamp, // Task Time Stamp (Column Q)
-    data.edits, // Edits (Column R)
+    data.edits || "", // Edits (Column R)
     "0", // No. of edits (Column S)
     "", // Task ID (Column T)
   ]
