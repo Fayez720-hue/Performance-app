@@ -1,16 +1,24 @@
 import { google } from "googleapis"
+import { format } from "date-fns"
 import type { Task, TaskFormData } from "@/types/task"
 import type { User, Notification, UserRole } from "@/types/user"
 
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 function getAuth() {
-  const privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, "\n")
+  let privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY
   const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL
 
   if (!privateKey || !clientEmail) {
-    throw new Error("Missing Google Sheets credentials")
+    throw new Error("Missing Google Sheets credentials: CHECK VERCEL ENV VARS")
   }
+
+  // Handle various ways the private key might be escaped or quoted
+  if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+    privateKey = privateKey.substring(1, privateKey.length - 1)
+  }
+
+  privateKey = privateKey.replace(/\\n/g, "\n")
 
   return new google.auth.JWT({
     email: clientEmail,

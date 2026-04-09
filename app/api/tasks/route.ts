@@ -70,8 +70,12 @@ export async function POST(request: Request) {
     const taskId = await createTask(validatedData)
 
     return NextResponse.json({ id: taskId, message: "Task created successfully" })
-  } catch (error) {
-    console.error("Error creating task:", error)
-    return NextResponse.json({ error: "Failed to create task" }, { status: 500 })
+  } catch (error: any) {
+    console.error("Critical Task Creation Error:", error)
+    return NextResponse.json({
+      error: "Failed to create task",
+      message: error.message,
+      stack: error.stack
+    }, { status: 500 })
   }
 }
