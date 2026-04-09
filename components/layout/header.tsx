@@ -26,20 +26,22 @@ export function Header() {
         </Link>
 
         <div className="flex items-center gap-3">
-          {canCreateTasks && (
-            <Link href="/tasks/new">
-              <Button size="sm" className="gap-1.5">
-                <Plus className="h-4 w-4" />
-                New Task
-              </Button>
-            </Link>
-          )}
-          
           {session && <NotificationBell />}
           
           <UserNav />
         </div>
       </div>
+
+      {/* Floating Action Button for mobile/Android experience */}
+      {canCreateTasks && (
+        <Link
+          href="/tasks/new"
+          className="fixed bottom-8 right-8 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-110 active:scale-95 sm:bottom-12 sm:right-12"
+        >
+          <Plus className="h-7 w-7" />
+          <span className="sr-only">Add New Task</span>
+        </Link>
+      )}
     </header>
   )
 }
