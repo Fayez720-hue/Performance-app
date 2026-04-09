@@ -43,6 +43,8 @@ interface DashboardData {
   taskCompletion: { name: string; completion: number }[];
   performanceData: { score: number; adherence: number; size: number }[];
   employees: Employee[];
+  userRole?: string;
+  isPersonalView?: boolean;
 }
 
 export default function DashboardPage() {
@@ -309,19 +311,21 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Floating Action Button - Fixed to viewport but horizontally constrained to content */}
-        <div className="fixed bottom-28 left-0 right-0 pointer-events-none z-50">
-          <div className="max-w-7xl mx-auto px-4 relative h-0">
-            <button
-              onClick={() => router.push("/tasks/new")}
-              className="absolute right-4 bottom-0 pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-2xl transition-transform hover:scale-110 active:scale-95 sm:right-8"
-            >
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-            </button>
+        {/* Floating Action Button - Only for Admins and Managers */}
+        {(data?.userRole === "Admin" || data?.userRole === "Manager") && (
+          <div className="fixed bottom-28 left-0 right-0 pointer-events-none z-50">
+            <div className="max-w-7xl mx-auto px-4 relative h-0">
+              <button
+                onClick={() => router.push("/tasks/new")}
+                className="absolute right-4 bottom-0 pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-2xl transition-transform hover:scale-110 active:scale-95 sm:right-8"
+              >
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

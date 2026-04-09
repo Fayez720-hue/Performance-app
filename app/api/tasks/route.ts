@@ -65,8 +65,20 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const validatedData = taskFormSchema.parse(body)
 
+    const validation = taskFormSchema.safeParse(body)
+    if (!validation.success) {
+      const errorMessages = validation.error.issues
+        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+        .join(", ")
+
+      return NextResponse.json({
+        error: "Validation Error",
+        message: errorMessages
+      }, { status: 400 })
+    }
+
+    const validatedData = validation.data
     const taskId = await createTask(validatedData)
 
     return NextResponse.json({ id: taskId, message: "Task created successfully" })

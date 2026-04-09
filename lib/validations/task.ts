@@ -12,7 +12,7 @@ export const taskFormSchema = z.object({
   references: z.string().optional().default(""),
   comments: z.string().optional().default(""),
   taskTimeTaken: z.string().optional().default(""),
-  submissionLink: z.string().url().optional().or(z.literal("")),
+  submissionLink: z.string().optional().default(""),
   submissionDate: z.string().optional().default(""),
   grading: z.string().optional().default(""),
   edits: z.string().optional().default(""),

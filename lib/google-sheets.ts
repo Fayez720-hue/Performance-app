@@ -36,6 +36,35 @@ const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID
 
 // ============ TASKS ============
 
+async function ensurePerformanceSheet() {
+  const sheets = getSheets()
+  const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID! })
+  const exists = spreadsheet.data.sheets?.some(s => s.properties?.title === "Performance")
+
+  if (!exists) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID!,
+      requestBody: {
+        requests: [{ addSheet: { properties: { title: "Performance" } } }]
+      }
+    })
+
+    const headers = [
+      "EMP ID", "Name", "Date", "Task", "References", "Comments", "progress",
+      "Task Starting Date", "Deadline", "Task Estimated Time", "Task Time taken",
+      "Submission Link", "Submission Date", "deadline adherence", "grading",
+      "overall score", "Task Time Stamp", "Edits", "No. of edits", "Task ID"
+    ]
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID!,
+      range: "Performance!A1:T1",
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [headers] }
+    })
+  }
+}
+
 export async function getTasks(): Promise<Task[]> {
   try {
     const sheets = getSheets()
@@ -122,54 +151,83 @@ export async function getTaskById(id: number): Promise<Task | null> {
 }
 
 export async function createTask(data: TaskFormData): Promise<number> {
-  const sheets = getSheets()
-  const timestamp = new Date().toISOString()
-  
-  // Use taskStartingDate as fallback for the main 'date' column if missing
-  const displayDate = data.date || data.taskStartingDate || format(new Date(), "yyyy-MM-dd")
+  try {
+    await ensurePerformanceSheet()
+    const sheets = getSheets()
+    const timestamp = new Date().toISOString()
 
-  // Calculate deadline adherence
-  const deadlineAdherence = data.deadline && data.submissionDate
-    ? new Date(data.submissionDate) <= new Date(data.deadline) ? "On Time" : "Late"
-    : "Pending"
+    // Ensure all required fields have some value to avoid range issues
+    const safeData = {
+      ...data,
+      name: data.name || "Unassigned",
+      task: data.task || "No description",
+      progress: data.progress || "To-do",
+      taskStartingDate: data.taskStartingDate || format(new Date(), "yyyy-MM-dd"),
+      deadline: data.deadline || format(new Date(), "yyyy-MM-dd"),
+      taskEstimatedTime: data.taskEstimatedTime || "0",
+    }
 
-  // Matching headers: EMP ID(A), Name(B), Date(C), Task(D), References(E), Comments(F), progress(G),
-  // Task Starting Date(H), Deadline(I), Task Estimated Time(J), Task Time taken(K),
-  // Submission Link(L), Submission Date(M), deadline adherence(N), grading(O),
-  // overall score(P), Task Time Stamp(Q), Edits(R), No. of edits(S), Task ID(T)
-  const row = [
-    "", // EMP ID (Column A)
-    data.name, // Name (Column B)
-    displayDate, // Date (Column C)
-    data.task, // Task (Column D)
-    data.references || "", // References (Column E)
-    data.comments || "", // Comments (Column F)
-    data.progress, // progress (Column G)
-    data.taskStartingDate, // Task Starting Date (Column H)
-    data.deadline, // Deadline (Column I)
-    data.taskEstimatedTime, // Task Estimated Time (Column J)
-    data.taskTimeTaken || "", // Task Time taken (Column K)
-    data.submissionLink || "", // Submission Link (Column L)
-    data.submissionDate || "", // Submission Date (Column M)
-    deadlineAdherence, // deadline adherence (Column N)
-    data.grading || "", // grading (Column O)
-    "", // overall score (Column P)
-    timestamp, // Task Time Stamp (Column Q)
-    data.edits || "", // Edits (Column R)
-    "0", // No. of edits (Column S)
-    "", // Task ID (Column T)
-  ]
+    // Use taskStartingDate as fallback for the main 'date' column if missing
+    const displayDate = safeData.date || safeData.taskStartingDate
 
-  const response = await sheets.spreadsheets.values.append({
-    spreadsheetId: SPREADSHEET_ID,
-    range: "Performance!A:T",
-    valueInputOption: "USER_ENTERED",
-    requestBody: { values: [row] },
-  })
+    // Calculate deadline adherence
+    const deadlineAdherence = safeData.deadline && safeData.submissionDate
+      ? new Date(safeData.submissionDate) <= new Date(safeData.deadline) ? "On Time" : "Late"
+      : "Pending"
 
-  const updatedRange = response.data.updates?.updatedRange || ""
-  const match = updatedRange.match(/A(\d+)/)
-  return match ? parseInt(match[1]) : -1
+    const row = [
+      "", // EMP ID (Column A)
+      safeData.name, // Name (Column B)
+      displayDate, // Date (Column C)
+      safeData.task, // Task (Column D)
+      safeData.references || "", // References (Column E)
+      safeData.comments || "", // Comments (Column F)
+      safeData.progress, // progress (Column G)
+      safeData.taskStartingDate, // Task Starting Date (Column H)
+      safeData.deadline, // Deadline (Column I)
+      safeData.taskEstimatedTime, // Task Estimated Time (Column J)
+      safeData.taskTimeTaken || "", // Task Time taken (Column K)
+      safeData.submissionLink || "", // Submission Link (Column L)
+      safeData.submissionDate || "", // Submission Date (Column M)
+      deadlineAdherence, // deadline adherence (Column N)
+      safeData.grading || "", // grading (Column O)
+      "", // overall score (P)
+      timestamp, // Task Time Stamp (Q)
+      safeData.edits || "", // Edits (R)
+      "0", // No. of edits (S)
+      "", // Task ID (T)
+    ]
+
+    // 1. Append to Master Performance Sheet
+    const response = await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: "Performance!A:T",
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [row] },
+    })
+
+    // 2. Ensure User exists and has a personal sheet, then append there
+    try {
+      if (safeData.name && safeData.name !== "Unassigned") {
+        await ensureUserSheet(safeData.name)
+        await sheets.spreadsheets.values.append({
+          spreadsheetId: SPREADSHEET_ID,
+          range: `'${safeData.name}'!A:T`,
+          valueInputOption: "USER_ENTERED",
+          requestBody: { values: [row] },
+        })
+      }
+    } catch (e) {
+      console.warn(`Could not sync to personal sheet for ${safeData.name}:`, e)
+    }
+
+    const updatedRange = response.data.updates?.updatedRange || ""
+    const match = updatedRange.match(/A(\d+)/)
+    return match ? parseInt(match[1]) : -1
+  } catch (error: any) {
+    console.error("createTask Error Details:", error)
+    throw error
+  }
 }
 
 export async function updateTask(id: number, data: Partial<TaskFormData>, currentEdits?: string): Promise<void> {
@@ -256,8 +314,32 @@ export async function deleteTask(id: number): Promise<void> {
 
 // ============ USERS ============
 
+async function ensureEmployeesSheet() {
+  const sheets = getSheets()
+  const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID! })
+  const exists = spreadsheet.data.sheets?.some(s => s.properties?.title === "Employees")
+
+  if (!exists) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID!,
+      requestBody: {
+        requests: [{ addSheet: { properties: { title: "Employees" } } }]
+      }
+    })
+
+    const headers = ["Email", "Name", "Role"]
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID!,
+      range: "Employees!A1:C1",
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [headers] }
+    })
+  }
+}
+
 export async function getUsers(): Promise<User[]> {
   try {
+    await ensureEmployeesSheet()
     const sheets = getSheets()
     if (!SPREADSHEET_ID) {
       console.error("GOOGLE_SHEETS_SPREADSHEET_ID is missing")
@@ -273,11 +355,16 @@ export async function getUsers(): Promise<User[]> {
     })
 
     const rows = response.data.values || []
-    return rows.map((row) => ({
-      email: (row[0] || "").trim(),
-      name: (row[1] || "").trim(),
-      role: ((row[2] || "Viewer") as string).trim() as UserRole,
-    }))
+    console.log(`Fetched ${rows.length} rows from Employees sheet`)
+
+    return rows
+      .filter(row => row && row.length >= 2) // Must have at least Email and Name
+      .map((row) => ({
+        email: (row[0] || "").trim(),
+        name: (row[1] || "").trim(),
+        role: ((row[2] || "Team Member") as string).trim() as UserRole,
+      }))
+      .filter(user => user.email !== "" && user.name !== "")
   } catch (error) {
     console.error("getUsers error:", error)
     return []
@@ -410,10 +497,8 @@ export async function updateUser(email: string, data: { name?: string; role?: st
     requestBody: { values: [[searchEmail, newName, newRole]] },
   })
 
-  // If role changed to Team Member, ensure they have a sheet
-  if (newRole === "Team Member") {
-    await ensureUserSheet(newName)
-  }
+  // If name changed, we might need to handle sheet renaming, but for now just ensure new sheet exists
+  await ensureUserSheet(newName)
 }
 
 export async function deleteUser(email: string): Promise<void> {
@@ -452,6 +537,29 @@ export async function deleteUser(email: string): Promise<void> {
 
 // ============ NOTIFICATIONS ============
 
+async function ensureNotificationsSheet() {
+  const sheets = getSheets()
+  const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID! })
+  const exists = spreadsheet.data.sheets?.some(s => s.properties?.title === "Notifications")
+
+  if (!exists) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID!,
+      requestBody: {
+        requests: [{ addSheet: { properties: { title: "Notifications" } } }]
+      }
+    })
+
+    const headers = ["ID", "User Email", "Type", "Task ID", "Message", "Read", "Timestamp"]
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID!,
+      range: "Notifications!A1:G1",
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [headers] }
+    })
+  }
+}
+
 export async function getNotifications(userEmail: string): Promise<Notification[]> {
   try {
     const sheets = getSheets()
@@ -484,6 +592,7 @@ export async function getNotifications(userEmail: string): Promise<Notification[
 }
 
 export async function createNotification(notification: Omit<Notification, "id">): Promise<void> {
+  await ensureNotificationsSheet()
   const sheets = getSheets()
   const id = `notif_${Date.now()}`
   

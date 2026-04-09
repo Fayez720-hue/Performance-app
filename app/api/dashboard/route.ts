@@ -17,7 +17,7 @@ export async function GET() {
     const user = await getUserByEmail(session.user.email) || {
       email: session.user.email,
       name: session.user.name || "Guest",
-      role: "Admin" // Default for first login
+      role: "Viewer" // Safer default
     };
 
     const dashboardData = await getDashboardStats();
@@ -25,7 +25,8 @@ export async function GET() {
     // If Team Member, filter data to only show THEIR stats
     if (user.role === "Team Member") {
       const personalStats = dashboardData.employees.find(
-        (emp: any) => emp.name.toLowerCase() === user.name.toLowerCase()
+        (emp: any) => emp.name.toLowerCase() === user.name.toLowerCase() ||
+                     emp.email?.toLowerCase() === user.email.toLowerCase()
       );
 
       if (personalStats) {
@@ -33,18 +34,36 @@ export async function GET() {
           ...dashboardData,
           totalEmployees: 1,
           avgScore: personalStats.overallScore,
-          completionRate: Math.round((personalStats.completed / (personalStats.tasks || 1)) * 100),
+          completionRate: personalStats.tasks > 0 ? Math.round((personalStats.completed / personalStats.tasks) * 100) : 0,
           avgShiftAdherence: personalStats.shiftAdherence,
           totalEdits: personalStats.edits,
           topPerformer: user.name,
           topPerformerScore: personalStats.overallScore,
           employees: [personalStats], // Only themselves
-          isPersonalView: true
+          isPersonalView: true,
+          userRole: user.role
         });
       }
+
+      return NextResponse.json({
+        ...dashboardData,
+        totalEmployees: 0,
+        avgScore: 0,
+        completionRate: 0,
+        avgShiftAdherence: 0,
+        totalEdits: 0,
+        topPerformer: "N/A",
+        topPerformerScore: 0,
+        employees: [],
+        isPersonalView: true,
+        userRole: user.role
+      });
     }
 
-    return NextResponse.json(dashboardData);
+    return NextResponse.json({
+      ...dashboardData,
+      userRole: user.role
+    });
   } catch (error) {
     console.error("Dashboard API error:", error);
     return NextResponse.json(

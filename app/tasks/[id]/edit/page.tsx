@@ -46,6 +46,9 @@ export default async function EditTaskPage({ params }: EditTaskPageProps) {
   }
 
   const allUsers = await getUsers()
+  const employeeNames = allUsers.length > 0
+    ? Array.from(new Set(allUsers.map(u => u.name))).filter(Boolean)
+    : [user.name]
 
   return (
     <div className="min-h-screen bg-background">
@@ -56,7 +59,7 @@ export default async function EditTaskPage({ params }: EditTaskPageProps) {
           mode="edit"
           userRole={user.role}
           userName={user.name}
-          employees={allUsers.map(u => u.name)}
+          employees={employeeNames}
         />
       </main>
     </div>

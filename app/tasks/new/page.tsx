@@ -27,6 +27,11 @@ export default async function NewTaskPage() {
 
   const allUsers = await getUsers()
 
+  // Ensure we have at least some names, even if fetching fails
+  const employeeNames = allUsers.length > 0
+    ? allUsers.map(u => u.name).filter(Boolean)
+    : [user.name];
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -35,7 +40,7 @@ export default async function NewTaskPage() {
           mode="create"
           userRole={user.role}
           userName={user.name}
-          employees={allUsers.map(u => u.name)}
+          employees={employeeNames}
         />
       </main>
     </div>

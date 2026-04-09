@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useSession } from "next-auth/react"
-import { ClipboardList, Users } from "lucide-react"
+import { ClipboardList, Users, BarChart3, Settings } from "lucide-react"
 import { UserNav } from "@/components/auth/user-nav"
 import { NotificationBell } from "@/components/notifications/notification-bell"
 import { ROLE_PERMISSIONS } from "@/types/user"
@@ -10,7 +10,9 @@ import type { UserRole } from "@/types/user"
 
 export function Header() {
   const { data: session } = useSession()
-  const isAdmin = session?.user?.role === "Admin" || (session?.user?.role && ROLE_PERMISSIONS[session.user.role as UserRole]?.canManageUsers)
+  const role = session?.user?.role as UserRole
+  const permissions = role ? ROLE_PERMISSIONS[role] : null
+  const isAdmin = role === "Admin" || permissions?.canManageUsers
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -23,21 +25,47 @@ export function Header() {
             <span className="text-lg font-semibold text-foreground">Task Manager</span>
           </Link>
 
-          {isAdmin && (
-            <nav className="hidden md:flex items-center gap-4">
+          <nav className="hidden md:flex items-center gap-4">
+            <Link
+              href="/dashboard"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/tasks"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+              Tasks
+            </Link>
+            <Link
+              href="/reports"
+              className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Reports
+            </Link>
+            {isAdmin && (
               <Link
                 href="/admin/users"
                 className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
               >
                 <Users className="h-4 w-4" />
-                Manage Users
+                Users
               </Link>
-            </nav>
-          )}
+            )}
+          </nav>
         </div>
 
         <div className="flex items-center gap-3">
           {session && <NotificationBell />}
+          <Link
+            href="/settings"
+            className="p-2 rounded-full hover:bg-muted text-muted-foreground"
+            title="Settings"
+          >
+            <Settings className="h-5 w-5" />
+          </Link>
           <UserNav />
         </div>
       </div>
