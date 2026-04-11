@@ -10,21 +10,36 @@ function getAuth() {
   const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL
 
   if (!privateKey || !clientEmail) {
-    throw new Error("Missing Google Sheets credentials: CHECK VERCEL ENV VARS")
+    throw new Error("Missing Google Sheets credentials")
   }
 
-  // Ultra-robust key cleaning for Vercel
-  // 1. Remove wrapping quotes
-  privateKey = privateKey.replace(/^"(.*)"$/, '$1')
-  // 2. Replace literal \n with real newlines
-  privateKey = privateKey.replace(/\\n/g, '\n')
-  // 3. Ensure it has the correct PEM headers (common mistake when pasting)
-  if (!privateKey.includes("-----BEGIN PRIVATE KEY-----")) {
-    privateKey = `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----`
+  // Final definitive fix for Vercel/Node private key issue
+  try {
+    // 1. If it's wrapped in quotes, unwrap it
+    if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+      privateKey = privateKey.substring(1, privateKey.length - 1)
+    }
+
+    // 2. Fix escaped newlines (\n -> actual newline)
+    // IMPORTANT: We handle both double-slashes and literal newlines
+    privateKey = privateKey.replace(/\\n/g, '\n')
+
+    // 3. Clean up any accidental double-newlines or spaces at the start/end
+    privateKey = privateKey.trim()
+
+    // 4. Ensure it has the headers correctly
+    if (!privateKey.includes("-----BEGIN PRIVATE KEY-----")) {
+      privateKey = `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----`
+    }
+  } catch (e) {
+    console.error("Error processing private key:", e)
   }
+
+  // Debug check (will show in Vercel logs)
+  console.log("Auth attempt with email:", clientEmail)
 
   return new google.auth.JWT({
-    email: clientEmail,
+    email: clientEmail?.trim(),
     key: privateKey,
     scopes: SCOPES,
   })
