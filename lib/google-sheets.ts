@@ -355,16 +355,17 @@ export async function getUsers(): Promise<User[]> {
     })
 
     const rows = response.data.values || []
-    console.log(`Fetched ${rows.length} rows from Employees sheet`)
 
     return rows
-      .filter(row => row && row.length >= 2) // Must have at least Email and Name
-      .map((row) => ({
-        email: (row[0] || "").trim(),
-        name: (row[1] || "").trim(),
-        role: ((row[2] || "Team Member") as string).trim() as UserRole,
-      }))
-      .filter(user => user.email !== "" && user.name !== "")
+      .slice(1) // Skip the header row ("Name", "Title", etc.)
+      .filter(row => row && row.length >= 1)
+      .map((row) => {
+        const name = (row[0] || "").trim()
+        const email = (row[4] || row[0] || "").trim() // Email is in Column E (index 4)
+        const role = (row[1] || "Team Member").trim() as UserRole // Use Title as role fallback
+        return { email, name, role }
+      })
+      .filter(user => user.name !== "")
   } catch (error) {
     console.error("getUsers error:", error)
     return []
