@@ -339,7 +339,6 @@ async function ensureEmployeesSheet() {
 
 export async function getUsers(): Promise<User[]> {
   try {
-    await ensureEmployeesSheet()
     const sheets = getSheets()
     if (!SPREADSHEET_ID) {
       console.error("GOOGLE_SHEETS_SPREADSHEET_ID is missing")
@@ -348,21 +347,29 @@ export async function getUsers(): Promise<User[]> {
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: "Employees!A2:E",
+      range: "Employees!A1:E50",
     }).catch(e => {
-      console.error("Error fetching Employees sheet (A2:E):", e.message)
+      console.error("Error fetching Employees sheet:", e.message)
       return { data: { values: [] } }
     })
 
     const rows = response.data.values || []
+    if (rows.length === 0) return []
 
+    // Map the rows based on the actual sheet structure we saw:
+    // [0] Name, [1] Title, [2] EMP ID, [3] EMP URL, [4] EMP Email
     return rows
-      .slice(1) // Skip the header row ("Name", "Title", etc.)
-      .filter(row => row && row.length >= 1)
+      .filter(row => row && row.length >= 1 && row[0] !== "Name") // Skip header and empty rows
       .map((row) => {
         const name = (row[0] || "").trim()
-        const email = (row[4] || row[0] || "").trim() // Email is in Column E (index 4)
-        const role = (row[1] || "Team Member").trim() as UserRole // Use Title as role fallback
+        const title = (row[1] || "").trim()
+        const email = (row[4] || row[0] || "").trim()
+
+        // Map Title to UserRole
+        let role: UserRole = "Team Member"
+        if (title.toLowerCase().includes("admin")) role = "Admin"
+        else if (title.toLowerCase().includes("manager")) role = "Manager"
+
         return { email, name, role }
       })
       .filter(user => user.name !== "")

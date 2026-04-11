@@ -26,11 +26,12 @@ export default async function NewTaskPage() {
   }
 
   const allUsers = await getUsers()
+  console.log("ALL USERS FETCHED ON PAGE:", allUsers.length)
 
   // Ensure we have at least some names, even if fetching fails
   const employeeNames = allUsers.length > 0
     ? allUsers.map(u => u.name).filter(Boolean)
-    : [user.name];
+    : [user.name, "Abdel Rahman Talaat", "Ahmed Fayez", "Malak Abdel Aziz", "Mohamed Abdel Sattar", "Haneen Abdel Fattah", "Amira Sobhy", "Obada Hisham"];
 
   return (
     <div className="min-h-screen bg-background">
