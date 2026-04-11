@@ -348,9 +348,9 @@ export async function getUsers(): Promise<User[]> {
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: "Employees!A2:C",
+      range: "Employees!A2:E",
     }).catch(e => {
-      console.error("Error fetching Employees sheet (A2:C):", e.message)
+      console.error("Error fetching Employees sheet (A2:E):", e.message)
       return { data: { values: [] } }
     })
 
