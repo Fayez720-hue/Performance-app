@@ -13,12 +13,15 @@ function getAuth() {
     throw new Error("Missing Google Sheets credentials: CHECK VERCEL ENV VARS")
   }
 
-  // Handle various ways the private key might be escaped or quoted
-  if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
-    privateKey = privateKey.substring(1, privateKey.length - 1)
+  // Ultra-robust key cleaning for Vercel
+  // 1. Remove wrapping quotes
+  privateKey = privateKey.replace(/^"(.*)"$/, '$1')
+  // 2. Replace literal \n with real newlines
+  privateKey = privateKey.replace(/\\n/g, '\n')
+  // 3. Ensure it has the correct PEM headers (common mistake when pasting)
+  if (!privateKey.includes("-----BEGIN PRIVATE KEY-----")) {
+    privateKey = `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----`
   }
-
-  privateKey = privateKey.replace(/\\n/g, "\n")
 
   return new google.auth.JWT({
     email: clientEmail,
