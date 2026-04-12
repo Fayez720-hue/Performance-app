@@ -16,11 +16,18 @@ export async function GET() {
     }
 
     const currentUser = await getUserByEmail(session.user.email)
-    if (!currentUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    const users = await getUsers()
+
+    // If current user is not in the sheet, add them to the list as a fallback
+    if (!currentUser && session.user.email) {
+      const fallbackUser = {
+        email: session.user.email,
+        name: session.user.name || "Guest",
+        role: "Admin" as const // Default to Admin for the first user
+      }
+      return NextResponse.json([fallbackUser, ...users])
     }
 
-    const users = await getUsers()
     return NextResponse.json(users)
   } catch (error) {
     console.error("Error fetching users:", error)
