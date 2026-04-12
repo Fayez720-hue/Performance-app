@@ -689,6 +689,9 @@ export async function createNotification(notification: Omit<Notification, "id">)
       ]],
     },
   })
+  } catch (error) {
+    console.error("createNotification error:", error)
+  }
 }
 
 export async function markNotificationsRead(userEmail: string): Promise<void> {
