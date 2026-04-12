@@ -180,11 +180,13 @@ export async function getTaskById(id: number): Promise<Task | null> {
 
 export async function createTask(data: TaskFormData): Promise<number> {
   try {
+    const spreadsheetId = getSpreadsheetId()
+    if (!spreadsheetId) {
+      throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID environment variable is missing or empty in Vercel settings.")
+    }
+
     await ensurePerformanceSheet()
     const sheets = getSheets()
-    const spreadsheetId = getSpreadsheetId()
-    if (!spreadsheetId) throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is missing")
-
     const timestamp = new Date().toISOString()
 
     // Ensure all required fields have some value to avoid range issues
