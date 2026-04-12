@@ -6,6 +6,7 @@ import { ClipboardX, Loader2 } from "lucide-react"
 import { TaskCard } from "./task-card"
 import { TaskFilters } from "./task-filters"
 import { TaskStats } from "./task-stats"
+import type { User } from "@/types/user"
 import {
   Empty,
   EmptyHeader,
@@ -29,6 +30,8 @@ export function TaskDeck({ userRole, userName }: TaskDeckProps) {
     refreshInterval: 30000, // Refresh every 30 seconds
   })
 
+  const { data: users } = useSWR<User[]>("/api/users", fetcher)
+
   const [search, setSearch] = useState("")
   const [progressFilter, setProgressFilter] = useState<TaskProgress | "all">("all")
   const [assigneeFilter, setAssigneeFilter] = useState("all")
@@ -37,9 +40,16 @@ export function TaskDeck({ userRole, userName }: TaskDeckProps) {
 
   // Get unique assignees
   const assignees = useMemo(() => {
-    if (!Array.isArray(tasks)) return []
-    return [...new Set(tasks.map((t) => t.name).filter(Boolean))]
-  }, [tasks])
+    // Priority 1: All registered users
+    if (Array.isArray(users) && users.length > 0) {
+      return [...new Set(users.map((u) => u.name).filter(Boolean))].sort()
+    }
+    // Priority 2: Unique names from existing tasks
+    if (Array.isArray(tasks)) {
+      return [...new Set(tasks.map((t) => t.name).filter(Boolean))].sort()
+    }
+    return []
+  }, [tasks, users])
 
   // Filter tasks
   const filteredTasks = useMemo(() => {

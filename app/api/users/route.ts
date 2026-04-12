@@ -20,11 +20,6 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    const permissions = ROLE_PERMISSIONS[currentUser.role]
-    if (!permissions.canManageUsers) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-
     const users = await getUsers()
     return NextResponse.json(users)
   } catch (error) {

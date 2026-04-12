@@ -46,18 +46,27 @@ function getSheets() {
   return google.sheets({ version: "v4", auth })
 }
 
-const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID
+function getSpreadsheetId() {
+  const id = process.env.GOOGLE_SHEETS_SPREADSHEET_ID
+  if (!id) return null
+  return id.trim().replace(/^["']|["']$/g, "")
+}
 
 // ============ TASKS ============
 
 async function ensurePerformanceSheet() {
   const sheets = getSheets()
-  const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID! })
+  const spreadsheetId = getSpreadsheetId()
+  if (!spreadsheetId) {
+    throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is missing")
+  }
+
+  const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId })
   const exists = spreadsheet.data.sheets?.some(s => s.properties?.title === "Performance")
 
   if (!exists) {
     await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: SPREADSHEET_ID!,
+      spreadsheetId: spreadsheetId,
       requestBody: {
         requests: [{ addSheet: { properties: { title: "Performance" } } }]
       }
@@ -71,7 +80,7 @@ async function ensurePerformanceSheet() {
     ]
 
     await sheets.spreadsheets.values.update({
-      spreadsheetId: SPREADSHEET_ID!,
+      spreadsheetId: spreadsheetId,
       range: "Performance!A1:T1",
       valueInputOption: "USER_ENTERED",
       requestBody: { values: [headers] }
@@ -82,11 +91,15 @@ async function ensurePerformanceSheet() {
 export async function getTasks(): Promise<Task[]> {
   try {
     const sheets = getSheets()
-    if (!SPREADSHEET_ID) return []
+    const spreadsheetId = getSpreadsheetId()
+    if (!spreadsheetId) {
+      console.error("GOOGLE_SHEETS_SPREADSHEET_ID is missing")
+      return []
+    }
 
     // Range A2:T to include all columns up to Task ID
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId,
       range: "Performance!A2:T",
     }).catch(e => {
       console.error("Error fetching Performance sheet (A2:T):", e.message)
@@ -124,10 +137,11 @@ export async function getTasks(): Promise<Task[]> {
 export async function getTaskById(id: number): Promise<Task | null> {
   try {
     const sheets = getSheets()
-    if (!SPREADSHEET_ID) return null
+    const spreadsheetId = getSpreadsheetId()
+    if (!spreadsheetId) return null
 
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId: spreadsheetId,
       range: `Performance!A${id}:T${id}`,
     }).catch(e => {
       console.error(`Error fetching Task ${id}:`, e.message)
@@ -168,6 +182,9 @@ export async function createTask(data: TaskFormData): Promise<number> {
   try {
     await ensurePerformanceSheet()
     const sheets = getSheets()
+    const spreadsheetId = getSpreadsheetId()
+    if (!spreadsheetId) throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is missing")
+
     const timestamp = new Date().toISOString()
 
     // Ensure all required fields have some value to avoid range issues
@@ -214,7 +231,7 @@ export async function createTask(data: TaskFormData): Promise<number> {
 
     // 1. Append to Master Performance Sheet
     const response = await sheets.spreadsheets.values.append({
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId,
       range: "Performance!A:T",
       valueInputOption: "USER_ENTERED",
       requestBody: { values: [row] },
@@ -222,17 +239,21 @@ export async function createTask(data: TaskFormData): Promise<number> {
 
     // 2. Ensure User exists and has a personal sheet, then append there
     try {
-      if (safeData.name && safeData.name !== "Unassigned") {
-        await ensureUserSheet(safeData.name)
+      const userName = safeData.name.trim()
+      if (userName && userName !== "Unassigned") {
+        // Sanitize sheet name (remove characters not allowed by Google Sheets)
+        const sanitizedSheetName = userName.replace(/[*?\[\]\\/']/g, "")
+        await ensureUserSheet(sanitizedSheetName)
         await sheets.spreadsheets.values.append({
-          spreadsheetId: SPREADSHEET_ID,
-          range: `'${safeData.name}'!A:T`,
+          spreadsheetId: spreadsheetId,
+          range: `'${sanitizedSheetName}'!A:T`,
           valueInputOption: "USER_ENTERED",
           requestBody: { values: [row] },
         })
       }
     } catch (e) {
       console.warn(`Could not sync to personal sheet for ${safeData.name}:`, e)
+      // Don't throw here, we want the main task creation to succeed
     }
 
     const updatedRange = response.data.updates?.updatedRange || ""
@@ -246,6 +267,9 @@ export async function createTask(data: TaskFormData): Promise<number> {
 
 export async function updateTask(id: number, data: Partial<TaskFormData>, currentEdits?: string): Promise<void> {
   const sheets = getSheets()
+  const spreadsheetId = getSpreadsheetId()
+  if (!spreadsheetId) throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is missing")
+
   const existingTask = await getTaskById(id)
   if (!existingTask) throw new Error("Task not found")
 
@@ -284,7 +308,7 @@ export async function updateTask(id: number, data: Partial<TaskFormData>, curren
   ]
 
   await sheets.spreadsheets.values.update({
-    spreadsheetId: SPREADSHEET_ID,
+    spreadsheetId: spreadsheetId,
     range: `Performance!A${id}:T${id}`,
     valueInputOption: "USER_ENTERED",
     requestBody: { values: [row] },
@@ -293,10 +317,12 @@ export async function updateTask(id: number, data: Partial<TaskFormData>, curren
 
 export async function deleteTask(id: number): Promise<void> {
   const sheets = getSheets()
-  
+  const spreadsheetId = getSpreadsheetId()
+  if (!spreadsheetId) throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is missing")
+
   // Get spreadsheet to find sheet ID
   const spreadsheet = await sheets.spreadsheets.get({
-    spreadsheetId: SPREADSHEET_ID,
+    spreadsheetId: spreadsheetId,
   })
   
   const performanceSheet = spreadsheet.data.sheets?.find(
@@ -308,7 +334,7 @@ export async function deleteTask(id: number): Promise<void> {
   }
 
   await sheets.spreadsheets.batchUpdate({
-    spreadsheetId: SPREADSHEET_ID,
+    spreadsheetId: spreadsheetId,
     requestBody: {
       requests: [
         {
@@ -330,12 +356,15 @@ export async function deleteTask(id: number): Promise<void> {
 
 async function ensureEmployeesSheet() {
   const sheets = getSheets()
-  const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID! })
+  const spreadsheetId = getSpreadsheetId()
+  if (!spreadsheetId) throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is missing")
+
+  const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: spreadsheetId })
   const exists = spreadsheet.data.sheets?.some(s => s.properties?.title === "Employees")
 
   if (!exists) {
     await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: SPREADSHEET_ID!,
+      spreadsheetId: spreadsheetId,
       requestBody: {
         requests: [{ addSheet: { properties: { title: "Employees" } } }]
       }
@@ -343,7 +372,7 @@ async function ensureEmployeesSheet() {
 
     const headers = ["Email", "Name", "Role"]
     await sheets.spreadsheets.values.update({
-      spreadsheetId: SPREADSHEET_ID!,
+      spreadsheetId: spreadsheetId,
       range: "Employees!A1:C1",
       valueInputOption: "USER_ENTERED",
       requestBody: { values: [headers] }
@@ -354,13 +383,14 @@ async function ensureEmployeesSheet() {
 export async function getUsers(): Promise<User[]> {
   try {
     const sheets = getSheets()
-    if (!SPREADSHEET_ID) {
+    const spreadsheetId = getSpreadsheetId()
+    if (!spreadsheetId) {
       console.error("GOOGLE_SHEETS_SPREADSHEET_ID is missing")
       return []
     }
 
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId,
       range: "Employees!A1:E50",
     }).catch(e => {
       console.error("Error fetching Employees sheet:", e.message)
@@ -370,10 +400,10 @@ export async function getUsers(): Promise<User[]> {
     const rows = response.data.values || []
     if (rows.length === 0) return []
 
-    // Map the rows based on the actual sheet structure we saw:
+    // Map the rows based on the actual sheet structure:
     // [0] Name, [1] Title, [2] EMP ID, [3] EMP URL, [4] EMP Email
     return rows
-      .filter(row => row && row.length >= 1 && row[0] !== "Name") // Skip header and empty rows
+      .filter(row => row && row.length >= 1 && row[0] !== "Name" && row[0] !== "") // Skip header and empty names
       .map((row) => {
         const name = (row[0] || "").trim()
         const title = (row[1] || "").trim()
@@ -407,6 +437,9 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
 export async function createUser(user: User): Promise<void> {
   const sheets = getSheets()
+  const spreadsheetId = getSpreadsheetId()
+  if (!spreadsheetId) throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is missing")
+
   const users = await getUsers()
 
   const searchEmail = user.email?.trim().toLowerCase()
@@ -429,7 +462,7 @@ export async function createUser(user: User): Promise<void> {
     // Only update if something actually changed/was missing
     if (updatedEmail !== existingUser.email || updatedName !== existingUser.name || updatedRole !== existingUser.role) {
       await sheets.spreadsheets.values.update({
-        spreadsheetId: SPREADSHEET_ID,
+        spreadsheetId: spreadsheetId,
         range: `Employees!A${existingUserIndex + 2}:C${existingUserIndex + 2}`,
         valueInputOption: "USER_ENTERED",
         requestBody: { values: [[updatedEmail, updatedName, updatedRole]] },
@@ -445,7 +478,7 @@ export async function createUser(user: User): Promise<void> {
 
   // New user, append to Employees master sheet
   await sheets.spreadsheets.values.append({
-    spreadsheetId: SPREADSHEET_ID,
+    spreadsheetId: spreadsheetId,
     range: "Employees!A:C",
     valueInputOption: "USER_ENTERED",
     requestBody: { values: [[user.email, user.name, user.role]] },
@@ -459,10 +492,13 @@ export async function createUser(user: User): Promise<void> {
 
 export async function ensureUserSheet(userName: string): Promise<void> {
   const sheets = getSheets()
+  const spreadsheetId = getSpreadsheetId()
+  if (!spreadsheetId) return
+
   try {
     // Create new sheet
     await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId: spreadsheetId,
       requestBody: {
         requests: [
           {
@@ -489,7 +525,7 @@ export async function ensureUserSheet(userName: string): Promise<void> {
     ]
 
     await sheets.spreadsheets.values.update({
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId: spreadsheetId,
       range: `'${userName}'!A1:T1`,
       valueInputOption: "USER_ENTERED",
       requestBody: { values: [headers] },
@@ -501,6 +537,9 @@ export async function ensureUserSheet(userName: string): Promise<void> {
 
 export async function updateUser(email: string, data: { name?: string; role?: string }): Promise<void> {
   const sheets = getSheets()
+  const spreadsheetId = getSpreadsheetId()
+  if (!spreadsheetId) throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is missing")
+
   const users = await getUsers()
   const searchEmail = email.trim().toLowerCase()
   const userIndex = users.findIndex((u) => u.email.trim().toLowerCase() === searchEmail)
@@ -513,7 +552,7 @@ export async function updateUser(email: string, data: { name?: string; role?: st
 
   // Update in Employees sheet
   await sheets.spreadsheets.values.update({
-    spreadsheetId: SPREADSHEET_ID,
+    spreadsheetId: spreadsheetId,
     range: `Employees!A${userIndex + 2}:C${userIndex + 2}`,
     valueInputOption: "USER_ENTERED",
     requestBody: { values: [[searchEmail, newName, newRole]] },
@@ -525,6 +564,9 @@ export async function updateUser(email: string, data: { name?: string; role?: st
 
 export async function deleteUser(email: string): Promise<void> {
   const sheets = getSheets()
+  const spreadsheetId = getSpreadsheetId()
+  if (!spreadsheetId) throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is missing")
+
   const users = await getUsers()
   const searchEmail = email.trim().toLowerCase()
   const userIndex = users.findIndex((u) => u.email.trim().toLowerCase() === searchEmail)
@@ -532,13 +574,13 @@ export async function deleteUser(email: string): Promise<void> {
   if (userIndex === -1) throw new Error("User not found")
 
   // Get sheetId for Employees
-  const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID })
+  const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: spreadsheetId })
   const sheet = spreadsheet.data.sheets?.find(s => s.properties?.title === "Employees")
 
   if (!sheet?.properties?.sheetId) throw new Error("Employees sheet not found")
 
   await sheets.spreadsheets.batchUpdate({
-    spreadsheetId: SPREADSHEET_ID,
+    spreadsheetId: spreadsheetId,
     requestBody: {
       requests: [
         {
@@ -561,12 +603,15 @@ export async function deleteUser(email: string): Promise<void> {
 
 async function ensureNotificationsSheet() {
   const sheets = getSheets()
-  const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID! })
+  const spreadsheetId = getSpreadsheetId()
+  if (!spreadsheetId) return
+
+  const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: spreadsheetId })
   const exists = spreadsheet.data.sheets?.some(s => s.properties?.title === "Notifications")
 
   if (!exists) {
     await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: SPREADSHEET_ID!,
+      spreadsheetId: spreadsheetId,
       requestBody: {
         requests: [{ addSheet: { properties: { title: "Notifications" } } }]
       }
@@ -574,7 +619,7 @@ async function ensureNotificationsSheet() {
 
     const headers = ["ID", "User Email", "Type", "Task ID", "Message", "Read", "Timestamp"]
     await sheets.spreadsheets.values.update({
-      spreadsheetId: SPREADSHEET_ID!,
+      spreadsheetId: spreadsheetId,
       range: "Notifications!A1:G1",
       valueInputOption: "USER_ENTERED",
       requestBody: { values: [headers] }
@@ -585,8 +630,11 @@ async function ensureNotificationsSheet() {
 export async function getNotifications(userEmail: string): Promise<Notification[]> {
   try {
     const sheets = getSheets()
+    const spreadsheetId = getSpreadsheetId()
+    if (!spreadsheetId) return []
+
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId: spreadsheetId,
       range: "Notifications!A2:G",
     }).catch(e => {
       console.warn("Notifications sheet not found or inaccessible:", e.message)
@@ -616,10 +664,13 @@ export async function getNotifications(userEmail: string): Promise<Notification[
 export async function createNotification(notification: Omit<Notification, "id">): Promise<void> {
   await ensureNotificationsSheet()
   const sheets = getSheets()
+  const spreadsheetId = getSpreadsheetId()
+  if (!spreadsheetId) return
+
   const id = `notif_${Date.now()}`
   
   await sheets.spreadsheets.values.append({
-    spreadsheetId: SPREADSHEET_ID,
+    spreadsheetId: spreadsheetId,
     range: "Notifications!A:G",
     valueInputOption: "USER_ENTERED",
     requestBody: {
@@ -638,8 +689,11 @@ export async function createNotification(notification: Omit<Notification, "id">)
 
 export async function markNotificationsRead(userEmail: string): Promise<void> {
   const sheets = getSheets()
+  const spreadsheetId = getSpreadsheetId()
+  if (!spreadsheetId) return
+
   const response = await sheets.spreadsheets.values.get({
-    spreadsheetId: SPREADSHEET_ID,
+    spreadsheetId: spreadsheetId,
     range: "Notifications!A2:G",
   })
 
@@ -658,7 +712,7 @@ export async function markNotificationsRead(userEmail: string): Promise<void> {
 
   if (updates.length > 0) {
     await sheets.spreadsheets.values.batchUpdate({
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId: spreadsheetId,
       requestBody: {
         valueInputOption: "USER_ENTERED",
         data: updates,
@@ -672,11 +726,12 @@ export async function markNotificationsRead(userEmail: string): Promise<void> {
 export async function getDashboardStats() {
   try {
     const sheets = getSheets()
-    if (!SPREADSHEET_ID) throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is not defined")
+    const spreadsheetId = getSpreadsheetId()
+    if (!spreadsheetId) throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is not defined")
 
     // 1. Fetch main KPIs from Summary sheet
     const summaryResponse = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId: spreadsheetId,
       range: "Summary!A2:G2",
     }).catch(e => {
       console.error("Error fetching Summary sheet:", e.message)
@@ -687,7 +742,7 @@ export async function getDashboardStats() {
 
     // 2. Fetch Detailed Employee Stats from Employees sheet
     const employeeResponse = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId: spreadsheetId,
       range: "Employees!A2:I",
     }).catch(e => {
       console.error("Error fetching Employees sheet:", e.message)
