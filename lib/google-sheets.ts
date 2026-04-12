@@ -382,6 +382,7 @@ async function ensureEmployeesSheet() {
 
 export async function getUsers(): Promise<User[]> {
   try {
+    await ensureEmployeesSheet()
     const sheets = getSheets()
     const spreadsheetId = getSpreadsheetId()
     if (!spreadsheetId) {
@@ -662,9 +663,10 @@ export async function getNotifications(userEmail: string): Promise<Notification[
 }
 
 export async function createNotification(notification: Omit<Notification, "id">): Promise<void> {
-  await ensureNotificationsSheet()
-  const sheets = getSheets()
-  const spreadsheetId = getSpreadsheetId()
+  try {
+    await ensureNotificationsSheet()
+    const sheets = getSheets()
+    const spreadsheetId = getSpreadsheetId()
   if (!spreadsheetId) return
 
   const id = `notif_${Date.now()}`

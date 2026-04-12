@@ -1,0 +1,16 @@
+.vs
+.idea
+.vscode
+android
+ios
+node_modules
+.next
+.git
+emulator_log.txt
+.firebaserc
+firebase.json
+render.yaml
+northflank.yaml
+Dockerfile
+.dockerignore
+wrangler.json
