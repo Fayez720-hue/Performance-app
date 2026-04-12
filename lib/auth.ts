@@ -86,20 +86,20 @@ export const authOptions: NextAuthOptions = {
     },
     async jwt({ token, user: nextAuthUser }) {
       if (nextAuthUser?.email) {
+        // Always check env vars first for role assignment
+        const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
+        const managerEmails = process.env.MANAGER_EMAILS?.split(",") || [];
+
+        let role: UserRole = "Team Member";
+        if (adminEmails.includes(nextAuthUser.email)) role = "Admin";
+        else if (managerEmails.includes(nextAuthUser.email)) role = "Manager";
+
         const { getUserByEmail } = await import("./google-sheets");
         const dbUser = await getUserByEmail(nextAuthUser.email);
 
         if (dbUser) {
           token.role = dbUser.role;
         } else {
-          // Fallback to env vars for first-time login if not in DB yet
-          let role: UserRole = "Team Member";
-          const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
-          const managerEmails = process.env.MANAGER_EMAILS?.split(",") || [];
-
-          if (adminEmails.includes(nextAuthUser.email)) role = "Admin";
-          else if (managerEmails.includes(nextAuthUser.email)) role = "Manager";
-
           token.role = role;
         }
 

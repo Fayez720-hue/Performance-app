@@ -48,7 +48,7 @@ export default async function TasksPage() {
         <TaskDeck userRole={displayUser.role} userName={displayUser.name} />
 
         {/* Floating Action Button - Only for Admins and Managers */}
-        {(displayUser.role === "Admin" || displayUser.role === "Manager") && (
+        {(displayUser.role?.toLowerCase() === "admin" || displayUser.role?.toLowerCase() === "manager") && (
           <div className="fixed bottom-28 left-0 right-0 pointer-events-none z-50">
             <div className="container mx-auto px-4 relative h-0">
               <Link

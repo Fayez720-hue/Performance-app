@@ -2,9 +2,9 @@ import { z } from "zod"
 
 export const taskFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  taskStartingDate: z.string().min(1, "Starting date is required"),
+  taskStartingDate: z.string().min(1, "Starting date and time is required"),
   task: z.string().min(1, "Task description is required"),
-  deadline: z.string().min(1, "Deadline (Date & Time) is required"),
+  deadline: z.string().min(1, "Deadline date and time is required"),
   progress: z.enum(["To-do", "In Progress", "Review", "Completed"]),
   taskEstimatedTime: z.string().min(1, "Estimated task time is required"),
   // Optional but available

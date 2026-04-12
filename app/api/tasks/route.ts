@@ -18,16 +18,14 @@ export async function GET() {
     const user = await getUserByEmail(session.user.email) || {
       email: session.user.email,
       name: session.user.name || "Guest",
-      role: "Admin"
+      role: "Viewer"
     }
 
     const tasks = await getTasks() || []
-    if (!Array.isArray(tasks)) {
-       return NextResponse.json([], { status: 200 })
-    }
 
-    const userRole = (user.role as string) || "Viewer"
-    const permissions = (ROLE_PERMISSIONS as any)[userRole] || ROLE_PERMISSIONS["Viewer"]
+    // SAFE ROLE FALLBACK: Ensure the role exists in permissions
+    const userRole = (user.role as UserRole) || "Viewer"
+    const permissions = ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS["Viewer"]
 
     // Filter tasks based on role
     const filteredTasks = permissions.canViewAllTasks
@@ -80,6 +78,17 @@ export async function POST(request: Request) {
 
     const validatedData = validation.data
     const taskId = await createTask(validatedData)
+
+    // Trigger Notification
+    try {
+      const { notifyTaskAssigned, getTaskById } = await import("@/lib/notifications")
+      const newTask = await getTaskById(taskId)
+      if (newTask) {
+        await notifyTaskAssigned(newTask, user.name)
+      }
+    } catch (notifError) {
+      console.error("Notification failed but task was created:", notifError)
+    }
 
     return NextResponse.json({ id: taskId, message: "Task created successfully" })
   } catch (error: any) {

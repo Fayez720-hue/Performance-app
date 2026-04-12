@@ -58,7 +58,7 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
       progress: task?.progress || "To-do",
       taskStartingDate: task?.taskStartingDate || "",
       deadline: task?.deadline || "",
-      taskEstimatedTime: task?.taskEstimatedTime || "",
+      taskEstimatedTime: task?.taskEstimatedTime || "00:00",
       taskTimeTaken: task?.taskTimeTaken || "",
       submissionLink: task?.submissionLink || "",
       submissionDate: task?.submissionDate || "",
@@ -139,36 +139,21 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
                 )}
               />
 
-              {/* Date */}
+              {/* Date - READ ONLY */}
               <FormField
                 control={form.control}
                 name="date"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(new Date(field.value), "PPP") : "Pick a date"}
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value ? new Date(field.value) : undefined}
-                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        disabled
+                        className="bg-muted cursor-not-allowed"
+                        placeholder={format(new Date(), "PPP")}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -241,87 +226,19 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
                 )}
               />
 
-              {/* Task Starting Date */}
+              {/* Task Starting Date & Time */}
               <FormField
                 control={form.control}
                 name="taskStartingDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Task Starting Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(new Date(field.value), "PPP") : "Pick a date"}
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value ? new Date(field.value) : undefined}
-                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Deadline */}
-              <FormField
-                control={form.control}
-                name="deadline"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Deadline</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(new Date(field.value), "PPP") : "Pick a date"}
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value ? new Date(field.value) : undefined}
-                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Estimated Time */}
-              <FormField
-                control={form.control}
-                name="taskEstimatedTime"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estimated Time</FormLabel>
+                    <FormLabel>Task Starting Date & Time</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., 2 hours" {...field} />
+                      <Input
+                        type="datetime-local"
+                        {...field}
+                        className="w-full text-left font-normal"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -330,7 +247,82 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
-              {/* Time Taken */}
+              {/* Deadline & Time */}
+              <FormField
+                control={form.control}
+                name="deadline"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Deadline & Time</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="datetime-local"
+                        {...field}
+                        className="w-full text-left font-normal"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Estimated Time (Duration) */}
+              <FormField
+                control={form.control}
+                name="taskEstimatedTime"
+                render={({ field }) => {
+                  // field.value is expected to be "HH:MM"
+                  const value = field.value || "00:00"
+                  const [h, m] = value.split(":")
+                  const hours = parseInt(h) || 0
+                  const minutes = parseInt(m) || 0
+
+                  const updateDuration = (newH: number, newM: number) => {
+                    const formatted = `${String(newH).padStart(2, "0")}:${String(newM).padStart(2, "0")}`
+                    field.onChange(formatted)
+                  }
+
+                  return (
+                    <FormItem>
+                      <FormLabel>Estimated Duration</FormLabel>
+                      <FormControl>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              min="0"
+                              value={hours}
+                              onChange={(e) => updateDuration(parseInt(e.target.value) || 0, minutes)}
+                              className="w-20 text-center"
+                            />
+                            <span className="text-sm text-muted-foreground font-medium">hrs</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="59"
+                              value={minutes}
+                              onChange={(e) => {
+                                let val = parseInt(e.target.value) || 0
+                                if (val > 59) val = 59
+                                updateDuration(hours, val)
+                              }}
+                              className="w-20 text-center"
+                            />
+                            <span className="text-sm text-muted-foreground font-medium">mins</span>
+                          </div>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )
+                }}
+              />
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Time Taken - READ ONLY */}
               <FormField
                 control={form.control}
                 name="taskTimeTaken"
@@ -338,7 +330,12 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
                   <FormItem>
                     <FormLabel>Time Taken</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., 2.5 hours" {...field} />
+                      <Input
+                        placeholder="Auto-calculated"
+                        {...field}
+                        disabled
+                        className="bg-muted cursor-not-allowed"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -362,57 +359,52 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
-              {/* Submission Date */}
+              {/* Submission Date - READ ONLY */}
               <FormField
                 control={form.control}
                 name="submissionDate"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Submission Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(new Date(field.value), "PPP") : "Pick a date"}
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value ? new Date(field.value) : undefined}
-                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        disabled
+                        placeholder="Auto-set on submission"
+                        className="bg-muted cursor-not-allowed"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              {/* Grading */}
-              {canEditAllFields && (
-                <FormField
-                  control={form.control}
-                  name="grading"
-                  render={({ field }) => (
+              {/* Grading - Editable only if submission link exists and user is Admin/Manager */}
+              <FormField
+                control={form.control}
+                name="grading"
+                render={({ field }) => {
+                  const hasSubmission = !!form.watch("submissionLink")
+                  const canGrade = canEditAllFields && hasSubmission
+
+                  return (
                     <FormItem>
-                      <FormLabel>Grading</FormLabel>
+                      <FormLabel className={!canGrade ? "text-muted-foreground" : ""}>
+                        Grading {!hasSubmission && "(Waiting for Submission)"}
+                      </FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter grade" {...field} />
+                        <Input
+                          placeholder={hasSubmission ? "Enter grade" : "No submission yet"}
+                          {...field}
+                          disabled={!canGrade}
+                          className={!canGrade ? "bg-muted cursor-not-allowed" : ""}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
-                  )}
-                />
-              )}
+                  )
+                }}
+              />
             </div>
 
             {/* Comments */}
@@ -462,8 +454,8 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
               />
             )}
 
-            {/* Read-only fields display */}
-            {mode === "edit" && task && (
+            {/* Read-only fields display - Only for Admin/Manager */}
+            {canEditAllFields && mode === "edit" && task && (
               <div className="rounded-lg border border-border bg-muted/30 p-4">
                 <h4 className="mb-3 text-sm font-medium text-muted-foreground">Auto-calculated Fields</h4>
                 <div className="grid gap-4 text-sm md:grid-cols-3">

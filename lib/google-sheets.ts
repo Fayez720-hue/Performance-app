@@ -62,29 +62,33 @@ async function ensurePerformanceSheet() {
   }
 
   const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId })
-  const exists = spreadsheet.data.sheets?.some(s => s.properties?.title === "Performance")
+  const exists = spreadsheet.data.sheets?.some(s => s.properties?.title?.trim() === "Performance")
 
   if (!exists) {
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: spreadsheetId,
-      requestBody: {
-        requests: [{ addSheet: { properties: { title: "Performance" } } }]
-      }
-    })
+    try {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: spreadsheetId,
+        requestBody: {
+          requests: [{ addSheet: { properties: { title: "Performance" } } }]
+        }
+      })
 
-    const headers = [
-      "EMP ID", "Name", "Date", "Task", "References", "Comments", "progress",
-      "Task Starting Date", "Deadline", "Task Estimated Time", "Task Time taken",
-      "Submission Link", "Submission Date", "deadline adherence", "grading",
-      "overall score", "Task Time Stamp", "Edits", "No. of edits", "Task ID"
-    ]
+      const headers = [
+        "EMP ID", "Name", "Date", "Task", "References", "Comments", "progress",
+        "Task Starting Date", "Deadline", "Task Estimated Time", "Task Time taken",
+        "Submission Link", "Submission Date", "deadline adherence", "grading",
+        "overall score", "Task Time Stamp", "Edits", "No. of edits", "Task ID"
+      ]
 
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: spreadsheetId,
-      range: "Performance!A1:T1",
-      valueInputOption: "USER_ENTERED",
-      requestBody: { values: [headers] }
-    })
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: spreadsheetId,
+        range: "Performance!A1:T1",
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [headers] }
+      })
+    } catch (e: any) {
+      if (!e.message.includes("already exists")) throw e
+    }
   }
 }
 
@@ -107,27 +111,38 @@ export async function getTasks(): Promise<Task[]> {
     })
 
     const rows = response.data.values || []
-    return rows.map((row, index) => ({
-      id: index + 2, // Using row number as internal ID for easier updates
-      name: (row[1] || "").trim(), // Name is Column B
-      date: (row[2] || "").trim(), // Date is Column C
-      task: (row[3] || "").trim(), // Task is Column D
-      references: (row[4] || "").trim(), // References is Column E
-      comments: (row[5] || "").trim(), // Comments is Column F
-      progress: ((row[6] || "To-do") as string).trim() as any, // progress is Column G
-      taskStartingDate: (row[7] || "").trim(), // Task Starting Date is Column H
-      deadline: (row[8] || "").trim(), // Deadline is Column I
-      taskEstimatedTime: (row[9] || "").trim(), // Task Estimated Time is Column J
-      taskTimeTaken: (row[10] || "").trim(), // Task Time taken is Column K
-      submissionLink: (row[11] || "").trim(), // Submission Link is Column L
-      submissionDate: (row[12] || "").trim(), // Submission Date is Column M
-      deadlineAdherence: (row[13] || "").trim(), // deadline adherence is Column N
-      grading: (row[14] || "").trim(), // grading is Column O
-      overallScore: (row[15] || "").trim(), // overall score is Column P
-      taskTimeStamp: (row[16] || "").trim(), // Task Time Stamp is Column Q
-      edits: (row[17] || "").trim(), // Edits is Column R
-      noOfEdits: parseInt(row[18]) || 0, // No. of edits is Column S
-    }))
+    return rows
+      .map((row, index) => {
+        const rowId = index + 2
+        const name = (row[1] || "").trim()
+        const taskDescription = (row[3] || "").trim()
+
+        // Skip completely empty rows
+        if (!name && !taskDescription && !row[2]) return null
+
+        return {
+          id: rowId,
+          name,
+          date: (row[2] || "").trim(),
+          task: taskDescription,
+          references: (row[4] || "").trim(),
+          comments: (row[5] || "").trim(),
+          progress: ((row[6] || "To-do") as string).trim() as any,
+          taskStartingDate: (row[7] || "").trim(),
+          deadline: (row[8] || "").trim(),
+          taskEstimatedTime: (row[9] || "").trim(),
+          taskTimeTaken: (row[10] || "").trim(),
+          submissionLink: (row[11] || "").trim(),
+          submissionDate: (row[12] || "").trim(),
+          deadlineAdherence: (row[13] || "").trim(),
+          grading: (row[14] || "").trim(),
+          overallScore: (row[15] || "").trim(),
+          taskTimeStamp: (row[16] || "").trim(),
+          edits: (row[17] || "").trim(),
+          noOfEdits: parseInt(row[18]) || 0,
+        }
+      })
+      .filter((task): task is Task => task !== null)
   } catch (error) {
     console.error("getTasks fatal error:", error)
     return []
@@ -200,70 +215,103 @@ export async function createTask(data: TaskFormData): Promise<number> {
       taskEstimatedTime: data.taskEstimatedTime || "0",
     }
 
-    // Use taskStartingDate as fallback for the main 'date' column if missing
-    const displayDate = safeData.date || safeData.taskStartingDate
+    // 1. Find the first truly empty row to avoid gaps
+    const getResponse = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: "Performance!B:B", // Look at the Name column to find the end
+    })
 
-    // Calculate deadline adherence
-    const deadlineAdherence = safeData.deadline && safeData.submissionDate
-      ? new Date(safeData.submissionDate) <= new Date(safeData.deadline) ? "On Time" : "Late"
-      : "Pending"
+    const values = getResponse.data.values || []
+    let nextRowIndex = values.length + 1
 
-    const row = [
-      "", // EMP ID (Column A)
-      safeData.name, // Name (Column B)
-      displayDate, // Date (Column C)
-      safeData.task, // Task (Column D)
-      safeData.references || "", // References (Column E)
-      safeData.comments || "", // Comments (Column F)
-      safeData.progress, // progress (Column G)
-      safeData.taskStartingDate, // Task Starting Date (Column H)
-      safeData.deadline, // Deadline (Column I)
-      safeData.taskEstimatedTime, // Task Estimated Time (Column J)
-      safeData.taskTimeTaken || "", // Task Time taken (Column K)
-      safeData.submissionLink || "", // Submission Link (Column L)
-      safeData.submissionDate || "", // Submission Date (Column M)
-      deadlineAdherence, // deadline adherence (Column N)
-      safeData.grading || "", // grading (Column O)
-      "", // overall score (P)
-      timestamp, // Task Time Stamp (Q)
-      safeData.edits || "", // Edits (R)
-      "0", // No. of edits (S)
-      "", // Task ID (T)
+    // Check if there are any empty rows in the middle
+    for (let i = 1; i < values.length; i++) {
+      if (!values[i][0] || values[i][0].toString().trim() === "") {
+        nextRowIndex = i + 1
+        break
+      }
+    }
+
+    // Use granular updates to avoid overwriting automated columns:
+    // A (EMP ID), C (Date), K (Time taken), M (Submission Date), N (Adherence), P (Score), Q (Timestamp), S (No. of edits), T (Task ID)
+    const updates = [
+      { range: `Performance!B${nextRowIndex}`, values: [[safeData.name]] },
+      { range: `Performance!D${nextRowIndex}:J${nextRowIndex}`, values: [[
+        safeData.task,
+        safeData.references || "",
+        safeData.comments || "",
+        safeData.progress,
+        safeData.taskStartingDate,
+        safeData.deadline,
+        safeData.taskEstimatedTime,
+      ]] },
+      { range: `Performance!L${nextRowIndex}`, values: [[safeData.submissionLink || ""]] },
+      { range: `Performance!O${nextRowIndex}`, values: [[safeData.grading || ""]] },
+      { range: `Performance!R${nextRowIndex}`, values: [[safeData.edits || ""]] }
     ]
 
-    // 1. Append to Master Performance Sheet
-    const response = await sheets.spreadsheets.values.append({
+    await sheets.spreadsheets.values.batchUpdate({
       spreadsheetId,
-      range: "Performance!A:T",
-      valueInputOption: "USER_ENTERED",
-      requestBody: { values: [row] },
+      requestBody: {
+        valueInputOption: "USER_ENTERED",
+        data: updates,
+      },
     })
+
+    // Construct a full row for personal sheet sync (if needed)
+    const row = [
+      "", // EMP ID
+      safeData.name,
+      "", // Date (Automated)
+      safeData.task,
+      safeData.references || "",
+      safeData.comments || "",
+      safeData.progress,
+      safeData.taskStartingDate,
+      safeData.deadline,
+      safeData.taskEstimatedTime,
+      "", // Task Time taken (Automated)
+      safeData.submissionLink || "",
+      "", // Submission Date (Automated)
+      "", // deadline adherence (Automated)
+      safeData.grading || "",
+      "", // overall score (Automated)
+      timestamp,
+      safeData.edits || "",
+      "0",
+      nextRowIndex.toString(),
+    ]
 
     // 2. Ensure User exists and has a personal sheet, then append there
     try {
-      const userName = safeData.name.trim()
-      if (userName && userName !== "Unassigned") {
-        // Sanitize sheet name (remove characters not allowed by Google Sheets)
-        const sanitizedSheetName = userName.replace(/[*?\[\]\\/']/g, "")
-        await ensureUserSheet(sanitizedSheetName)
-        await sheets.spreadsheets.values.append({
-          spreadsheetId: spreadsheetId,
-          range: `'${sanitizedSheetName}'!A:T`,
-          valueInputOption: "USER_ENTERED",
-          requestBody: { values: [row] },
-        })
+      const userName = safeData.name?.trim()
+      if (userName && userName !== "Unassigned" && userName !== "Guest") {
+        const sanitizedSheetName = userName.replace(/[\/\\\?\*:[\]']/g, "").trim()
+
+        if (sanitizedSheetName.length > 0) {
+          await ensureUserSheet(sanitizedSheetName)
+          await sheets.spreadsheets.values.append({
+            spreadsheetId: spreadsheetId,
+            range: `'${sanitizedSheetName}'!A:T`,
+            valueInputOption: "USER_ENTERED",
+            requestBody: { values: [row] },
+          }).catch(err => console.warn(`Append to user sheet [${sanitizedSheetName}] failed:`, err.message))
+        }
       }
-    } catch (e) {
-      console.warn(`Could not sync to personal sheet for ${safeData.name}:`, e)
-      // Don't throw here, we want the main task creation to succeed
+    } catch (e: any) {
+      console.warn(`Could not sync to personal sheet for ${safeData.name}:`, e.message)
     }
 
-    const updatedRange = response.data.updates?.updatedRange || ""
-    const match = updatedRange.match(/A(\d+)/)
-    return match ? parseInt(match[1]) : -1
+    return nextRowIndex
   } catch (error: any) {
     console.error("createTask Error Details:", error)
-    throw error
+    if (error.code === 403) {
+      throw new Error("Permission Denied: Ensure the Google Service Account is an 'Editor' on the Google Sheet.")
+    }
+    if (error.code === 404) {
+      throw new Error("Spreadsheet Not Found: Check your GOOGLE_SHEETS_SPREADSHEET_ID.")
+    }
+    throw new Error(`Google Sheets Error: ${error.message}`)
   }
 }
 
@@ -280,40 +328,45 @@ export async function updateTask(id: number, data: Partial<TaskFormData>, curren
     noOfEdits += 1
   }
 
-  const deadline = data.deadline || existingTask.deadline
-  const submissionDate = data.submissionDate || existingTask.submissionDate
-  const deadlineAdherence = deadline && submissionDate
-    ? new Date(submissionDate) <= new Date(deadline) ? "On Time" : "Late"
-    : "Pending"
-
-  const row = [
-    "", // EMP ID (A) - Keep empty or handle if needed
-    data.name ?? existingTask.name, // Name (B)
-    data.date ?? existingTask.date, // Date (C)
-    data.task ?? existingTask.task, // Task (D)
-    data.references ?? existingTask.references, // References (E)
-    data.comments ?? existingTask.comments, // Comments (F)
-    data.progress ?? existingTask.progress, // progress (G)
-    data.taskStartingDate ?? existingTask.taskStartingDate, // Task Starting Date (H)
-    data.deadline ?? existingTask.deadline, // Deadline (I)
-    data.taskEstimatedTime ?? existingTask.taskEstimatedTime, // Task Estimated Time (J)
-    data.taskTimeTaken ?? existingTask.taskTimeTaken, // Task Time taken (K)
-    data.submissionLink ?? existingTask.submissionLink, // Submission Link (L)
-    data.submissionDate ?? existingTask.submissionDate, // Submission Date (M)
-    deadlineAdherence, // deadline adherence (N)
-    data.grading ?? existingTask.grading, // grading (O)
-    existingTask.overallScore, // overall score (P)
-    existingTask.taskTimeStamp, // Task Time Stamp (Q)
-    data.edits ?? existingTask.edits, // Edits (R)
-    noOfEdits.toString(), // No. of edits (S)
-    "", // Task ID (T)
+  // Define granular updates to avoid overwriting automated columns:
+  // A (EMP ID), C (Date), K (Time taken), M (Submission Date), N (Adherence), P (Score), Q (Timestamp), S (No. of edits), T (Task ID)
+  const updates = [
+    {
+      range: `Performance!B${id}`, // Name
+      values: [[data.name ?? existingTask.name]]
+    },
+    {
+      range: `Performance!D${id}:J${id}`, // Task through Estimated Time
+      values: [[
+        data.task ?? existingTask.task,
+        data.references ?? existingTask.references,
+        data.comments ?? existingTask.comments,
+        data.progress ?? existingTask.progress,
+        data.taskStartingDate ?? existingTask.taskStartingDate,
+        data.deadline ?? existingTask.deadline,
+        data.taskEstimatedTime ?? existingTask.taskEstimatedTime,
+      ]]
+    },
+    {
+      range: `Performance!L${id}`, // Submission Link
+      values: [[data.submissionLink ?? existingTask.submissionLink]]
+    },
+    {
+      range: `Performance!O${id}`, // Grading
+      values: [[data.grading ?? existingTask.grading]]
+    },
+    {
+      range: `Performance!R${id}`, // Edits
+      values: [[data.edits ?? existingTask.edits]]
+    }
   ]
 
-  await sheets.spreadsheets.values.update({
+  await sheets.spreadsheets.values.batchUpdate({
     spreadsheetId: spreadsheetId,
-    range: `Performance!A${id}:T${id}`,
-    valueInputOption: "USER_ENTERED",
-    requestBody: { values: [row] },
+    requestBody: {
+      valueInputOption: "USER_ENTERED",
+      data: updates,
+    },
   })
 }
 
@@ -322,68 +375,77 @@ export async function deleteTask(id: number): Promise<void> {
   const spreadsheetId = getSpreadsheetId()
   if (!spreadsheetId) throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is missing")
 
-  // Get spreadsheet to find sheet ID
-  const spreadsheet = await sheets.spreadsheets.get({
-    spreadsheetId: spreadsheetId,
-  })
-  
-  const performanceSheet = spreadsheet.data.sheets?.find(
-    (s) => s.properties?.title === "Performance"
-  )
-  
-  if (!performanceSheet?.properties?.sheetId) {
-    throw new Error("Performance sheet not found")
-  }
+  // Clear only the app-managed columns instead of the whole row
+  // This preserves formulas in columns A, C, K, M, N, P, Q, S, T
+  const rangesToClear = [
+    `Performance!B${id}`,       // Name
+    `Performance!D${id}:J${id}`, // Task through Estimated Time
+    `Performance!L${id}`,       // Submission Link
+    `Performance!O${id}`,       // Grading
+    `Performance!R${id}`        // Edits
+  ]
 
-  await sheets.spreadsheets.batchUpdate({
+  await sheets.spreadsheets.values.batchClear({
     spreadsheetId: spreadsheetId,
-    requestBody: {
-      requests: [
-        {
-          deleteDimension: {
-            range: {
-              sheetId: performanceSheet.properties.sheetId,
-              dimension: "ROWS",
-              startIndex: id - 1,
-              endIndex: id,
-            },
-          },
-        },
-      ],
-    },
+    requestBody: { ranges: rangesToClear },
   })
 }
 
 // ============ USERS ============
 
+// Simple in-memory cache to prevent Quota Exceeded errors
+let usersCache: { data: User[], timestamp: number } | null = null;
+const CACHE_DURATION = 60 * 1000; // 1 minute
+let employeesSheetChecked = false;
+
 async function ensureEmployeesSheet() {
+  if (employeesSheetChecked) return;
+
   const sheets = getSheets()
   const spreadsheetId = getSpreadsheetId()
   if (!spreadsheetId) throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is missing")
 
-  const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: spreadsheetId })
-  const exists = spreadsheet.data.sheets?.some(s => s.properties?.title === "Employees")
+  try {
+    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: spreadsheetId })
+    // Support both "Employees" and "Users" sheet names
+    const exists = spreadsheet.data.sheets?.some(s =>
+      ["Employees", "Users"].includes(s.properties?.title?.trim() || "")
+    )
 
-  if (!exists) {
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: spreadsheetId,
-      requestBody: {
-        requests: [{ addSheet: { properties: { title: "Employees" } } }]
-      }
-    })
+    if (!exists) {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: spreadsheetId,
+        requestBody: {
+          requests: [{ addSheet: { properties: { title: "Employees" } } }]
+        }
+      })
 
-    const headers = ["Email", "Name", "Role"]
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: spreadsheetId,
-      range: "Employees!A1:C1",
-      valueInputOption: "USER_ENTERED",
-      requestBody: { values: [headers] }
-    })
+      const headers = ["Email", "Name", "Role"]
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: spreadsheetId,
+        range: "Employees!A1:C1",
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [headers] }
+      })
+    }
+    employeesSheetChecked = true;
+  } catch (e: any) {
+    if (e.message.includes("already exists")) {
+      employeesSheetChecked = true;
+      return;
+    }
+    console.error("ensureEmployeesSheet error:", e.message);
   }
 }
 
 export async function getUsers(): Promise<User[]> {
   try {
+    // Check cache first
+    const now = Date.now();
+    if (usersCache && (now - usersCache.timestamp < CACHE_DURATION)) {
+      return usersCache.data;
+    }
+
     await ensureEmployeesSheet()
     const sheets = getSheets()
     const spreadsheetId = getSpreadsheetId()
@@ -392,34 +454,90 @@ export async function getUsers(): Promise<User[]> {
       return []
     }
 
+    // Get the spreadsheet once to find the correct sheet name
+    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId })
+    const sheetName = spreadsheet.data.sheets?.find(s =>
+      ["Employees", "Users"].includes(s.properties?.title?.trim() || "")
+    )?.properties?.title || "Employees"
+
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: "Employees!A1:E50",
+      range: `${sheetName}!A1:Z100`,
     }).catch(e => {
-      console.error("Error fetching Employees sheet:", e.message)
+      console.error(`Error fetching ${sheetName} sheet:`, e.message)
       return { data: { values: [] } }
     })
 
     const rows = response.data.values || []
     if (rows.length === 0) return []
 
-    // Map the rows based on the actual sheet structure:
-    // [0] Name, [1] Title, [2] EMP ID, [3] EMP URL, [4] EMP Email
-    return rows
-      .filter(row => row && row.length >= 1 && row[0] !== "Name" && row[0] !== "") // Skip header and empty names
-      .map((row) => {
-        const name = (row[0] || "").trim()
-        const title = (row[1] || "").trim()
-        const email = (row[4] || row[0] || "").trim()
+    // Detect column indexes from header row
+    const headers = (rows[0] || []).map((h: any) => String(h).toLowerCase().trim())
+    const emailIndex = headers.findIndex(h => h.includes("email"))
+    const nameIndex = headers.findIndex(h => h.includes("name"))
+    const roleIndex = headers.findIndex(h => h.includes("role") || h.includes("title"))
 
-        // Map Title to UserRole
+    const adminEmails = (process.env.ADMIN_EMAILS || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean)
+    const managerEmails = (process.env.MANAGER_EMAILS || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean)
+
+    const userMap = new Map<string, User>()
+
+    rows.slice(1)
+      .filter(row => row && row.length > 0)
+      .forEach((row) => {
+        let email = emailIndex !== -1 ? String(row[emailIndex] || "").trim().toLowerCase() : ""
+        let name = nameIndex !== -1 ? String(row[nameIndex] || "").trim() : ""
+        let roleStr = roleIndex !== -1 ? String(row[roleIndex] || "").trim() : ""
+
+        // Try to find email anywhere in the row if not in its column
+        if (!email || !email.includes("@")) {
+          for (const cell of row) {
+            const cellStr = String(cell).trim().toLowerCase()
+            if (cellStr.includes("@")) {
+              email = cellStr
+              break
+            }
+          }
+        }
+
+        if (!email) return
+
+        // Fallback for name from email
+        if (!name) {
+          name = email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, l => l.toUpperCase())
+        }
+
         let role: UserRole = "Team Member"
-        if (title.toLowerCase().includes("admin")) role = "Admin"
-        else if (title.toLowerCase().includes("manager")) role = "Manager"
+        const lowerRole = roleStr.toLowerCase()
+        if (lowerRole.includes("admin")) role = "Admin"
+        else if (lowerRole.includes("manager")) role = "Manager"
+        else if (lowerRole.includes("viewer")) role = "Viewer"
 
-        return { email, name, role }
+        // ENV Override
+        if (adminEmails.includes(email)) role = "Admin"
+        else if (managerEmails.includes(email)) role = "Manager"
+
+        // Merge logic: Update existing or add new
+        if (userMap.has(email)) {
+          const existing = userMap.get(email)!
+          userMap.set(email, {
+            email,
+            name: (name && name !== email.split("@")[0]) ? name : existing.name,
+            role: role !== "Team Member" ? role : existing.role
+          })
+        } else {
+          userMap.set(email, { email, name, role })
+        }
       })
-      .filter(user => user.name !== "")
+
+    // Return unique users, sorted by name
+    const result = Array.from(userMap.values())
+      .sort((a, b) => a.name.localeCompare(b.name))
+
+    // Update cache
+    usersCache = { data: result, timestamp: Date.now() };
+
+    return result;
   } catch (error) {
     console.error("getUsers error:", error)
     return []
@@ -429,9 +547,42 @@ export async function getUsers(): Promise<User[]> {
 export async function getUserByEmail(email: string): Promise<User | null> {
   try {
     if (!email) return null
-    const users = await getUsers()
     const searchEmail = email.trim().toLowerCase()
-    return users.find((u) => u.email.trim().toLowerCase() === searchEmail) || null
+
+    // Check ADMIN_EMAILS first for immediate admin access
+    const adminEmails = (process.env.ADMIN_EMAILS || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean)
+    const managerEmails = (process.env.MANAGER_EMAILS || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean)
+
+    const users = await getUsers()
+    const existingUser = users.find((u) => u.email.trim().toLowerCase() === searchEmail)
+
+    if (existingUser) {
+      // If found in sheet, ensure role is correct based on ENV override
+      let role = existingUser.role
+      if (adminEmails.includes(searchEmail)) role = "Admin"
+      else if (managerEmails.includes(searchEmail)) role = "Manager"
+
+      return { ...existingUser, role }
+    }
+
+    // Fallback if not in sheet but in ENV
+    if (adminEmails.includes(searchEmail)) {
+      return {
+        email: searchEmail,
+        name: "Admin User",
+        role: "Admin"
+      }
+    }
+
+    if (managerEmails.includes(searchEmail)) {
+      return {
+        email: searchEmail,
+        name: "Manager User",
+        role: "Manager"
+      }
+    }
+
+    return null
   } catch (error) {
     console.error("getUserByEmail error:", error)
     return null
@@ -610,23 +761,27 @@ async function ensureNotificationsSheet() {
   if (!spreadsheetId) return
 
   const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: spreadsheetId })
-  const exists = spreadsheet.data.sheets?.some(s => s.properties?.title === "Notifications")
+  const exists = spreadsheet.data.sheets?.some(s => s.properties?.title?.trim() === "Notifications")
 
   if (!exists) {
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: spreadsheetId,
-      requestBody: {
-        requests: [{ addSheet: { properties: { title: "Notifications" } } }]
-      }
-    })
+    try {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: spreadsheetId,
+        requestBody: {
+          requests: [{ addSheet: { properties: { title: "Notifications" } } }]
+        }
+      })
 
-    const headers = ["ID", "User Email", "Type", "Task ID", "Message", "Read", "Timestamp"]
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: spreadsheetId,
-      range: "Notifications!A1:G1",
-      valueInputOption: "USER_ENTERED",
-      requestBody: { values: [headers] }
-    })
+      const headers = ["ID", "User Email", "Type", "Task ID", "Message", "Read", "Timestamp"]
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: spreadsheetId,
+        range: "Notifications!A1:G1",
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [headers] }
+      })
+    } catch (e: any) {
+      if (!e.message.includes("already exists")) throw e
+    }
   }
 }
 
@@ -759,14 +914,14 @@ export async function getDashboardStats() {
     const employeeRows = employeeResponse.data.values || []
 
     const employeeStats = employeeRows.map(row => ({
-      name: (row[1] || "Unknown").trim(),
-      title: (row[2] || "Employee").trim(),
+      name: String(row[1] || "Unknown").trim(),
+      title: String(row[2] || "Employee").trim(),
       tasks: parseInt(row[3]) || 0,
       completed: parseInt(row[4]) || 0,
       overallScore: parseFloat(row[5]) || 0,
       shiftAdherence: parseFloat(row[6]) || 0,
       edits: parseInt(row[7]) || 0,
-      performance: ((row[8] || "Good") as string).trim() as "Excellent" | "Good" | "Needs Improvement",
+      performance: String(row[8] || "Good").trim() as "Excellent" | "Good" | "Needs Improvement",
     }))
 
     // Provide defaults if stats are empty to avoid "No data" UI error

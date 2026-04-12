@@ -84,6 +84,28 @@ export async function PUT(
 
     await updateTask(taskId, validatedData, existingTask.edits)
 
+    // Trigger Notifications
+    try {
+      const { notifyProgressUpdate, notifyRevisionsRequested } = await import("@/lib/notifications")
+
+      // Notify about progress change
+      if (validatedData.progress && validatedData.progress !== existingTask.progress) {
+        const updatedTask = { ...existingTask, ...validatedData } as any
+        await notifyProgressUpdate(updatedTask, existingTask.progress)
+      }
+
+      // Notify about Revisions Requested (Custom logic)
+      if (validatedData.comments && validatedData.comments !== existingTask.comments &&
+          (user.role === "Admin" || user.role === "Manager")) {
+        const lowerComments = validatedData.comments.toLowerCase()
+        if (lowerComments.includes("revision") || lowerComments.includes("fix") || lowerComments.includes("edit")) {
+          await notifyRevisionsRequested({ ...existingTask, ...validatedData } as any)
+        }
+      }
+    } catch (notifError) {
+      console.error("Notification failed but task was updated:", notifError)
+    }
+
     return NextResponse.json({ message: "Task updated successfully" })
   } catch (error) {
     console.error("Error updating task:", error)

@@ -104,6 +104,14 @@ export function UserManagement() {
   }
 
   async function onSubmit(values: UserFormValues) {
+    // Optimistic UI Update
+    const previousUsers = users
+    const updatedUsers = editingUser
+      ? users?.map(u => u.email === values.email ? { ...values } as User : u)
+      : [...(users || []), { ...values } as User]
+
+    mutate(updatedUsers, false) // Update UI immediately without re-fetching
+
     try {
       const method = editingUser ? "PUT" : "POST"
       const response = await fetch("/api/users", {
@@ -119,14 +127,19 @@ export function UserManagement() {
 
       toast.success(`User ${editingUser ? 'updated' : 'added'} successfully`)
       handleOpenChange(false)
-      mutate()
+      mutate() // Re-fetch to sync with server
     } catch (error) {
+      mutate(previousUsers) // Rollback on error
       toast.error(error instanceof Error ? error.message : "An error occurred")
     }
   }
 
   async function handleDelete(email: string) {
     if (!confirm("Are you sure you want to delete this user? This will remove them from the Employees list.")) return
+
+    // Optimistic UI Update
+    const previousUsers = users
+    mutate(users?.filter(u => u.email !== email), false)
 
     try {
       const response = await fetch(`/api/users?email=${encodeURIComponent(email)}`, {
@@ -136,14 +149,20 @@ export function UserManagement() {
       if (!response.ok) throw new Error("Failed to delete user")
 
       toast.success("User deleted successfully")
-      mutate()
+      mutate() // Re-fetch to sync
     } catch {
+      mutate(previousUsers) // Rollback
       toast.error("Failed to delete user")
     }
   }
 
   async function handleRoleChange(email: string, newRole: UserRole) {
     setUpdatingUser(email)
+
+    // Optimistic UI Update
+    const previousUsers = users
+    mutate(users?.map(u => u.email === email ? { ...u, role: newRole } : u), false)
+
     try {
       const response = await fetch("/api/users", {
         method: "PUT",
@@ -156,6 +175,7 @@ export function UserManagement() {
       toast.success("Role updated successfully")
       mutate()
     } catch {
+      mutate(previousUsers) // Rollback
       toast.error("Failed to update role")
     } finally {
       setUpdatingUser(null)

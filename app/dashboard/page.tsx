@@ -5,8 +5,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
-  LineChart,
-  Line,
+  LayoutDashboard,
+  CheckSquare,
+  BarChart3,
+  Settings as SettingsIcon,
+} from "lucide-react";
+import {
   BarChart,
   Bar,
   XAxis,
@@ -14,9 +18,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  ScatterChart,
-  Scatter,
-  ZAxis,
 } from "recharts";
 
 interface Employee {
@@ -183,10 +184,42 @@ export default function DashboardPage() {
             </div>
             <nav className="p-4">
               <ul className="space-y-2">
-                <li><button onClick={() => router.push("/dashboard")} className="w-full text-left px-3 py-2 rounded-lg bg-blue-50 text-blue-600">📊 Dashboard</button></li>
-                <li><button onClick={() => router.push("/tasks")} className="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-700">✅ Tasks</button></li>
-                <li><button className="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-700">📈 Reports</button></li>
-                <li><button className="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-700">⚙️ Settings</button></li>
+                <li>
+                  <button
+                    onClick={() => router.push("/dashboard")}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-medium transition-colors"
+                  >
+                    <LayoutDashboard className="h-5 w-5" />
+                    Dashboard
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => router.push("/tasks")}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+                  >
+                    <CheckSquare className="h-5 w-5" />
+                    Tasks
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => router.push("/reports")}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+                  >
+                    <BarChart3 className="h-5 w-5" />
+                    Reports
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => router.push("/settings")}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+                  >
+                    <SettingsIcon className="h-5 w-5" />
+                    Settings
+                  </button>
+                </li>
               </ul>
             </nav>
           </div>
@@ -251,7 +284,7 @@ export default function DashboardPage() {
               {(data as any).isPersonalView ? "My Performance Dashboard" : "CanShift Performance Dashboard"}
             </h1>
             <p className="text-sm text-gray-500">
-              {(data as any).isPersonalView ? "Your personal analytics" : "Real-time Team Analytics"} | {session?.user?.email}
+              {(data as any).isPersonalView ? "Your personal analytics" : "Real-time Team Analytics"}
             </p>
           </div>
         </div>
@@ -302,17 +335,41 @@ export default function DashboardPage() {
         )}
 
         {/* Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-30">
-          <div className="max-w-md mx-auto flex justify-around py-2">
-            <button onClick={() => router.push("/dashboard")} className="flex flex-col items-center px-4 py-1 text-blue-600"><span>🏠</span><span className="text-xs">Home</span></button>
-            <button onClick={() => router.push("/tasks")} className="flex flex-col items-center px-4 py-1 text-gray-600"><span>✅</span><span className="text-xs">Tasks</span></button>
-            <button className="flex flex-col items-center px-4 py-1 text-gray-600"><span>📊</span><span className="text-xs">Reports</span></button>
-            <button className="flex flex-col items-center px-4 py-1 text-gray-600"><span>👤</span><span className="text-xs">Profile</span></button>
+        <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-md border-t border-border shadow-lg z-30 md:hidden">
+          <div className="max-w-md mx-auto flex justify-around py-3">
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="flex flex-col items-center px-4 text-primary font-medium"
+            >
+              <LayoutDashboard className="h-5 w-5" />
+              <span className="text-[10px] mt-1">Home</span>
+            </button>
+            <button
+              onClick={() => router.push("/tasks")}
+              className="flex flex-col items-center px-4 text-muted-foreground hover:text-primary transition-colors"
+            >
+              <CheckSquare className="h-5 w-5" />
+              <span className="text-[10px] mt-1">Tasks</span>
+            </button>
+            <button
+              onClick={() => router.push("/reports")}
+              className="flex flex-col items-center px-4 text-muted-foreground hover:text-primary transition-colors"
+            >
+              <BarChart3 className="h-5 w-5" />
+              <span className="text-[10px] mt-1">Reports</span>
+            </button>
+            <button
+              onClick={() => router.push("/settings")}
+              className="flex flex-col items-center px-4 text-muted-foreground hover:text-primary transition-colors"
+            >
+              <SettingsIcon className="h-5 w-5" />
+              <span className="text-[10px] mt-1">Profile</span>
+            </button>
           </div>
         </div>
 
         {/* Floating Action Button - Only for Admins and Managers */}
-        {(data?.userRole === "Admin" || data?.userRole === "Manager") && (
+        {(data?.userRole?.toLowerCase() === "admin" || data?.userRole?.toLowerCase() === "manager") && (
           <div className="fixed bottom-28 left-0 right-0 pointer-events-none z-50">
             <div className="max-w-7xl mx-auto px-4 relative h-0">
               <button

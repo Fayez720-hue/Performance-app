@@ -14,16 +14,21 @@ export async function GET() {
 
     // Get user info to check role
     const { getUserByEmail } = await import("@/lib/google-sheets");
-    const user = await getUserByEmail(session.user.email) || {
+    const foundUser = await getUserByEmail(session.user.email);
+
+    const user = foundUser || {
       email: session.user.email,
       name: session.user.name || "Guest",
-      role: "Viewer" // Safer default
+      role: "Viewer"
     };
 
     const dashboardData = await getDashboardStats();
 
+    // Normalize role for comparisons
+    const normalizedRole = (user.role || "Viewer").trim();
+
     // If Team Member, filter data to only show THEIR stats
-    if (user.role === "Team Member") {
+    if (normalizedRole === "Team Member") {
       const personalStats = dashboardData.employees.find(
         (emp: any) => emp.name.toLowerCase() === user.name.toLowerCase() ||
                      emp.email?.toLowerCase() === user.email.toLowerCase()

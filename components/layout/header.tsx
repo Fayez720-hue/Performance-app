@@ -20,7 +20,7 @@ export function Header() {
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-              <ClipboardList className="h-5 w-5 text-primary" />
+              <ClipboardList className="h-5 w-5 text-primary" suppressHydrationWarning />
             </div>
             <span className="text-lg font-semibold text-foreground">Task Manager</span>
           </Link>
@@ -42,7 +42,7 @@ export function Header() {
               href="/reports"
               className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
             >
-              <BarChart3 className="h-4 w-4" />
+              <BarChart3 className="h-4 w-4" suppressHydrationWarning />
               Reports
             </Link>
             {isAdmin && (
@@ -50,7 +50,7 @@ export function Header() {
                 href="/admin/users"
                 className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
               >
-                <Users className="h-4 w-4" />
+                <Users className="h-4 w-4" suppressHydrationWarning />
                 Users
               </Link>
             )}
@@ -64,7 +64,7 @@ export function Header() {
             className="p-2 rounded-full hover:bg-muted text-muted-foreground"
             title="Settings"
           >
-            <Settings className="h-5 w-5" />
+            <Settings className="h-5 w-5" suppressHydrationWarning />
           </Link>
           <UserNav />
         </div>
