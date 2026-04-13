@@ -4,10 +4,10 @@
     "/*"
   ],
   "exclude": [
-    "/_next/*",
+    "/_next/static/*",
     "/favicon.ico",
+    "/images/*",
     "/*.png",
-    "/*.jpg",
-    "/*.svg"
+    "/*.jpg"
   ]
 }
