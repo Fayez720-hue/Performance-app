@@ -12,5 +12,8 @@
   },
   "observability": {
     "enabled": true
+  },
+  "vars": {
+    "NEXT_RUNTIME": "edge"
   }
 }
