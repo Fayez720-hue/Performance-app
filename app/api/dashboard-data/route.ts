@@ -1,20 +1,22 @@
-export const dynamic = 'force-dynamic';
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 
-import { NextResponse } from "next/server";
+import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { getDashboardStats } from "@/lib/google-sheets"
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions)
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const dashboardData = await getDashboardStats();
-
-    return NextResponse.json(dashboardData);
+    const stats = await getDashboardStats()
+    return NextResponse.json(stats)
   } catch (error) {
-    console.error("Dashboard API error:", error);
-    return NextResponse.json({ error: "Failed to fetch dashboard data" }, { status: 500 });
+    console.error("Dashboard data API error:", error)
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
-

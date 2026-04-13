@@ -1,61 +1,19 @@
-"use client"
-
 export const runtime = 'edge'
+"use client"
 
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
-import { ROLE_PERMISSIONS, type User, type UserRole } from "@/types/user"
-import { TaskForm } from "@/components/tasks/task-form"
 import { Header } from "@/components/layout/header"
-import { Loader2 } from "lucide-react"
-import { getApiUrl } from "@/lib/api"
+import { TaskForm } from "@/components/tasks/task-form"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ArrowLeft, Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 export default function NewTaskPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
-  const [employeeNames, setEmployeeNames] = useState<string[]>([])
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.replace("/login")
-    } else if (status === "authenticated") {
-      fetchData()
-    }
-  }, [status, router])
-
-  const fetchData = async () => {
-    try {
-      const res = await fetch(getApiUrl("/api/users"))
-      const users = await res.json()
-
-      const currentUser = users.find((u: User) => u.email === session?.user?.email)
-
-      const names = users.length > 0
-        ? users.map((u: User) => u.name).filter(Boolean)
-        : ["Abdel Rahman Talaat", "Ahmed Fayez", "Malak Abdel Aziz", "Mohamed Abdel Sattar", "Haneen Abdel Fattah", "Amira Sobhy", "Obada Hisham"];
-
-      setEmployeeNames(names)
-
-      if (currentUser) {
-        setUser(currentUser)
-      } else {
-        setUser({
-          email: session?.user?.email || "",
-          name: session?.user?.name || "Guest",
-          role: ((session?.user as any).role || "Admin") as UserRole
-        })
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (status === "loading" || loading) {
+  if (status === "loading") {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -63,21 +21,30 @@ export default function NewTaskPage() {
     )
   }
 
-  if (!user || !ROLE_PERMISSIONS[user.role].canCreateTasks) {
-    router.replace("/")
+  if (status === "unauthenticated") {
+    router.replace("/login")
     return null
   }
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container mx-auto max-w-3xl px-4 py-8">
-        <TaskForm
-          mode="create"
-          userRole={user.role}
-          userName={user.name}
-          employees={employeeNames}
-        />
+      <main className="container mx-auto px-4 py-8">
+        <Button
+          variant="ghost"
+          onClick={() => router.back()}
+          className="mb-6"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Tasks
+        </Button>
+        <Card className="max-w-2xl mx-auto border-border">
+          <CardHeader>
+            <CardTitle>Create New Task</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TaskForm onSuccess={() => router.push("/tasks")} />
+          </CardContent>
+        </Card>
       </main>
     </div>
   )

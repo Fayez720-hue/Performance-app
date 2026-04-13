@@ -1,68 +1,41 @@
-"use client"
-
 export const runtime = 'edge'
+"use client"
 
 import { useSession } from "next-auth/react"
 import { useRouter, useParams } from "next/navigation"
-import { useEffect, useState, use } from "react"
-import { ROLE_PERMISSIONS, type User, type UserRole } from "@/types/user"
-import { TaskForm } from "@/components/tasks/task-form"
+import { useEffect, useState } from "react"
 import { Header } from "@/components/layout/header"
-import { Loader2 } from "lucide-react"
+import { TaskForm } from "@/components/tasks/task-form"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ArrowLeft, Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import type { Task } from "@/types/task"
 import { getApiUrl } from "@/lib/api"
 
-export default function EditTaskPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function EditTaskPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-
-  const [user, setUser] = useState<User | null>(null)
+  const params = useParams()
   const [task, setTask] = useState<Task | null>(null)
-  const [employeeNames, setEmployeeNames] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.replace("/login")
     } else if (status === "authenticated") {
-      fetchData()
+      fetchTask()
     }
-  }, [status, router, id])
+  }, [status, params.id])
 
-  const fetchData = async () => {
+  const fetchTask = async () => {
     try {
-      // Fetch users and task in parallel
-      const [usersRes, taskRes] = await Promise.all([
-        fetch(getApiUrl("/api/users")),
-        fetch(getApiUrl(`/api/tasks/${id}`))
-      ])
-
-      if (!taskRes.ok) {
-        router.replace("/tasks")
-        return
-      }
-
-      const users = await usersRes.json()
-      const taskData = await taskRes.json()
-
-      const currentUser = users.find((u: User) => u.email === session?.user?.email)
-      const names = users.map((u: User) => u.name).filter(Boolean)
-
-      setTask(taskData)
-      setEmployeeNames(names)
-
-      if (currentUser) {
-        setUser(currentUser)
-      } else {
-        setUser({
-          email: session?.user?.email || "",
-          name: session?.user?.name || "Guest",
-          role: ((session?.user as any).role || "Viewer") as UserRole
-        })
-      }
+      const res = await fetch(getApiUrl(`/api/tasks/${params.id}`))
+      if (!res.ok) throw new Error("Task not found")
+      const data = await res.json()
+      setTask(data)
     } catch (error) {
-      console.error("Error fetching data:", error)
+      console.error("Error fetching task:", error)
+      router.replace("/tasks")
     } finally {
       setLoading(false)
     }
@@ -76,28 +49,31 @@ export default function EditTaskPage({ params }: { params: Promise<{ id: string 
     )
   }
 
-  if (!user || !task) return null
-
-  const permissions = ROLE_PERMISSIONS[user.role]
-  const canEdit = permissions.canEditAllTasks ||
-    (permissions.canEditOwnTasks && task.name === user.name)
-
-  if (!canEdit) {
-    router.replace("/")
-    return null
-  }
+  if (!task) return null
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container mx-auto max-w-3xl px-4 py-8">
-        <TaskForm
-          task={task}
-          mode="edit"
-          userRole={user.role}
-          userName={user.name}
-          employees={employeeNames}
-        />
+      <main className="container mx-auto px-4 py-8">
+        <Button
+          variant="ghost"
+          onClick={() => router.back()}
+          className="mb-6"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Tasks
+        </Button>
+        <Card className="max-w-2xl mx-auto border-border">
+          <CardHeader>
+            <CardTitle>Edit Task: {task.task}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TaskForm
+              initialData={task}
+              onSuccess={() => router.push("/tasks")}
+              isEditing
+            />
+          </CardContent>
+        </Card>
       </main>
     </div>
   )

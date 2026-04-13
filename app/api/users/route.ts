@@ -1,30 +1,20 @@
-export const dynamic = 'force-dynamic'
 export const runtime = 'edge'
-;
+export const dynamic = 'force-dynamic'
 
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { getUsers, createUser, updateUser, deleteUser, getUserByEmail } from "@/lib/google-sheets"
+import { ROLE_PERMISSIONS } from "@/types/user"
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
-    
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const currentUser = await getUserByEmail(session.user.email)
     const users = await getUsers()
-
-    // If current user is not in the sheet, add them to the list as a fallback
-    if (!currentUser && session.user.email) {
-      const fallbackUser = {
-        email: session.user.email,
-        name: session.user.name || "Guest",
-        role: "Admin" as const // Default to Admin for the first user
-      }
-      return NextResponse.json([fallbackUser, ...users])
-    }
-
     return NextResponse.json(users)
   } catch (error) {
     console.error("Error fetching users:", error)
@@ -35,32 +25,18 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
-    
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const currentUser = await getUserByEmail(session.user.email)
-    if (!currentUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
-    }
-
-    const permissions = ROLE_PERMISSIONS[currentUser.role]
-    if (!permissions.canManageUsers) {
+    if (!currentUser || !ROLE_PERMISSIONS[currentUser.role].canManageUsers) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const body = await request.json()
-    const validatedData = userSchema.parse(body)
-
-    // Check if user already exists
-    const existingUser = await getUserByEmail(validatedData.email)
-    if (existingUser) {
-      return NextResponse.json({ error: "User already exists" }, { status: 400 })
-    }
-
-    await createUser(validatedData)
-    return NextResponse.json({ message: "User created successfully" })
+    const data = await request.json()
+    await createUser(data)
+    return NextResponse.json({ message: "User created" })
   } catch (error) {
     console.error("Error creating user:", error)
     return NextResponse.json({ error: "Failed to create user" }, { status: 500 })
@@ -70,30 +46,18 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const session = await getServerSession(authOptions)
-    
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const currentUser = await getUserByEmail(session.user.email)
-    if (!currentUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
-    }
-
-    const permissions = ROLE_PERMISSIONS[currentUser.role]
-    if (!permissions.canManageUsers) {
+    if (!currentUser || !ROLE_PERMISSIONS[currentUser.role].canManageUsers) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const body = await request.json()
-    const { email, name, role } = body
-
-    if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 })
-    }
-
-    await updateUser(email, { name, role })
-    return NextResponse.json({ message: "User updated successfully" })
+    const { email, ...data } = await request.json()
+    await updateUser(email, data)
+    return NextResponse.json({ message: "User updated" })
   } catch (error) {
     console.error("Error updating user:", error)
     return NextResponse.json({ error: "Failed to update user" }, { status: 500 })
@@ -103,33 +67,20 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const session = await getServerSession(authOptions)
-
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const currentUser = await getUserByEmail(session.user.email)
-    if (!currentUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
-    }
-
-    const permissions = ROLE_PERMISSIONS[currentUser.role]
-    if (!permissions.canManageUsers) {
+    if (!currentUser || !ROLE_PERMISSIONS[currentUser.role].canManageUsers) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const email = searchParams.get("email")
-
-    if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 })
-    }
-
+    const { email } = await request.json()
     await deleteUser(email)
-    return NextResponse.json({ message: "User deleted successfully" })
+    return NextResponse.json({ message: "User deleted" })
   } catch (error) {
     console.error("Error deleting user:", error)
     return NextResponse.json({ error: "Failed to delete user" }, { status: 500 })
   }
 }
-

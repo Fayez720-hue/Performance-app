@@ -1,13 +1,13 @@
+export const runtime = 'edge'
+export const dynamic = "force-dynamic"
+
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { getTasks, createTask, getUserByEmail } from "@/lib/google-sheets"
 import { taskFormSchema } from "@/lib/validations/task"
 import { ROLE_PERMISSIONS } from "@/types/user"
-
-export const dynamic = "force-dynamic"
-export const runtime = "edge"
-
+import type { UserRole } from "@/types/user"
 
 export async function GET() {
   try {

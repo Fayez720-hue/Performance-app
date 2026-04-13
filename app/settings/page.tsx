@@ -1,191 +1,144 @@
-"use client"
-
 export const runtime = 'edge'
+"use client"
 
 import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useTheme } from "next-themes"
-import {
-  Settings,
-  Bell,
-  Palette,
-  Shield,
-  User,
-  ChevronRight,
-  LogOut,
-  Moon,
-  Sun,
-  Users
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
 import { Header } from "@/components/layout/header"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { LogOut, User, Bell, Shield, Moon, Sun, Monitor, Loader2 } from "lucide-react"
+import { ThemeProvider, useTheme } from "next-themes"
 import { Switch } from "@/components/ui/switch"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import { useEffect, useState } from "react"
 
 export default function SettingsPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const router = useRouter()
   const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
 
-  const userRole = (session?.user as any)?.role || "Viewer"
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
-  const sections = [
-    {
-      title: "Account",
-      description: "Manage your profile and account details",
-      items: [
-        {
-          icon: User,
-          label: "Profile",
-          description: session?.user?.email || "No email linked",
-          action: () => {}
-        },
-        {
-          icon: Shield,
-          label: "Security",
-          description: "Manage your Google account link",
-          action: () => window.open("https://myaccount.google.com/security", "_blank")
-        },
-      ]
-    },
-    {
-      title: "Appearance",
-      description: "Customize the look and feel of the app",
-      items: [
-        {
-          icon: theme === "dark" ? Moon : Sun,
-          label: "Dark Mode",
-          description: "Toggle between light and dark themes",
-          rightElement: (
-            <Switch
-              checked={theme === "dark"}
-              onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
-            />
-          )
-        },
-      ]
-    },
-    {
-      title: "App Settings",
-      description: "General application configuration",
-      items: [
-        { icon: Bell, label: "Notifications", description: "Manage browser alerts", action: () => {} },
-      ]
-    }
-  ]
-
-  // Add Admin-only section
-  if (userRole === "Admin" || userRole === "Manager") {
-    sections.push({
-      title: "Administration",
-      description: "Tools for team management",
-      items: [
-        {
-          icon: Users,
-          label: "User Management",
-          description: "Manage team roles and sheets",
-          action: () => router.push("/admin/users")
-        },
-      ]
-    })
+  if (status === "loading") {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
-  return (
-    <div className="min-h-screen bg-background pb-20">
-      <Header />
-      <main className="container mx-auto px-4 py-8 max-w-2xl">
+  if (status === "unauthenticated") {
+    router.replace("/login")
+    return null
+  }
 
-        {/* Profile Section */}
-        <div className="flex flex-col items-center text-center mb-10 mt-4">
-          <Avatar className="h-24 w-24 mb-4 ring-2 ring-primary/10">
-            <AvatarImage src={session?.user?.image || ""} />
-            <AvatarFallback className="text-2xl bg-primary/5">
-              {session?.user?.name?.substring(0, 2).toUpperCase() || "US"}
-            </AvatarFallback>
-          </Avatar>
-          <h1 className="text-2xl font-bold">{session?.user?.name}</h1>
-          <p className="text-muted-foreground">{userRole}</p>
+  if (!mounted) return null
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      <main className="container mx-auto px-4 py-8 max-w-4xl pb-24">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Settings</h1>
+          <p className="text-muted-foreground">Manage your account preferences and application settings</p>
         </div>
 
-        <div className="space-y-8">
-          {sections.map((section) => (
-            <section key={section.title} className="space-y-4">
-              <div className="px-1">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  {section.title}
-                </h2>
+        <div className="grid gap-6">
+          {/* Profile Section */}
+          <Card className="border-border">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                <CardTitle>Profile Information</CardTitle>
               </div>
-              <Card className="overflow-hidden border-none bg-muted/30 shadow-none">
-                <CardContent className="p-0">
-                  {section.items.map((item, index) => (
-                    <div key={item.label}>
-                      <div
-                        className="flex items-center justify-between p-4 transition-colors hover:bg-muted/50"
-                      >
-                        <div
-                          className="flex items-center gap-4 text-left flex-1 cursor-pointer"
-                          onClick={() => item.action?.()}
-                        >
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-background shadow-sm">
-                            <item.icon className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium leading-none">{item.label}</p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {item.description}
-                            </p>
-                          </div>
-                        </div>
-                        {item.rightElement ? (
-                          item.rightElement
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </div>
-                      {index < section.items.length - 1 && <Separator className="opacity-50" />}
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </section>
-          ))}
+              <CardDescription>Your personal details and role</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/30">
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary border border-primary/20">
+                  {session?.user?.name?.[0] || session?.user?.email?.[0]?.toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">{session?.user?.name || "User"}</h3>
+                  <p className="text-sm text-muted-foreground">{session?.user?.email}</p>
+                  <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                    {(session?.user as any).role || "Team Member"}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Logout Section */}
-          <div className="pt-4">
-            <Button
-              variant="destructive"
-              className="w-full justify-center gap-2 h-12 text-base font-semibold"
-              onClick={() => signOut({ callbackUrl: "/login" })}
-            >
-              <LogOut className="h-5 w-5" />
-              Sign Out
-            </Button>
-            <p className="text-center text-[10px] text-muted-foreground mt-4 uppercase tracking-tighter opacity-50">
-              Version 1.0.0 • Production Release
-            </p>
-          </div>
+          {/* Theme Section */}
+          <Card className="border-border">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Monitor className="h-5 w-5 text-primary" />
+                <CardTitle>Appearance</CardTitle>
+              </div>
+              <CardDescription>Customize how the application looks</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-base">Theme</Label>
+                  <p className="text-sm text-muted-foreground">Choose between light, dark, or system theme</p>
+                </div>
+                <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+                  <Button
+                    variant={theme === "light" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setTheme("light")}
+                  >
+                    <Sun className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={theme === "dark" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setTheme("dark")}
+                  >
+                    <Moon className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={theme === "system" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setTheme("system")}
+                  >
+                    <Monitor className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Account Actions */}
+          <Card className="border-border border-destructive/20 bg-destructive/5">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-destructive" />
+                <CardTitle className="text-destructive">Account Actions</CardTitle>
+              </div>
+              <CardDescription>Security and session management</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="destructive"
+                className="w-full md:w-auto"
+                onClick={() => signOut({ callbackUrl: "/login" })}
+              >
+                <LogOut className="mr-2 h-4 w-4" /> Sign Out
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </main>
-
-      {/* Bottom Navigation for Mobile */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-md border-t shadow-lg md:hidden z-50">
-        <div className="flex justify-around py-2 max-w-md mx-auto">
-          <button onClick={() => router.push("/dashboard")} className="flex flex-col items-center px-4 py-1 text-muted-foreground hover:text-primary transition-colors">
-            <span className="text-xl">🏠</span><span className="text-[10px] font-medium">Home</span>
-          </button>
-          <button onClick={() => router.push("/tasks")} className="flex flex-col items-center px-4 py-1 text-muted-foreground hover:text-primary transition-colors">
-            <span className="text-xl">✅</span><span className="text-[10px] font-medium">Tasks</span>
-          </button>
-          <button onClick={() => router.push("/reports")} className="flex flex-col items-center px-4 py-1 text-muted-foreground hover:text-primary transition-colors">
-            <span className="text-xl">📊</span><span className="text-[10px] font-medium">Reports</span>
-          </button>
-          <button className="flex flex-col items-center px-4 py-1 text-primary">
-            <Settings className="h-6 w-6 mb-0.5" /><span className="text-[10px] font-bold">Settings</span>
-          </button>
-        </div>
-      </div>
     </div>
   )
 }

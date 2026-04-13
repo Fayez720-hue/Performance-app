@@ -1,15 +1,15 @@
-"use client"
-
 export const runtime = 'edge'
+"use client"
 
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Header } from "@/components/layout/header"
-import { TaskDeck } from "@/components/tasks/task-deck"
-import { Plus, Loader2 } from "lucide-react"
-import Link from "next/link"
+import { TaskList } from "@/components/tasks/task-list"
+import { Loader2, Plus } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import type { User, UserRole } from "@/types/user"
+import { ROLE_PERMISSIONS } from "@/types/user"
 import { getApiUrl } from "@/lib/api"
 
 export default function TasksPage() {
@@ -35,7 +35,7 @@ export default function TasksPage() {
       if (currentUser) {
         setUser(currentUser)
       } else {
-        // Fallback
+        // Fallback for demo or first-time sync
         setUser({
           email: session?.user?.email || "",
           name: session?.user?.name || "Guest",
@@ -57,46 +57,24 @@ export default function TasksPage() {
     )
   }
 
-  if (!session || !user) return null
+  const permissions = user ? ROLE_PERMISSIONS[user.role] : ROLE_PERMISSIONS["Viewer"]
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <Link 
-            href="/dashboard" 
-            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-          >
-            ← Back to Dashboard
-          </Link>
-        </div>
-        
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-foreground">Task Dashboard</h1>
-          <p className="text-muted-foreground">
-            {user.role === "Team Member"
-              ? "View and manage your assigned tasks"
-              : "Manage and track all team tasks"}
-          </p>
-        </div>
-        
-        <TaskDeck userRole={user.role} userName={user.name} />
-
-        {/* Floating Action Button - Only for Admins and Managers */}
-        {(user.role?.toLowerCase() === "admin" || user.role?.toLowerCase() === "manager") && (
-          <div className="fixed bottom-28 left-0 right-0 pointer-events-none z-50">
-            <div className="container mx-auto px-4 relative h-0">
-              <Link
-                href="/tasks/new"
-                className="absolute right-4 bottom-0 pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-2xl transition-transform hover:scale-110 active:scale-95 sm:right-8"
-              >
-                <Plus className="h-8 w-8" />
-                <span className="sr-only">Add New Task</span>
-              </Link>
-            </div>
+      <main className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Tasks</h1>
+            <p className="text-muted-foreground">Manage and track team progress</p>
           </div>
-        )}
+          {permissions.canCreateTasks && (
+            <Button onClick={() => router.push("/tasks/new")} className="w-full md:w-auto">
+              <Plus className="mr-2 h-4 w-4" /> Create Task
+            </Button>
+          )}
+        </div>
+        <TaskList user={user!} />
       </main>
     </div>
   )
