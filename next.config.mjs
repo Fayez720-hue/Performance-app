@@ -9,8 +9,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Use 'export' for APK, 'standalone' for Cloudflare
-  output: process.env.STATIC_BUILD === 'true' ? 'export' : 'standalone',
+  // Use 'export' ONLY for APK. Cloudflare build needs default (no output setting).
+  output: process.env.STATIC_BUILD === 'true' ? 'export' : undefined,
 
   // Force bundling of problematic packages for OpenNext
   transpilePackages: ["next-auth", "jose", "@panva/hkdf", "openid-client"],

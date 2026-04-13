@@ -2,8 +2,9 @@ import NextAuth from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { NextResponse } from "next/server"
 
-// Dynamically set based on the build type
-export const dynamic = process.env.STATIC_BUILD === 'true' ? "force-static" : "force-dynamic"
+// Next.js requires this to be a literal string, not a conditional.
+// We'll use the default behavior and let Next.js determine if it's dynamic.
+export const dynamic = "force-dynamic"
 
 // Required for catch-all routes in static export mode
 export function generateStaticParams() {
@@ -11,6 +12,7 @@ export function generateStaticParams() {
 }
 
 const handler = (req: any, res: any) => {
+  // If we are in the static build phase for APK, we just return a stub.
   if (process.env.STATIC_BUILD === 'true') {
     return NextResponse.json({ static: true })
   }
