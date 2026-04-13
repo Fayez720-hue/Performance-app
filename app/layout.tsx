@@ -33,7 +33,7 @@ export const metadata: Metadata = {
 
 import { ThemeProvider } from '@/components/providers/theme-provider'
 
-export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 
 export default function RootLayout({
   children,

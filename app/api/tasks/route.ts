@@ -5,7 +5,6 @@ import { getTasks, createTask, getUserByEmail } from "@/lib/google-sheets"
 import { taskFormSchema } from "@/lib/validations/task"
 import { ROLE_PERMISSIONS } from "@/types/user"
 
-export const runtime = 'edge'
 export const dynamic = "force-dynamic"
 
 export async function GET() {

@@ -14,7 +14,6 @@ const nextConfig = {
 
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // If we are building for the Android APK, we mock node modules
       if (process.env.STATIC_BUILD === 'true') {
         config.resolve.fallback = {
           ...config.resolve.fallback,
@@ -35,8 +34,8 @@ const nextConfig = {
           os: false,
         };
       } else {
-        // For Cloudflare build, we use nodejs_compat aliases
-        // This helps next-auth find the crypto/buffer modules provided by Cloudflare
+        // For Cloudflare, we must ensure Node.js modules are available.
+        // We alias them to the 'node:' prefix which Cloudflare nodejs_compat provides.
         config.resolve.alias = {
           ...config.resolve.alias,
           'crypto': 'node:crypto',
@@ -44,6 +43,8 @@ const nextConfig = {
           'stream': 'node:stream',
           'util': 'node:util',
           'events': 'node:events',
+          'path': 'node:path',
+          'fs': 'node:fs',
         };
       }
     }
