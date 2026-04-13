@@ -1,21 +1,22 @@
 {
   "name": "performance-app",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npx --package wrangler --package @opennextjs/cloudflare opennextjs-cloudflare",
+    "build": "next build && opennextjs-cloudflare",
     "start": "next start",
     "lint": "eslint ."
   },
   "engines": {
-    "node": "20.x"
+    "node": ">=20.10.0"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.0",
     "@capacitor/cli": "^8.3.0",
     "@capacitor/core": "^8.3.0",
     "@hookform/resolvers": "^3.9.1",
+    "@opennextjs/cloudflare": "latest",
     "@radix-ui/react-accordion": "1.2.12",
     "@radix-ui/react-alert-dialog": "1.1.15",
     "@radix-ui/react-aspect-ratio": "1.1.8",
@@ -66,11 +67,10 @@
     "swr": "^2.2.6",
     "tailwind-merge": "^3.3.1",
     "vaul": "^1.1.2",
+    "wrangler": "^3.111.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "wrangler": "^3.111.0",
-    "@opennextjs/cloudflare": "latest",
     "@cloudflare/workers-types": "^4.20250224.0",
     "@types/node": "20.x",
     "@types/react": "19.2.14",
