@@ -7,7 +7,6 @@ import { Toaster } from 'sonner'
 import './globals.css'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -15,6 +14,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof globalThis !== 'undefined' && !globalThis.__name) {
+                globalThis.__name = (target, value) => Object.defineProperty(target, "name", { value, configurable: true });
+              }
+            `,
+          }}
+        />
+      </head>
       <body className="font-sans antialiased">
         <ThemeProvider
           attribute="class"
