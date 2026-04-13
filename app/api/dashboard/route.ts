@@ -1,7 +1,3 @@
-export const dynamic = "force-dynamic"
-export const runtime = "edge"
-
-
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
@@ -9,7 +5,6 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getDashboardStats, getUserByEmail } from "@/lib/google-sheets";
-import type { UserRole } from "@/types/user";
 
 export async function GET() {
   try {
@@ -19,7 +14,6 @@ export async function GET() {
     }
 
     // Get user info to check role
-    const { getUserByEmail } = await import("@/lib/google-sheets");
     const foundUser = await getUserByEmail(session.user.email);
 
     const user = foundUser || {

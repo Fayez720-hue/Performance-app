@@ -1,3 +1,4 @@
+export const runtime = 'edge'
 export const dynamic = "force-dynamic"
 
 import { NextResponse } from "next/server"
@@ -103,7 +104,7 @@ export async function PUT(
         }
       }
     } catch (notifError) {
-      console.error("Notification failed but task was updated:", notifError)
+      console.error("Notification failed but task was created:", notifError)
     }
 
     return NextResponse.json({ message: "Task updated successfully" })
