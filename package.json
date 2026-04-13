@@ -1,11 +1,11 @@
 {
   "name": "performance-app",
-  "version": "1.1.9",
+  "version": "1.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:cf": "npm install && next build && npx opennextjs-cloudflare",
+    "build:cf": "npm install && next build && node --experimental-specifier-resolution=node ./node_modules/@opennextjs/cloudflare/dist/cli.js",
     "start": "next start",
     "lint": "eslint ."
   },
