@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:cf": "npx @opennextjs/cloudflare",
     "start": "next start",
     "lint": "eslint ."
   },
@@ -70,6 +71,7 @@
   },
   "devDependencies": {
     "@cloudflare/next-on-pages": "^1.13.16",
+    "@opennextjs/cloudflare": "latest",
     "@types/node": "25.5.2",
     "@types/react": "19.2.14",
     "autoprefixer": "^10.4.27",
