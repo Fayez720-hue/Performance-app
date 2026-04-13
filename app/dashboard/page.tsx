@@ -4,6 +4,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { getApiUrl } from "@/lib/api";
 import {
   LayoutDashboard,
   CheckSquare,
@@ -76,7 +77,7 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch("/api/dashboard");
+      const response = await fetch(getApiUrl("/api/dashboard"));
       if (!response.ok) throw new Error("Failed to fetch");
       const dashboardData = await response.json();
       setData(dashboardData);

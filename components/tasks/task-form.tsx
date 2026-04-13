@@ -32,6 +32,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { taskFormSchema, type TaskFormValues } from "@/lib/validations/task"
 import { PROGRESS_OPTIONS, type Task } from "@/types/task"
+import { getApiUrl } from "@/lib/api"
 
 interface TaskFormProps {
   task?: Task
@@ -70,7 +71,7 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
   async function onSubmit(values: TaskFormValues) {
     setIsSubmitting(true)
     try {
-      const url = mode === "create" ? "/api/tasks" : `/api/tasks/${task?.id}`
+      const url = mode === "create" ? getApiUrl("/api/tasks") : getApiUrl(`/api/tasks/${task?.id}`)
       const method = mode === "create" ? "POST" : "PUT"
 
       const response = await fetch(url, {

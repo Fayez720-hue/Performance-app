@@ -33,6 +33,8 @@ export const metadata: Metadata = {
 
 import { ThemeProvider } from '@/components/providers/theme-provider'
 
+export const runtime = 'edge'
+
 export default function RootLayout({
   children,
 }: Readonly<{

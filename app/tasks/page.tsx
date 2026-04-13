@@ -1,27 +1,61 @@
-import { redirect } from "next/navigation"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { getUserByEmail } from "@/lib/google-sheets"
+"use client"
+
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 import { Header } from "@/components/layout/header"
 import { TaskDeck } from "@/components/tasks/task-deck"
-import { Plus } from "lucide-react"
+import { Plus, Loader2 } from "lucide-react"
 import Link from "next/link"
+import type { User, UserRole } from "@/types/user"
+import { getApiUrl } from "@/lib/api"
 
-export default async function TasksPage() {
-  const session = await getServerSession(authOptions)
+export default function TasksPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  if (!session?.user?.email) {
-    redirect("/login")
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login")
+    } else if (status === "authenticated") {
+      fetchUser()
+    }
+  }, [status, router])
+
+  const fetchUser = async () => {
+    try {
+      const res = await fetch(getApiUrl("/api/users"))
+      const users = await res.json()
+      const currentUser = users.find((u: User) => u.email === session?.user?.email)
+
+      if (currentUser) {
+        setUser(currentUser)
+      } else {
+        // Fallback
+        setUser({
+          email: session?.user?.email || "",
+          name: session?.user?.name || "Guest",
+          role: ((session?.user as any).role || "Viewer") as UserRole
+        })
+      }
+    } catch (error) {
+      console.error("Error fetching user:", error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const user = await getUserByEmail(session.user.email)
-  
-  // If user is not found in the sheet, fallback to session data
-  const displayUser = user || {
-    email: session.user.email,
-    name: session.user.name || "Guest",
-    role: ((session.user as any).role || "Viewer") as any
+  if (status === "loading" || loading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
+
+  if (!session || !user) return null
 
   return (
     <div className="min-h-screen bg-background">
@@ -39,16 +73,16 @@ export default async function TasksPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-semibold text-foreground">Task Dashboard</h1>
           <p className="text-muted-foreground">
-            {displayUser.role === "Team Member"
+            {user.role === "Team Member"
               ? "View and manage your assigned tasks"
               : "Manage and track all team tasks"}
           </p>
         </div>
         
-        <TaskDeck userRole={displayUser.role} userName={displayUser.name} />
+        <TaskDeck userRole={user.role} userName={user.name} />
 
         {/* Floating Action Button - Only for Admins and Managers */}
-        {(displayUser.role?.toLowerCase() === "admin" || displayUser.role?.toLowerCase() === "manager") && (
+        {(user.role?.toLowerCase() === "admin" || user.role?.toLowerCase() === "manager") && (
           <div className="fixed bottom-28 left-0 right-0 pointer-events-none z-50">
             <div className="container mx-auto px-4 relative h-0">
               <Link

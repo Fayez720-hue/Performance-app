@@ -7,6 +7,7 @@ import { TaskCard } from "./task-card"
 import { TaskFilters } from "./task-filters"
 import { TaskStats } from "./task-stats"
 import type { User } from "@/types/user"
+import { fetcher } from "@/lib/api"
 import {
   Empty,
   EmptyHeader,
@@ -17,8 +18,6 @@ import {
 import type { Task, TaskProgress } from "@/types/task"
 import type { UserRole } from "@/types/user"
 import { ROLE_PERMISSIONS } from "@/types/user"
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 interface TaskDeckProps {
   userRole: UserRole

@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import useSWR from "swr"
+import { fetcher } from "@/lib/api"
 import {
   BarChart3,
   TrendingUp,
@@ -33,7 +34,7 @@ import {
 } from "recharts"
 import { cn } from "@/lib/utils"
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
+const _fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 export default function ReportsPage() {
   const { data: session } = useSession()

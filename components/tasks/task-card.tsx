@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
+import { getApiUrl } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -75,7 +76,7 @@ export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) 
   async function handleDelete() {
     setIsDeleting(true)
     try {
-      const response = await fetch(`/api/tasks/${task.id}`, { method: "DELETE" })
+      const response = await fetch(getApiUrl(`/api/tasks/${task.id}`), { method: "DELETE" })
       if (!response.ok) throw new Error("Failed to delete task")
       toast.success("Task deleted successfully")
       onDelete?.()

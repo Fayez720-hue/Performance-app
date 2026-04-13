@@ -15,8 +15,9 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import type { Notification, NotificationType } from "@/types/user"
+import { getApiUrl } from "@/lib/api"
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
+const _fetcher = (url: string) => fetch(getApiUrl(url)).then((res) => res.json())
 
 const notificationIcons: Record<NotificationType, typeof Bell> = {
   task_assigned: ClipboardList,
@@ -38,14 +39,14 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const { data: notifications, mutate, isLoading } = useSWR<Notification[]>(
     "/api/notifications",
-    fetcher,
+    _fetcher,
     { refreshInterval: 60000 }
   )
 
   const unreadCount = notifications?.filter((n) => !n.read).length || 0
 
   async function handleMarkAsRead() {
-    await fetch("/api/notifications", { method: "PUT" })
+    await fetch(getApiUrl("/api/notifications"), { method: "PUT" })
     mutate()
   }
 

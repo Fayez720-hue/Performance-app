@@ -53,8 +53,7 @@ import {
 import { userSchema, type UserFormValues } from "@/lib/validations/task"
 import type { User, UserRole } from "@/types/user"
 import { cn } from "@/lib/utils"
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
+import { fetcher, getApiUrl } from "@/lib/api"
 
 const roleColors: Record<UserRole, string> = {
   Admin: "bg-red-500/10 text-red-400",
@@ -114,7 +113,7 @@ export function UserManagement() {
 
     try {
       const method = editingUser ? "PUT" : "POST"
-      const response = await fetch("/api/users", {
+      const response = await fetch(getApiUrl("/api/users"), {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
@@ -142,7 +141,7 @@ export function UserManagement() {
     mutate(users?.filter(u => u.email !== email), false)
 
     try {
-      const response = await fetch(`/api/users?email=${encodeURIComponent(email)}`, {
+      const response = await fetch(getApiUrl(`/api/users?email=${encodeURIComponent(email)}`), {
         method: "DELETE",
       })
 
@@ -164,7 +163,7 @@ export function UserManagement() {
     mutate(users?.map(u => u.email === email ? { ...u, role: newRole } : u), false)
 
     try {
-      const response = await fetch("/api/users", {
+      const response = await fetch(getApiUrl("/api/users"), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, role: newRole }),

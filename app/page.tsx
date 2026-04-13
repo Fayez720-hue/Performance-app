@@ -1,14 +1,25 @@
-import { redirect } from "next/navigation"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+"use client"
 
-export default async function Home() {
-  const session = await getServerSession(authOptions)
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
+import { Loader2 } from "lucide-react"
 
-  if (!session) {
-    redirect("/login")
-  }
+export default function Home() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
 
-  // Redirect to dashboard if logged in
-  redirect("/dashboard")
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/dashboard")
+    } else if (status === "unauthenticated") {
+      router.replace("/login")
+    }
+  }, [status, router])
+
+  return (
+    <div className="flex h-screen w-full items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  )
 }
