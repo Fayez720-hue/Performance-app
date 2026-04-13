@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:cf": "npx wrangler --version && npx @opennextjs/cloudflare",
+    "build:cf": "opennextjs-cloudflare",
     "start": "next start",
     "lint": "eslint ."
   },
@@ -67,10 +67,10 @@
     "swr": "^2.2.6",
     "tailwind-merge": "^3.3.1",
     "vaul": "^1.1.2",
-    "zod": "^3.24.1",
-    "wrangler": "^3.111.0"
+    "zod": "^3.24.1"
   },
   "devDependencies": {
+    "wrangler": "^3.111.0",
     "@opennextjs/cloudflare": "latest",
     "@cloudflare/workers-types": "^4.20250224.0",
     "@types/node": "25.5.2",
