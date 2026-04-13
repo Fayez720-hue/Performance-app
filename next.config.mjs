@@ -13,27 +13,39 @@ const nextConfig = {
   output: process.env.STATIC_BUILD === 'true' ? 'export' : undefined,
 
   webpack: (config, { isServer }) => {
-    // Only apply aggressive fallbacks during Static Export (APK build)
-    // For Cloudflare/Production build, we need these modules for NextAuth
-    if (isServer && process.env.STATIC_BUILD === 'true') {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        crypto: false,
-        buffer: false,
-        stream: false,
-        path: false,
-        fs: false,
-        net: false,
-        tls: false,
-        child_process: false,
-        http: false,
-        https: false,
-        url: false,
-        querystring: false,
-        util: false,
-        zlib: false,
-        os: false,
-      };
+    if (isServer) {
+      // If we are building for the Android APK, we mock node modules
+      if (process.env.STATIC_BUILD === 'true') {
+        config.resolve.fallback = {
+          ...config.resolve.fallback,
+          crypto: false,
+          buffer: false,
+          stream: false,
+          path: false,
+          fs: false,
+          net: false,
+          tls: false,
+          child_process: false,
+          http: false,
+          https: false,
+          url: false,
+          querystring: false,
+          util: false,
+          zlib: false,
+          os: false,
+        };
+      } else {
+        // For Cloudflare build, we use nodejs_compat aliases
+        // This helps next-auth find the crypto/buffer modules provided by Cloudflare
+        config.resolve.alias = {
+          ...config.resolve.alias,
+          'crypto': 'node:crypto',
+          'buffer': 'node:buffer',
+          'stream': 'node:stream',
+          'util': 'node:util',
+          'events': 'node:events',
+        };
+      }
     }
     return config;
   },

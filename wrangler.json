@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "performance-app",
+  "name": "performance-app-v1",
   "main": ".worker-next/index.mjs",
   "compatibility_date": "2024-10-30",
   "compatibility_flags": [
