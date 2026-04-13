@@ -1,15 +1,15 @@
 {
   "name": "performance-app",
-  "version": "1.0.8",
+  "version": "1.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && ./node_modules/.bin/opennextjs-cloudflare",
+    "build": "next build && npx --package wrangler --package @opennextjs/cloudflare opennextjs-cloudflare",
     "start": "next start",
     "lint": "eslint ."
   },
   "engines": {
-    "node": ">=20.10.0"
+    "node": "20.x"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.0",
@@ -66,11 +66,11 @@
     "swr": "^2.2.6",
     "tailwind-merge": "^3.3.1",
     "vaul": "^1.1.2",
-    "zod": "^3.24.1",
-    "wrangler": "^3.111.0",
-    "@opennextjs/cloudflare": "latest"
+    "zod": "^3.24.1"
   },
   "devDependencies": {
+    "wrangler": "^3.111.0",
+    "@opennextjs/cloudflare": "latest",
     "@cloudflare/workers-types": "^4.20250224.0",
     "@types/node": "20.x",
     "@types/react": "19.2.14",
