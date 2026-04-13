@@ -12,6 +12,7 @@
     "sync:apk": "npm run build:apk && npx cap copy android",
     "build:android": "npm run sync:apk && cd android && ./gradlew assembleDebug && cd ..",
     "deploy:cf": "npm run build:cf && npx wrangler pages deploy .open-next --project-name=performance-app --branch=main",
+    "build:prod": "npm run build:cf && powershell -Command \"Copy-Item -Path '.open-next/assets/*' -Destination '.open-next/' -Recurse -Force; Copy-Item '.open-next/worker.js' '.open-next/_worker.js' -Force\"",
     "start": "next start",
     "lint": "eslint ."
   },
