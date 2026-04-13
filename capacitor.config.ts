@@ -5,10 +5,10 @@ const config: CapacitorConfig = {
   appName: 'Performance App v1.0',
   webDir: 'out',
   server: {
-    // Replace with your ACTUAL live Vercel URL
-    url: 'https://performance-app-chi.vercel.app',
+    // Pointing to your live Cloudflare backend
+    url: 'https://performance-app-6yb.pages.dev',
     cleartext: true,
-    allowNavigation: ['performance-app-chi.vercel.app']
+    allowNavigation: ['performance-app-6yb.pages.dev']
   }
 };
 

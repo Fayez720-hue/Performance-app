@@ -1,16 +1,24 @@
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
+'use client'
 
-import { redirect } from "next/navigation"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 
-export default async function Home() {
-  const session = await getServerSession(authOptions)
+export default function Home() {
+  const router = useRouter()
+  const { data: session, status } = useSession()
 
-  if (session) {
-    redirect("/dashboard")
-  } else {
-    redirect("/login")
-  }
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login")
+    } else if (status === "authenticated") {
+      router.push("/dashboard")
+    }
+  }, [status, router])
+
+  return (
+    <div className="flex h-screen items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+    </div>
+  )
 }

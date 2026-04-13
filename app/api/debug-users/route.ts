@@ -1,10 +1,15 @@
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 import { NextResponse } from "next/server"
 import { getUsers } from "@/lib/google-sheets"
 
+// Satisfy 'output: export' for the APK build
+export const dynamic = "force-static"
+
 export async function GET() {
+  // If we are building for the APK, return a dummy response
+  if (process.env.STATIC_BUILD === 'true') {
+    return NextResponse.json({ static: true })
+  }
+
   try {
     const users = await getUsers()
     const response = {

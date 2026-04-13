@@ -1,0 +1,5 @@
+name: Performance-app
+app_id: da_KD4Iat7Uzge5
+owner: fayez720-hue
+package: .
+kind: wasmer.io/App.v0

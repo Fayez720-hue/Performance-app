@@ -1,0 +1,14 @@
+[package]
+name = "fayez720-hue/performance-app"
+version = "1.2.4"
+description = "Performance App Backend"
+
+[[module]]
+name = "server"
+source = ".next/standalone/server.js"
+abi = "wasi"
+
+[[command]]
+name = "server"
+module = "server"
+runner = "https://wasmer.io/wasmer/winterjs"
