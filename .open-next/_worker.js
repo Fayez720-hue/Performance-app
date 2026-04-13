@@ -1,4 +1,4 @@
-globalThis.__name = (target, value) => Object.defineProperty(target, "name", { value, configurable: true }); //@ts-expect-error: Will be resolved by wrangler build
+//@ts-expect-error: Will be resolved by wrangler build
 import { handleCdnCgiImageRequest, handleImageRequest } from "./cloudflare/images.js";
 //@ts-expect-error: Will be resolved by wrangler build
 import { runWithCloudflareRequestContext } from "./cloudflare/init.js";
@@ -13,7 +13,7 @@ export { DOShardedTagCache } from "./.build/durable-objects/sharded-tag-cache.js
 //@ts-expect-error: Will be resolved by wrangler build
 export { BucketCachePurge } from "./.build/durable-objects/bucket-cache-purge.js";
 export default {
-    async fetch(request, env, ctx) { if (request.method === "GET" || request.method === "HEAD") { try { const assetResponse = await env.ASSETS.fetch(request); if (assetResponse.status !== 404) return assetResponse; } catch (e) {} }
+    async fetch(request, env, ctx) { globalThis.__name = (target, value) => Object.defineProperty(target, "name", { value, configurable: true }); if (request.method === "GET" || request.method === "HEAD") { try { const assetResponse = await env.ASSETS.fetch(request); if (assetResponse.status !== 404) return assetResponse; } catch (e) {} }
         return runWithCloudflareRequestContext(request, env, ctx, async () => {
             const response = maybeGetSkewProtectionResponse(request);
             if (response) {

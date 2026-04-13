@@ -18,9 +18,14 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              if (typeof globalThis !== 'undefined' && !globalThis.__name) {
-                globalThis.__name = (target, value) => Object.defineProperty(target, "name", { value, configurable: true });
-              }
+              (function() {
+                var g = typeof globalThis !== 'undefined' ? globalThis : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {};
+                if (!g.__name) {
+                  g.__name = function(target, value) {
+                    return Object.defineProperty(target, 'name', { value: value, configurable: true });
+                  };
+                }
+              })();
             `,
           }}
         />
