@@ -1,11 +1,7 @@
-import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { getUsers, createUser, updateUser, deleteUser, getUserByEmail } from "@/lib/google-sheets"
-import { userSchema } from "@/lib/validations/task"
-import { ROLE_PERMISSIONS } from "@/types/user"
+export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
 
-export const dynamic = "force-dynamic"
+import { NextResponse } from "next/server"
 
 export async function GET() {
   try {
@@ -135,3 +131,4 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Failed to delete user" }, { status: 500 })
   }
 }
+

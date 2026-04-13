@@ -1,9 +1,7 @@
-import { NextResponse } from "next/server";
-import { getDashboardStats } from "@/lib/google-sheets";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-
+export const runtime = 'edge'
 export const dynamic = "force-dynamic"
+
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {

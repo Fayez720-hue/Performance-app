@@ -1,9 +1,7 @@
-import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { getNotifications, markNotificationsRead } from "@/lib/google-sheets"
+export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
 
-export const dynamic = "force-dynamic"
+import { NextResponse } from "next/server"
 
 export async function GET() {
   try {
@@ -36,3 +34,4 @@ export async function PUT() {
     return NextResponse.json({ error: "Failed to mark notifications as read" }, { status: 500 })
   }
 }
+

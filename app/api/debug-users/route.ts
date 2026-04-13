@@ -1,3 +1,6 @@
+export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from "next/server"
 import { getUsers } from "@/lib/google-sheets"
 
@@ -17,3 +20,4 @@ export async function GET() {
     }, { status: 500 })
   }
 }
+

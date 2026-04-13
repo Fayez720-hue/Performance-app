@@ -1,9 +1,7 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { getDashboardStats } from "@/lib/google-sheets";
+export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
 
-export const dynamic = "force-dynamic"
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
@@ -20,3 +18,4 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to fetch dashboard data" }, { status: 500 });
   }
 }
+
