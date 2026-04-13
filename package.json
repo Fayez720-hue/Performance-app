@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:cf": "npx --package wrangler --package @opennextjs/cloudflare opennextjs-cloudflare",
+    "build:cf": "npm exec opennextjs-cloudflare",
     "start": "next start",
     "lint": "eslint ."
   },
@@ -68,8 +68,9 @@
     "tailwind-merge": "^3.3.1",
     "vaul": "^1.1.2",
     "zod": "^3.24.1",
-    "wrangler": "latest",
-    "@opennextjs/cloudflare": "latest"
+    "wrangler": "^3.111.0",
+    "@opennextjs/cloudflare": "latest",
+    "@cloudflare/next-on-pages": "^1.13.16"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250224.0",
