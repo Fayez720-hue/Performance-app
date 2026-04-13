@@ -13,7 +13,9 @@ const nextConfig = {
   output: process.env.STATIC_BUILD === 'true' ? 'export' : undefined,
 
   webpack: (config, { isServer }) => {
-    if (isServer) {
+    // Only apply aggressive fallbacks during Static Export (APK build)
+    // For Cloudflare/Production build, we need these modules for NextAuth
+    if (isServer && process.env.STATIC_BUILD === 'true') {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         crypto: false,
