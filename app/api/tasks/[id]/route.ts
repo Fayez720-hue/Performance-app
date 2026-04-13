@@ -8,8 +8,6 @@ import { getTaskById, updateTask, deleteTask, getUserByEmail } from "@/lib/googl
 import { taskFormSchema } from "@/lib/validations/task"
 import { ROLE_PERMISSIONS } from "@/types/user"
 
-export const dynamic = "force-dynamic"
-
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
