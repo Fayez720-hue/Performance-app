@@ -5,10 +5,10 @@ const config: CapacitorConfig = {
   appName: 'Performance App v1.0',
   webDir: 'out',
   server: {
-    // Pointing to your live Cloudflare backend
-    url: 'https://performance-app-6yb.pages.dev',
+    // Pointing to your live backend
+    url: 'https://performance-app.wasmer.app',
     cleartext: true,
-    allowNavigation: ['performance-app-6yb.pages.dev']
+    allowNavigation: ['performance-app.wasmer.app', 'performance-app-6yb.pages.dev']
   }
 };
 
