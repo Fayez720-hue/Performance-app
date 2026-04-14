@@ -12,6 +12,11 @@ export function generateStaticParams() {
 }
 
 const handler = (req: any, res: any) => {
+  // Debug check for production
+  if (process.env.NODE_ENV === 'production') {
+    console.log("NextAuth Init - ID:", !!process.env.GOOGLE_CLIENT_ID, "Secret:", !!process.env.GOOGLE_CLIENT_SECRET, "URL:", process.env.NEXTAUTH_URL);
+  }
+
   // If we are in the static build phase for APK, we just return a stub.
   if (process.env.STATIC_BUILD === 'true') {
     return NextResponse.json({ static: true })

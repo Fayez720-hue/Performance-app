@@ -4145,7 +4145,7 @@
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/api/auth/[...nextauth]/route.js": {
-      "bytes": 8535,
+      "bytes": 8680,
       "imports": [
         {
           "path": ".open-next/server-functions/default/node_modules/next/dist/shared/lib/router/utils/app-paths.js",
@@ -8620,7 +8620,7 @@
           "bytesInOutput": 3528
         },
         ".open-next/server-functions/default/.next/server/app/api/auth/[...nextauth]/route.js": {
-          "bytesInOutput": 8835
+          "bytesInOutput": 8980
         },
         ".open-next/server-functions/default/.next/server/app/api/dashboard-data/route.js": {
           "bytesInOutput": 16354
@@ -8839,7 +8839,7 @@
           "bytesInOutput": 62363
         }
       },
-      "bytes": 5001118
+      "bytes": 5001263
     }
   }
 }
