@@ -9,14 +9,12 @@ const config = {
       queue: "dummy",
     },
   },
-  // These are required to prevent bundling errors with next-auth v4 dependencies
+  // Externalize core modules so Cloudflare's nodejs_compat handles them natively
   edgeExternals: [
     "node:crypto",
-    "jose",
-    "@panva/hkdf",
-    "openid-client",
-    "preact",
-    "preact-render-to-string"
+    "node:http",
+    "node:https",
+    "node:zlib"
   ],
   middleware: {
     external: true,

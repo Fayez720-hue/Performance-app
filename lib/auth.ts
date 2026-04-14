@@ -1,56 +1,90 @@
 import { NextAuthOptions } from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
 import type { UserRole } from "@/types/user"
 
 export const authOptions: NextAuthOptions = {
   debug: true,
-  trustHost: true,
   secret: process.env.NEXTAUTH_SECRET,
-  useSecureCookies: true, // Force secure cookies for Cloudflare
-  cookies: {
-    sessionToken: {
-      name: `__Secure-next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: true
-      }
-    },
-    callbackUrl: {
-      name: `__Secure-next-auth.callback-url`,
-      options: {
-        sameSite: 'lax',
-        path: '/',
-        secure: true
-      }
-    },
-    csrfToken: {
-      name: `__Secure-next-auth.csrf-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: true
-      }
-    }
+  trustHost: true,
+  session: {
+    strategy: "jwt",
   },
   providers: [
-    GoogleProvider({
-      clientId: (process.env.GOOGLE_CLIENT_ID || "").trim().replace(/^["']|["']$/g, ""),
-      clientSecret: (process.env.GOOGLE_CLIENT_SECRET || "").trim().replace(/^["']|["']$/g, ""),
-      checks: ['pkce', 'state'],
+    {
+      id: "google",
+      name: "Google",
+      type: "oauth",
       authorization: {
+        url: "https://accounts.google.com/o/oauth2/v2/auth",
         params: {
+          scope: "openid email profile",
           prompt: "consent",
           access_type: "offline",
           response_type: "code"
         }
-      }
-    }),
+      },
+      token: "https://oauth2.googleapis.com/token",
+      userinfo: "https://www.googleapis.com/oauth2/v3/userinfo",
+      // Match the variable names exactly as they appear in your Cloudflare Dashboard
+      clientId: (process.env.GOOGLE_ID || process.env.GOOGLE_CLIENT_ID || "").trim(),
+      clientSecret: (process.env.GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET || "").trim(),
+      checks: ["state"], // Simplified checks for better compatibility with Edge cookies
+      profile(profile) {
+        return {
+          id: profile.sub || profile.id,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+        }
+      },
+    },
   ],
-  session: {
-    strategy: "jwt",
+  // Use standard cookie names to avoid __Host- restriction issues on Cloudflare preview URLs
+  useSecureCookies: process.env.NODE_ENV === "production",
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: true,
+      },
+    },
+    callbackUrl: {
+      name: `next-auth.callback-url`,
+      options: {
+        sameSite: "lax",
+        path: "/",
+        secure: true,
+      },
+    },
+    csrfToken: {
+      name: `next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: true,
+      },
+    },
+    pkceCodeVerifier: {
+      name: `next-auth.pkce.code_verifier`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: true,
+      },
+    },
+    state: {
+      name: `next-auth.state`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: true,
+      },
+    },
   },
   pages: {
     signIn: "/login",
@@ -96,5 +130,5 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
-  },
+  }
 }

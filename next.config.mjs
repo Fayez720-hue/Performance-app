@@ -10,14 +10,12 @@ const nextConfig = {
     unoptimized: true,
   },
   output: process.env.STATIC_BUILD === 'true' ? 'export' : undefined,
-
   transpilePackages: ["next-auth", "jose", "@panva/hkdf", "openid-client"],
-
   webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        crypto: false,
+    if (isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        crypto: 'node:crypto',
       };
     }
     return config;
