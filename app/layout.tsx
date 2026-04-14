@@ -18,7 +18,7 @@ export default function RootLayout({
         <script
           id="name-polyfill"
           dangerouslySetInnerHTML={{
-            __html: `(function(g){g.__name=g.__name||function(t,v){return Object.defineProperty(t,'name',{value:v,configurable:true})}})(typeof globalThis!=='undefined'?globalThis:self);`,
+            __html: `(function(g){console.log('Polyfill check...');if(!g.__name)g.__name=function(t,v){return Object.defineProperty(t,'name',{value:v,configurable:true})}})(typeof globalThis!=='undefined'?globalThis:typeof self!=='undefined'?self:window);`,
           }}
         />
       </head>
