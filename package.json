@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:cf": "cross-env STATIC_BUILD=false npx opennextjs-cloudflare build",
+    "build:cf": "cross-env STATIC_BUILD=false NEXT_OTEL_FETCH_DISABLED=1 npx opennextjs-cloudflare build",
     "build:wasmer": "cross-env STATIC_BUILD=false NODE_ENV=production next build",
     "deploy:wasmer": "npm run build:wasmer && wasmer deploy",
     "build:apk": "powershell -Command \"(Get-Content app/api/auth/[...nextauth]/route.ts) -replace 'force-dynamic', 'force-static' -replace '/\\* APK_BUILD_ONLY', '' -replace 'APK_BUILD_ONLY \\*/', '' | Set-Content app/api/auth/[...nextauth]/route.ts; cross-env STATIC_BUILD=true next build; (Get-Content app/api/auth/[...nextauth]/route.ts) -replace 'force-static', 'force-dynamic' | Set-Content app/api/auth/[...nextauth]/route.ts; (Get-Content app/api/auth/[...nextauth]/route.ts) -replace 'export function generateStaticParams', '/* APK_BUILD_ONLY`nexport function generateStaticParams' -replace 'providers\\] \\}' , 'providers\\] }`nAPK_BUILD_ONLY */' | Set-Content app/api/auth/[...nextauth]/route.ts\"",
