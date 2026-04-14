@@ -5,11 +5,11 @@ import type { UserRole } from "@/types/user"
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "dummy-id",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "dummy-secret",
+      clientId: "423199982215-9f8naaojguulkgha5nmlpumpb00d6j3j.apps.googleusercontent.com",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
-  secret: process.env.NEXTAUTH_SECRET || "temporary-build-secret",
+  secret: process.env.NEXTAUTH_SECRET || "Qbl6TL22aEKcQpjdfWuhy4BvZ6fHBv3dwHY92V60hGo=",
   session: {
     strategy: "jwt",
   },

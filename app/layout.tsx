@@ -16,17 +16,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <script
+          id="name-polyfill"
           dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                var g = typeof globalThis !== 'undefined' ? globalThis : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {};
-                if (!g.__name) {
-                  g.__name = function(target, value) {
-                    return Object.defineProperty(target, 'name', { value: value, configurable: true });
-                  };
-                }
-              })();
-            `,
+            __html: `(function(g){g.__name=g.__name||function(t,v){return Object.defineProperty(t,'name',{value:v,configurable:true})}})(typeof globalThis!=='undefined'?globalThis:self);`,
           }}
         />
       </head>
