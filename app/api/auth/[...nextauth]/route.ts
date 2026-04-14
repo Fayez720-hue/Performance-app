@@ -1,6 +1,6 @@
 import NextAuth from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 
 export const dynamic = "force-dynamic"
 
@@ -11,18 +11,20 @@ export function generateStaticParams() {
 }
 APK_BUILD_ONLY */
 
-const authHandler = NextAuth(authOptions)
+const handler = NextAuth(authOptions)
 
-export async function GET(req: any, res: any) {
+export async function GET(request: NextRequest, context: any) {
   if (process.env.STATIC_BUILD === 'true') {
     return NextResponse.json({ static: true })
   }
-  return await authHandler(req, res)
+  // Next.js 15 requires awaiting params if accessed,
+  // but NextAuth v4 handler expects the context object directly.
+  return await handler(request, context)
 }
 
-export async function POST(req: any, res: any) {
+export async function POST(request: NextRequest, context: any) {
   if (process.env.STATIC_BUILD === 'true') {
     return NextResponse.json({ static: true })
   }
-  return await authHandler(req, res)
+  return await handler(request, context)
 }
