@@ -2,27 +2,27 @@ import NextAuth from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { NextResponse } from "next/server"
 
-// Next.js 15 + OpenNext works best without explicit runtime="edge" here
-// as it can cause strict bundling issues with next-auth v4.
-export const dynamic = "force-static"
+export const dynamic = "force-dynamic"
 
-// Required for catch-all routes in static export mode
-// But incompatible with runtime = "edge" in Cloudflare
+// During APK build, this block will be uncommented by the package.json script
+/* APK_BUILD_ONLY
 export function generateStaticParams() {
   return [{ nextauth: ["signin"] }, { nextauth: ["callback"] }, { nextauth: ["session"] }, { nextauth: ["csrf"] }, { nextauth: ["providers"] }]
 }
+APK_BUILD_ONLY */
 
-const handler = (req: any, res: any) => {
-  // Debug check for production
-  if (process.env.NODE_ENV === 'production') {
-    console.log("NextAuth Init - ID:", !!process.env.GOOGLE_CLIENT_ID, "Secret:", !!process.env.GOOGLE_CLIENT_SECRET, "URL:", process.env.NEXTAUTH_URL);
-  }
+const authHandler = NextAuth(authOptions)
 
-  // If we are in the static build phase for APK, we just return a stub.
+export async function GET(req: any, res: any) {
   if (process.env.STATIC_BUILD === 'true') {
     return NextResponse.json({ static: true })
   }
-  return NextAuth(authOptions)(req, res)
+  return await authHandler(req, res)
 }
 
-export { handler as GET, handler as POST }
+export async function POST(req: any, res: any) {
+  if (process.env.STATIC_BUILD === 'true') {
+    return NextResponse.json({ static: true })
+  }
+  return await authHandler(req, res)
+}

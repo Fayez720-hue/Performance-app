@@ -1,38 +1,37 @@
 import { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
-import type { UserRole } from "@/types/user"
 
 export const authOptions: NextAuthOptions = {
+  debug: true,
+  secret: process.env.NEXTAUTH_SECRET || "Qbl6TL22aEKcQpjdfWuhy4BvZ6fHBv3dwHY92V60hGo=",
+  trustHost: true,
   providers: [
     GoogleProvider({
       clientId: "423199982215-9f8naaojguulkgha5nmlpumpb00d6j3j.apps.googleusercontent.com",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "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",
     }),
   ],
-  secret: process.env.NEXTAUTH_SECRET || "Qbl6TL22aEKcQpjdfWuhy4BvZ6fHBv3dwHY92V60hGo=",
   session: {
     strategy: "jwt",
   },
+  pages: {
+    signIn: "/login",
+    error: "/login",
+  },
   callbacks: {
     async signIn({ user }) {
-      if (!user.email) return false;
+      if (!user?.email) return false;
       try {
         const { createUser } = await import("./google-sheets");
-        const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
-        const managerEmails = process.env.MANAGER_EMAILS?.split(",") || [];
-        let role: UserRole = "Team Member";
-        if (adminEmails.includes(user.email)) role = "Admin";
-        else if (managerEmails.includes(user.email)) role = "Manager";
-
         await createUser({
-          email: user.email,
+          email: user.email.toLowerCase(),
           name: user.name || user.email.split("@")[0],
-          role: role
+          role: "Team Member"
         });
       } catch (e) {
-        console.error("Sign-in error:", e);
+        console.error("signIn sync error:", e);
       }
-      return true
+      return true;
     },
     async jwt({ token, user }) {
       if (user?.email) {
@@ -48,13 +47,10 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.role = token.role as any;
+      if (session?.user) {
+        (session.user as any).role = token.role || "Team Member";
       }
       return session;
     },
-  },
-  pages: {
-    signIn: "/login",
   },
 }
