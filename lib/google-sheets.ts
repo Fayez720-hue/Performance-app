@@ -171,6 +171,79 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   return users.find((u) => u.email.trim().toLowerCase() === email.trim().toLowerCase()) || null
 }
 
+export async function addUser(data: { email: string; name: string; role: UserRole }): Promise<void> {
+  const users = await getUsers()
+  const existingUser = users.find(u => u.email.toLowerCase() === data.email.toLowerCase())
+  if (existingUser) throw new Error("User already exists")
+
+  const values = [
+    [
+      data.email.toLowerCase(),
+      data.name,
+      data.role,
+      0, // Tasks
+      0, // Completed
+      0, // Overall Score
+      0, // Shift Adherence
+      0, // Edits
+      "Good" // Performance
+    ]
+  ]
+
+  await sheetsRequest("/values/Employees!A:I:append?valueInputOption=USER_ENTERED", {
+    method: "POST",
+    body: JSON.stringify({ values })
+  })
+}
+
+export async function updateUser(email: string, data: Partial<User>): Promise<void> {
+  const res = await sheetsRequest("/values/Employees!A1:Z100")
+  const rows = res.values || []
+  const headers = (rows[0] || []).map((h: any) => String(h).toLowerCase().trim())
+  const emailIndex = headers.findIndex((h: string) => h.includes("email"))
+
+  if (emailIndex === -1) throw new Error("Email column not found in Employees sheet")
+
+  const rowIndex = rows.findIndex((row: any[]) =>
+    String(row[emailIndex] || "").trim().toLowerCase() === email.toLowerCase()
+  )
+
+  if (rowIndex === -1) throw new Error("User not found")
+
+  const currentRow = rows[rowIndex]
+  const nameIndex = headers.findIndex((h: string) => h.includes("name"))
+  const roleIndex = headers.findIndex((h: string) => h.includes("role") || h.includes("title"))
+
+  if (data.name !== undefined && nameIndex !== -1) currentRow[nameIndex] = data.name
+  if (data.role !== undefined && roleIndex !== -1) currentRow[roleIndex] = data.role
+
+  const realRowNumber = rowIndex + 1
+  await sheetsRequest(`/values/Employees!A${realRowNumber}:Z${realRowNumber}?valueInputOption=USER_ENTERED`, {
+    method: "PUT",
+    body: JSON.stringify({ values: [currentRow] })
+  })
+}
+
+export async function deleteUserByEmail(email: string): Promise<void> {
+  const res = await sheetsRequest("/values/Employees!A1:Z100")
+  const rows = res.values || []
+  const headers = (rows[0] || []).map((h: any) => String(h).toLowerCase().trim())
+  const emailIndex = headers.findIndex((h: string) => h.includes("email"))
+
+  if (emailIndex === -1) throw new Error("Email column not found")
+
+  const rowIndex = rows.findIndex((row: any[]) =>
+    String(row[emailIndex] || "").trim().toLowerCase() === email.toLowerCase()
+  )
+
+  if (rowIndex === -1) return // Already gone
+
+  const realRowNumber = rowIndex + 1
+  await sheetsRequest(`/values/Employees!A${realRowNumber}:Z${realRowNumber}:clear`, {
+    method: "POST"
+  })
+}
+
 // ============ TASKS & OTHER METHODS ============
 // (Keeping other methods but they are not critical for login flow right now)
 
