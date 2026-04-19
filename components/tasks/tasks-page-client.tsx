@@ -27,27 +27,36 @@ export default function TasksPageClient() {
 
   const fetchUser = async () => {
     try {
-      const res = await fetch(getApiUrl("/api/users"))
+      const res = await fetch("/api/employees")
+      if (!res.ok) throw new Error("Failed to fetch users")
       const users = await res.json()
-      const currentUser = users.find((u: User) => u.email === session?.user?.email)
+      const currentUser = users.find((u: User) => u.email.toLowerCase() === session?.user?.email?.toLowerCase())
 
       if (currentUser) {
         setUser(currentUser)
       } else {
+        const role = (session?.user as any).role || "Team Member";
         setUser({
           email: session?.user?.email || "",
           name: session?.user?.name || "Guest",
-          role: ((session?.user as any).role || "Viewer") as UserRole
+          role: (ROLE_PERMISSIONS[role as UserRole] ? role : "Team Member") as UserRole
         })
       }
     } catch (error) {
       console.error("Error fetching user:", error)
+      // Fallback to session data if API fails
+      const role = (session?.user as any).role || "Team Member";
+      setUser({
+        email: session?.user?.email || "",
+        name: session?.user?.name || "Guest",
+        role: (ROLE_PERMISSIONS[role as UserRole] ? role : "Team Member") as UserRole
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  if (status === "loading" || loading) {
+  if (status === "loading" || loading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -55,7 +64,7 @@ export default function TasksPageClient() {
     )
   }
 
-  const permissions = user ? ROLE_PERMISSIONS[user.role] : ROLE_PERMISSIONS["Viewer"]
+  const permissions = ROLE_PERMISSIONS[user.role] || ROLE_PERMISSIONS["Viewer"]
 
   return (
     <div className="min-h-screen bg-background">

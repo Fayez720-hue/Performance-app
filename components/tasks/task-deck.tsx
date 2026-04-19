@@ -20,11 +20,13 @@ import type { UserRole } from "@/types/user"
 import { ROLE_PERMISSIONS } from "@/types/user"
 
 interface TaskDeckProps {
-  userRole: UserRole
-  userName: string
+  user: User
 }
 
-export function TaskDeck({ userRole, userName }: TaskDeckProps) {
+export function TaskDeck({ user }: TaskDeckProps) {
+  const userRole = user.role || "Team Member"
+  const userName = user.name || "Guest"
+
   const { data: tasks, error, isLoading, mutate } = useSWR<Task[]>("/api/tasks", fetcher, {
     refreshInterval: 30000, // Refresh every 30 seconds
   })
@@ -35,7 +37,7 @@ export function TaskDeck({ userRole, userName }: TaskDeckProps) {
   const [progressFilter, setProgressFilter] = useState<TaskProgress | "all">("all")
   const [assigneeFilter, setAssigneeFilter] = useState("all")
 
-  const permissions = ROLE_PERMISSIONS[userRole]
+  const permissions = ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS["Viewer"]
 
   // Get unique assignees
   const assignees = useMemo(() => {
