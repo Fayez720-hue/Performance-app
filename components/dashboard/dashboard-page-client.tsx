@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from '@/components/providers/session-provider';
+import { useSession, signOut } from 'next-auth/react';
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -51,7 +51,7 @@ interface DashboardData {
 }
 
 export default function DashboardPageClient() {
-  const { data: session, status, signOut } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -101,8 +101,7 @@ export default function DashboardPageClient() {
   })) : [];
 
   const handleSignOut = async () => {
-    await signOut();
-    router.push("/login");
+    await signOut({ callbackUrl: "/login" });
   };
 
   if (status === "loading" || loading) {
