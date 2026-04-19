@@ -9,7 +9,10 @@ const config: CapacitorConfig = {
     url: 'https://performance-app-ivory.vercel.app',
     cleartext: true,
     allowNavigation: [
-      'performance-app-ivory.vercel.app'
+      'performance-app-ivory.vercel.app',
+      '*.google.com',
+      '*.googleapis.com',
+      '*.googleusercontent.com'
     ]
   },
   android: {

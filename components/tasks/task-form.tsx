@@ -80,15 +80,24 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
         body: JSON.stringify(values),
       })
 
+      let responseData;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        responseData = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(text || `Server error: ${response.status} ${response.statusText}`);
+      }
+
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Failed to save task")
+        throw new Error(responseData.error || "Failed to save task")
       }
 
       toast.success(mode === "create" ? "Task created successfully" : "Task updated successfully")
-      router.push("/")
+      router.push("/tasks")
       router.refresh()
     } catch (error) {
+      console.error("Task Save Error:", error)
       toast.error(error instanceof Error ? error.message : "Something went wrong")
     } finally {
       setIsSubmitting(false)

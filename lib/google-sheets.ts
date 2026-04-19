@@ -294,12 +294,12 @@ export async function getTaskById(id: number): Promise<Task | null> {
 
 export async function createTask(data: any): Promise<number> {
   const tasks = await getTasks()
-  const lastId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) : 1
-  const nextRow = lastId + 1
+  const lastId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) : 0
+  const nextId = lastId + 1
 
   const values = [
     [
-      nextRow, // ID in Column A? Wait, getTasks says name is row[1], so Column B.
+      nextId,
       data.name,
       data.date || format(new Date(), "yyyy-MM-dd"),
       data.task,
@@ -309,7 +309,7 @@ export async function createTask(data: any): Promise<number> {
       data.taskStartingDate || "",
       data.deadline || "",
       data.taskEstimatedTime || "00:00",
-      "", // taskTimeTaken (calculated by sheet usually)
+      "", // taskTimeTaken
       data.submissionLink || "",
       data.submissionDate || "",
       "", // deadlineAdherence
@@ -321,12 +321,12 @@ export async function createTask(data: any): Promise<number> {
     ]
   ]
 
-  await sheetsRequest("/values/Performance!A" + nextRow + ":S" + nextRow + "?valueInputOption=USER_ENTERED", {
-    method: "PUT", // Using PUT to a specific row is one way, or APPEND
+  await sheetsRequest("/values/Performance!A:S:append?valueInputOption=USER_ENTERED", {
+    method: "POST",
     body: JSON.stringify({ values })
   })
 
-  return nextRow
+  return nextId
 }
 
 export async function updateTask(id: number, data: any): Promise<void> {
