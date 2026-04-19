@@ -14,17 +14,36 @@ const handler = NextAuth({
   },
   callbacks: {
     async session({ session, token }) {
-      if (session.user) {
+      if (session.user && token.email) {
         (session.user as any).id = token.sub;
-        // In a real app, you might fetch the role from a database here
-        // For now, we'll keep it simple to ensure the dashboard loads
-        (session.user as any).role = "Admin";
+
+        // Fetch real user role from Google Sheets
+        try {
+          const { getUserByEmail } = await import("@/lib/google-sheets");
+          const dbUser = await getUserByEmail(token.email);
+          if (dbUser) {
+            (session.user as any).role = dbUser.role;
+            (session.user as any).name = dbUser.name;
+          } else {
+            // Default role if user not in sheet
+            const adminEmails = (process.env.ADMIN_EMAILS || "").toLowerCase().split(",").map(e => e.trim());
+            if (adminEmails.includes(token.email.toLowerCase())) {
+              (session.user as any).role = "Admin";
+            } else {
+              (session.user as any).role = "Team Member";
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching user role from Sheets:", error);
+          (session.user as any).role = "Team Member";
+        }
       }
       return session;
     },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.email = user.email;
       }
       return token;
     },
