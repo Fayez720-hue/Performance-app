@@ -18,13 +18,28 @@ export default function EditTaskPageClient() {
   const [task, setTask] = useState<Task | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const [employees, setEmployees] = useState<string[]>([])
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.replace("/login")
     } else if (status === "authenticated") {
       fetchTask()
+      fetchEmployees()
     }
   }, [status, params.id])
+
+  const fetchEmployees = async () => {
+    try {
+      const res = await fetch("/api/employees")
+      if (res.ok) {
+        const data = await res.json()
+        setEmployees(data.map((e: any) => e.name))
+      }
+    } catch (error) {
+      console.error("Error fetching employees:", error)
+    }
+  }
 
   const fetchTask = async () => {
     try {
@@ -67,9 +82,11 @@ export default function EditTaskPageClient() {
           </CardHeader>
           <CardContent>
             <TaskForm
-              initialData={task}
-              onSuccess={() => router.push("/tasks")}
-              isEditing
+              task={task}
+              mode="edit"
+              userRole={(session?.user as any)?.role}
+              userName={session?.user?.name || ""}
+              employees={employees}
             />
           </CardContent>
         </Card>

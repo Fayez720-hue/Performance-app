@@ -180,7 +180,7 @@ export async function getTasks(): Promise<Task[]> {
     const rows = data.values || []
     return rows
       .map((row: any[], index: number) => {
-        const rowId = index + 2
+        const rowId = parseInt(row[0]) || (index + 2)
         const name = (row[1] || "").trim()
         if (!name && !row[3] && !row[2]) return null
         return {
@@ -206,7 +206,93 @@ export async function getTasks(): Promise<Task[]> {
         }
       })
       .filter((task: any): task is Task => task !== null)
-  } catch { return [] }
+  } catch (error) {
+    console.error("getTasks error:", error)
+    return []
+  }
+}
+
+export async function getTaskById(id: number): Promise<Task | null> {
+  try {
+    const tasks = await getTasks()
+    return tasks.find(t => t.id === id) || null
+  } catch { return null }
+}
+
+export async function createTask(data: any): Promise<number> {
+  const tasks = await getTasks()
+  const lastId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) : 1
+  const nextRow = lastId + 1
+
+  const values = [
+    [
+      nextRow, // ID in Column A? Wait, getTasks says name is row[1], so Column B.
+      data.name,
+      data.date || format(new Date(), "yyyy-MM-dd"),
+      data.task,
+      data.references || "",
+      data.comments || "",
+      data.progress || "To-do",
+      data.taskStartingDate || "",
+      data.deadline || "",
+      data.taskEstimatedTime || "00:00",
+      "", // taskTimeTaken (calculated by sheet usually)
+      data.submissionLink || "",
+      data.submissionDate || "",
+      "", // deadlineAdherence
+      data.grading || "",
+      "", // overallScore
+      format(new Date(), "yyyy-MM-dd HH:mm:ss"), // taskTimeStamp
+      data.edits || "",
+      0, // noOfEdits
+    ]
+  ]
+
+  await sheetsRequest("/values/Performance!A" + nextRow + ":S" + nextRow + "?valueInputOption=USER_ENTERED", {
+    method: "PUT", // Using PUT to a specific row is one way, or APPEND
+    body: JSON.stringify({ values })
+  })
+
+  return nextRow
+}
+
+export async function updateTask(id: number, data: any): Promise<void> {
+  const values = [
+    [
+      id, // Keep the ID in Column A
+      data.name,
+      data.date,
+      data.task,
+      data.references,
+      data.comments,
+      data.progress,
+      data.taskStartingDate,
+      data.deadline,
+      data.taskEstimatedTime,
+      data.taskTimeTaken,
+      data.submissionLink,
+      data.submissionDate,
+      data.deadlineAdherence,
+      data.grading,
+      data.overallScore,
+      data.taskTimeStamp,
+      data.edits,
+      data.noOfEdits
+    ]
+  ]
+
+  const rowId = id
+  await sheetsRequest(`/values/Performance!A${rowId}:S${rowId}?valueInputOption=USER_ENTERED`, {
+    method: "PUT",
+    body: JSON.stringify({ values })
+  })
+}
+
+export async function deleteTask(id: number): Promise<void> {
+  // Clearing the entire row A:S
+  await sheetsRequest(`/values/Performance!A${id}:S${id}:clear`, {
+    method: "POST"
+  })
 }
 
 export async function getDashboardStats() {

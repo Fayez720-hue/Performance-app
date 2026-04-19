@@ -1,7 +1,8 @@
 "use client"
 
-import { useSession } from '@/components/providers/session-provider'
+import { useSession } from 'next-auth/react'
 import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 import { Header } from "@/components/layout/header"
 import { TaskForm } from "@/components/tasks/task-form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,6 +12,26 @@ import { Button } from "@/components/ui/button"
 export default function NewTaskPageClient() {
   const { data: session, status } = useSession()
   const router = useRouter()
+
+  const [employees, setEmployees] = useState<string[]>([])
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetchEmployees()
+    }
+  }, [status])
+
+  const fetchEmployees = async () => {
+    try {
+      const res = await fetch("/api/employees")
+      if (res.ok) {
+        const data = await res.json()
+        setEmployees(data.map((e: any) => e.name))
+      }
+    } catch (error) {
+      console.error("Error fetching employees:", error)
+    }
+  }
 
   if (status === "loading") {
     return (
@@ -41,7 +62,12 @@ export default function NewTaskPageClient() {
             <CardTitle>Create New Task</CardTitle>
           </CardHeader>
           <CardContent>
-            <TaskForm onSuccess={() => router.push("/tasks")} />
+            <TaskForm
+              mode="create"
+              userRole={(session?.user as any)?.role}
+              userName={session?.user?.name || ""}
+              employees={employees}
+            />
           </CardContent>
         </Card>
       </main>

@@ -2,16 +2,21 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.canshift.performanceapp',
-  appName: 'Performance App v1.0',
+  appName: 'Performance App',
   webDir: 'out',
   server: {
-    // Switched to your live Wasmer backend
-    url: 'https://performance-app-fayez720-hue.wasmer.app',
+    // Pointing to your live Vercel production deployment
+    url: 'https://performance-app-ivory.vercel.app',
     cleartext: true,
     allowNavigation: [
-      'performance-app-fayez720-hue.wasmer.app',
-      'performance-app-6yb.pages.dev'
+      'performance-app-ivory.vercel.app',
+      '*.google.com',
+      '*.googleapis.com',
+      '*.googleusercontent.com'
     ]
+  },
+  android: {
+    allowMixedContent: true
   }
 };
 
