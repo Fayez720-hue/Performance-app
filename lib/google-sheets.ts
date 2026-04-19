@@ -143,12 +143,12 @@ export async function getUsers(): Promise<User[]> {
 
     const userMap = new Map<string, User>()
 
-    rows.slice(1).forEach((row: any[]) => {
+    rows.slice(1).forEach((row: any[], index: number) => {
       let email = emailIndex !== -1 ? String(row[emailIndex] || "").trim().toLowerCase() : ""
-      if (!email || !email.includes("@")) return
-
-      let name = nameIndex !== -1 ? String(row[nameIndex] || "").trim() : email.split("@")[0]
+      let name = nameIndex !== -1 ? String(row[nameIndex] || "").trim() : ""
       let roleStr = roleIndex !== -1 ? String(row[roleIndex] || "").trim() : ""
+
+      if (!name && !email) return
 
       let role: UserRole = "Team Member"
       const lowerRole = roleStr.toLowerCase()
@@ -156,7 +156,17 @@ export async function getUsers(): Promise<User[]> {
       else if (lowerRole.includes("manager") || managerEmails.includes(email)) role = "Manager"
       else if (lowerRole.includes("viewer")) role = "Viewer"
 
-      userMap.set(email, { email, name, role })
+      const user: User = {
+        email: email || `no-email-${index}`,
+        name: name || email.split("@")[0] || "Unknown",
+        role
+      }
+
+      if (email) {
+        userMap.set(email, user)
+      } else {
+        userMap.set(`no-email-${index}`, user)
+      }
     })
 
     return Array.from(userMap.values()).sort((a, b) => a.name.localeCompare(b.name))
