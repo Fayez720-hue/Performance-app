@@ -4,10 +4,7 @@
     "private": true,
     "scripts": {
         "dev": "next dev",
-        "build:next": "next build",
-        "build:opennext": "npx @opennextjs/cloudflare build",
-        "build": "npm run build:next && npm run build:opennext",
-        "deploy": "npx wrangler pages deploy .open-next --project-name=performance-app --commit-dirty=true",
+        "build": "next build",
         "start": "next start",
         "lint": "eslint ."
     },
