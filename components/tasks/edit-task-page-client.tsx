@@ -11,10 +11,12 @@ import { Button } from "@/components/ui/button"
 import type { Task } from "@/types/task"
 import { getApiUrl } from "@/lib/api"
 
-export default function EditTaskPageClient() {
+export default function EditTaskPageClient({ id }: { id?: string }) {
   const { data: session, status } = useSession()
   const router = useRouter()
   const params = useParams()
+  const taskId = id || (params?.id as string)
+
   const [task, setTask] = useState<Task | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -23,11 +25,11 @@ export default function EditTaskPageClient() {
   useEffect(() => {
     if (status === "unauthenticated") {
       router.replace("/login")
-    } else if (status === "authenticated") {
+    } else if (status === "authenticated" && taskId) {
       fetchTask()
       fetchEmployees()
     }
-  }, [status, params.id])
+  }, [status, taskId])
 
   const fetchEmployees = async () => {
     try {

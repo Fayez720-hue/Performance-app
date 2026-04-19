@@ -5,7 +5,8 @@ export function getApiUrl(path: string): string {
 
   // If we are in a browser/app environment and have a base URL, use it
   if (typeof window !== 'undefined' && baseUrl) {
-    return `${baseUrl}${normalizedPath}`;
+    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    return `${cleanBaseUrl}${normalizedPath}`;
   }
 
   return normalizedPath;
