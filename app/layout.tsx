@@ -6,6 +6,7 @@ import { AuthProvider } from '@/components/providers/session-provider'
 import { Toaster } from 'sonner'
 import './globals.css'
 import { ThemeProvider } from '@/components/providers/theme-provider'
+import { ReturnToAppHandler } from '@/components/auth/return-to-app-handler'
 
 export const dynamic = "force-dynamic"
 
@@ -27,6 +28,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
+            <ReturnToAppHandler />
             {children}
             <Toaster position="top-right" richColors />
           </AuthProvider>

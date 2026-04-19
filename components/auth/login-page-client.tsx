@@ -21,7 +21,7 @@ export default function LoginPageClient() {
         <CardContent className="space-y-6">
           <div className="space-y-4 pt-2">
             <button
-              onClick={() => signIn("google", { callbackUrl: "/auth/callback" })}
+              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
               className="flex w-full items-center justify-center gap-3 rounded-md bg-primary px-8 py-3 text-base font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:scale-[1.02]"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24">
