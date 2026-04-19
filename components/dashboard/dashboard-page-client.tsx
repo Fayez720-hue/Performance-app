@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from '@/components/providers/session-provider';
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,7 @@ import {
   CheckSquare,
   BarChart3,
   Settings as SettingsIcon,
+  LogOut,
 } from "lucide-react";
 import {
   BarChart,
@@ -50,7 +51,7 @@ interface DashboardData {
 }
 
 export default function DashboardPageClient() {
-  const { data: session, status } = useSession();
+  const { data: session, status, signOut } = useSession();
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,7 +59,6 @@ export default function DashboardPageClient() {
   const [showSettings, setShowSettings] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
-  // Filter states
   const [performanceFilter, setPerformanceFilter] = useState<"all" | "excellent" | "good">("all");
   const [scoreRange, setScoreRange] = useState<[number, number]>([0, 100]);
   const [adherenceRange, setAdherenceRange] = useState<[number, number]>([0, 100]);
@@ -100,6 +100,11 @@ export default function DashboardPageClient() {
     averageAdherence: Math.round(values.totalAdherence / (values.count || 1)),
   })) : [];
 
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/login");
+  };
+
   if (status === "loading" || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -126,12 +131,10 @@ export default function DashboardPageClient() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Sidebar Overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/50 z-40 transition-opacity" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <div className={cn(
         "fixed top-0 left-0 h-full w-64 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -156,7 +159,6 @@ export default function DashboardPageClient() {
         </nav>
       </div>
 
-      {/* Header Buttons */}
       <button onClick={() => setSidebarOpen(true)} className="fixed top-4 left-4 z-30 p-2 bg-white rounded-lg shadow-md">
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
       </button>
@@ -167,22 +169,24 @@ export default function DashboardPageClient() {
         </button>
       </div>
 
-      {/* Profile Modal */}
       {showProfile && (
         <div className="fixed top-16 right-4 w-64 bg-white rounded-lg shadow-xl z-50 p-4 border">
           <p className="font-medium">{session?.user?.name}</p>
           <p className="text-xs text-gray-500 mb-3">{session?.user?.email}</p>
-          <button onClick={() => signOut()} className="w-full text-left text-sm text-red-600 border-t pt-2">Sign Out</button>
+          <button 
+            onClick={handleSignOut} 
+            className="w-full flex items-center gap-2 text-left text-sm text-red-600 border-t pt-2 hover:bg-red-50"
+          >
+            <LogOut className="h-4 w-4" /> Sign Out
+          </button>
         </div>
       )}
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-6 pt-20">
         <div className="mb-8">
           <h1 className="text-2xl font-bold">{(data as any).isPersonalView ? "My Performance" : "Team Performance"}</h1>
         </div>
 
-        {/* KPI Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
           <div className="bg-white p-4 rounded-xl shadow-sm border">
             <p className="text-sm text-muted-foreground">Average Score</p>
@@ -206,7 +210,6 @@ export default function DashboardPageClient() {
           </div>
         </div>
 
-        {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white p-6 rounded-xl shadow-sm border">
             <h3 className="font-semibold mb-4">Performance by Department</h3>

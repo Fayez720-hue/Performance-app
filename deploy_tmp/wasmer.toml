@@ -1,0 +1,24 @@
+[package]
+name = "fayez720-hue/performance-app"
+version = "2.2.98"
+description = "Infra Test"
+
+[dependencies]
+"wasmer/winterjs" = "1.2.0"
+
+[fs]
+"/" = "."
+
+[[module]]
+name = "app"
+source = "index.js"
+abi = "none"
+
+[[command]]
+name = "run"
+module = "app"
+runner = "wasmer/winterjs"
+args = ["--address", "0.0.0.0:8080", "index.js"] # No leading slash
+
+[env]
+PORT = "8080"

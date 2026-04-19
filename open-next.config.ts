@@ -1,7 +1,7 @@
-const config = {
+export default {
   default: {
     override: {
-      wrapper: "cloudflare-node",
+      wrapper: "cloudflare-node", // Mandatory for OpenNext build validation
       converter: "edge",
       proxyExternalRequest: "fetch",
       incrementalCache: "dummy",
@@ -9,13 +9,8 @@ const config = {
       queue: "dummy",
     },
   },
-  // Externalize core modules so Cloudflare's nodejs_compat handles them natively
-  edgeExternals: [
-    "node:crypto",
-    "node:http",
-    "node:https",
-    "node:zlib"
-  ],
+  // We keep these shims. The patcher will remove the actual imports.
+  edgeExternals: ["node:crypto", "node:process", "node:buffer"],
   middleware: {
     external: true,
     override: {
@@ -28,5 +23,3 @@ const config = {
     },
   },
 };
-
-export default config;

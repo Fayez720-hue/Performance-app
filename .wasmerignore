@@ -1,0 +1,22 @@
+# EXCLUDE EVERYTHING
+*
+
+# EXCLUDE HEAVY DIRS
+node_modules/
+node_modules-backup/
+.open-next-backup/
+.git/
+.next/
+.vscode/
+.idea/
+
+# INCLUDE ESSENTIALS
+!index.js
+!index.mjs
+!wasmer.toml
+!app.yaml
+!shims.mjs
+
+# INCLUDE RUNTIME ARTIFACTS
+!.open-next/
+!.open-next/**

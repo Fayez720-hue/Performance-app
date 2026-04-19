@@ -1,14 +1,26 @@
 [package]
-name = "fayez720-hue/performance-app"
-version = "1.2.4"
-description = "Performance App Backend"
+name = "fayez720-hue/perf-app"
+version = "2.0.3"
+description = "Next.js 15 Full Bundle - V20 Eval Isolation"
+
+[dependencies]
+"wasmer/winterjs" = "1.2.0"
+
+[fs]
+"/" = "."
 
 [[module]]
-name = "server"
-source = ".next/standalone/server.js"
-abi = "wasi"
+name = "worker"
+source = "index.mjs"
+abi = "none"
 
 [[command]]
 name = "server"
-module = "server"
-runner = "https://wasmer.io/wasmer/winterjs"
+module = "worker"
+runner = "wasmer/winterjs"
+args = ["index.mjs"]
+
+[env]
+NEXTAUTH_URL = "https://perf-app.wasmer.app"
+NODE_ENV = "production"
+PORT = "8080"

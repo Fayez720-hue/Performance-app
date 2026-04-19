@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useSession } from "next-auth/react"
+import { useSession } from '@/components/providers/session-provider'
 import { ClipboardList, Users, BarChart3, Settings } from "lucide-react"
 import { UserNav } from "@/components/auth/user-nav"
 import { NotificationBell } from "@/components/notifications/notification-bell"

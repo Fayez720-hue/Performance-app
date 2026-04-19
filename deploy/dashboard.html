@@ -1,0 +1,117 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard - Performance App</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui, sans-serif;
+            background: #f3f4f6;
+            min-height: 100vh;
+        }
+        .header {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        h1 { font-size: 1.5rem; color: #1f2937; }
+        button {
+            padding: 0.5rem 1rem;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        button:hover { background: #dc2626; }
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Task Manager Dashboard</h1>
+        <button onclick="logout()">Sign Out</button>
+    </div>
+    <div class="container">
+        <div class="card">
+            <h2>Welcome, <span id="userName"></span>!</h2>
+            <p>Email: <span id="userEmail"></span></p>
+            <p>Role: <span id="userRole"></span></p>
+        </div>
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="taskCount">0</div>
+                <div class="stat-label">Total Tasks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="completedCount">0</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">85%</div>
+                <div class="stat-label">Completion Rate</div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const user = localStorage.getItem('user');
+        if (!user) {
+            window.location.href = '/';
+        }
+        
+        const userData = JSON.parse(user);
+        document.getElementById('userName').textContent = userData.name;
+        document.getElementById('userEmail').textContent = userData.email;
+        document.getElementById('userRole').textContent = userData.role;
+        
+        // Demo stats
+        document.getElementById('taskCount').textContent = Math.floor(Math.random() * 50) + 10;
+        document.getElementById('completedCount').textContent = Math.floor(Math.random() * 30) + 5;
+        
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

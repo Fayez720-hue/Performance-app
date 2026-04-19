@@ -42,10 +42,30 @@ async function getAccessToken(): Promise<string> {
   const unsignedToken = `${encodedHeader}.${encodedPayload}`
 
   // Sign the token using SubtleCrypto
-  const pemHeader = "-----BEGIN PRIVATE KEY-----"
-  const pemFooter = "-----END PRIVATE KEY-----"
-  const pemContents = privateKey.substring(pemHeader.length, privateKey.length - pemFooter.length).replace(/\s/g, "")
-  const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0))
+  console.log("SHEETS_AUTH: Preparing to sign JWT...");
+  
+  const pemHeader = "-----BEGIN PRIVATE KEY-----";
+  const pemFooter = "-----END PRIVATE KEY-----";
+  
+  // Robust PEM cleaning: extract content between headers and remove all whitespace
+  let pemContents = "";
+  if (privateKey.includes(pemHeader) && privateKey.includes(pemFooter)) {
+    pemContents = privateKey.split(pemHeader)[1].split(pemFooter)[0].replace(/\s/g, "");
+  } else {
+    // Fallback if headers are missing but string might be raw base64
+    pemContents = privateKey.replace(/\s/g, "");
+  }
+
+  console.log("SHEETS_AUTH: PEM content extracted, length:", pemContents.length);
+
+  let binaryKey: Uint8Array;
+  try {
+    binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
+    console.log("SHEETS_AUTH: Binary key generated successfully.");
+  } catch (err) {
+    console.error("SHEETS_AUTH: Failed to decode Base64 PEM content. Invalid format.");
+    throw new Error("Invalid Google Sheets Private Key format (Base64 decode failed)");
+  }
 
   const importedKey = await crypto.subtle.importKey(
     "pkcs8",
@@ -53,13 +73,15 @@ async function getAccessToken(): Promise<string> {
     { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
     false,
     ["sign"]
-  )
+  );
+  console.log("SHEETS_AUTH: Key imported into SubtleCrypto.");
 
   const signature = await crypto.subtle.sign(
     "RSASSA-PKCS1-v1_5",
     importedKey,
     new TextEncoder().encode(unsignedToken)
-  )
+  );
+  console.log("SHEETS_AUTH: Signature generated.");
 
   const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
     .replace(/\+/g, "-")

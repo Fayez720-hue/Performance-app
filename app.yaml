@@ -1,5 +1,5 @@
-name: Performance-app
-app_id: da_KD4Iat7Uzge5
+name: perf-app
+app_id: da_KgYIZt9UWrMw
 owner: fayez720-hue
 package: .
 kind: wasmer.io/App.v0

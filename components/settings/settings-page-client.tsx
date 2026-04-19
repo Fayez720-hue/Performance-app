@@ -1,6 +1,6 @@
 "use client"
 
-import { useSession, signOut } from "next-auth/react"
+import { useSession } from '@/components/providers/session-provider'
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { useEffect, useState } from "react"
 
 export default function SettingsPageClient() {
-  const { data: session, status } = useSession()
+  const { data: session, status, signOut } = useSession()
   const router = useRouter()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -125,7 +125,7 @@ export default function SettingsPageClient() {
               <Button
                 variant="destructive"
                 className="w-full md:w-auto"
-                onClick={() => signOut({ callbackUrl: "/login" })}
+                onClick={() => signOut()}
               >
                 <LogOut className="mr-2 h-4 w-4" /> Sign Out
               </Button>

@@ -1,6 +1,6 @@
-"use client"
+﻿"use client"
 
-import { signOut, useSession } from "next-auth/react"
+import { useSession } from '@/components/providers/session-provider'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -11,11 +11,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { LogOut, Settings, Shield, User } from "lucide-react"
+import { LogOut, Shield, User } from "lucide-react"
 import Link from "next/link"
 
 export function UserNav() {
-  const { data: session } = useSession()
+  const { data: session, signOut } = useSession()
 
   if (!session?.user) {
     return (
@@ -78,7 +78,7 @@ export function UserNav() {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="cursor-pointer text-destructive focus:text-destructive"
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={() => signOut()}
         >
           <LogOut className="mr-2 h-4 w-4" />
           Log out

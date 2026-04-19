@@ -9,13 +9,21 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  output: process.env.STATIC_BUILD === 'true' ? 'export' : undefined,
-  transpilePackages: ["next-auth", "jose", "@panva/hkdf", "openid-client"],
+  serverExternalPackages: [],
+  staticPageGenerationTimeout: 1000, // Prevent hangs during build
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.resolve.alias = {
         ...config.resolve.alias,
         crypto: 'node:crypto',
+        http: 'node:http',
+        https: 'node:https',
+        zlib: 'node:zlib',
+        stream: 'node:stream',
+        buffer: 'node:buffer',
+        events: 'node:events',
+        util: 'node:util',
+        url: 'node:url',
       };
     }
     return config;

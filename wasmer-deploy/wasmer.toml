@@ -1,0 +1,18 @@
+﻿[package]
+name = "fayez720-hue/perf-isolated-test"
+version = "1.0.0"
+description = "Isolation Test"
+
+[dependencies]
+"wasmer/winterjs" = "1.1.8"
+
+[[module]]
+name = "worker"
+source = "index.js"
+abi = "none"
+
+[[command]]
+name = "server"
+module = "worker"
+runner = "wasmer/winterjs"
+args = ["index.js"]

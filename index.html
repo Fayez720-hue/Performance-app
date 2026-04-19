@@ -1,0 +1,89 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Performance App - Login</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 400px;
+        }
+        h1 { font-size: 1.875rem; margin-bottom: 0.5rem; color: #1f2937; }
+        .subtitle { color: #6b7280; margin-bottom: 1.5rem; }
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+        }
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:hover { background: #5a67d8; }
+        .error { color: #ef4444; margin-bottom: 1rem; display: none; }
+        .demo-note { font-size: 0.75rem; color: #9ca3af; margin-top: 1rem; text-align: center; }
+        code { background: #f3f4f6; padding: 0.125rem 0.25rem; border-radius: 0.25rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Task Manager</h1>
+        <p class="subtitle">Sign in to manage tasks and track progress</p>
+        <div id="error" class="error"></div>
+        <input type="email" id="email" placeholder="Email address" value="demo@example.com">
+        <input type="password" id="password" placeholder="Password" value="demo">
+        <button onclick="login()">Sign In</button>
+        <p class="demo-note">Demo: Use any email with password <code>demo</code></p>
+    </div>
+    <script>
+        function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error');
+            
+            if (password === 'demo') {
+                const user = {
+                    email: email,
+                    name: email.split('@')[0],
+                    role: 'Team Member'
+                };
+                localStorage.setItem('user', JSON.stringify(user));
+                window.location.href = '/dashboard.html';
+            } else {
+                errorDiv.textContent = 'Invalid password. Use "demo"';
+                errorDiv.style.display = 'block';
+            }
+        }
+        
+        // Check if already logged in
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) {
+            window.location.href = '/dashboard.html';
+        }
+    </script>
+</body>
+</html>

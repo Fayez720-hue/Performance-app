@@ -1,18 +1,22 @@
-
-
-import Link from 'next/link'
-
-export default function NotFound() {
+﻿export default function NotFound() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <h2 className="text-2xl font-bold mb-4">Page Not Found</h2>
-      <p className="mb-4">Could not find requested resource</p>
-      <Link
-        href="/"
-        className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity"
-      >
-        Return Home
-      </Link>
+    <div style={{ 
+      display: "flex", 
+      height: "100vh", 
+      alignItems: "center", 
+      justifyContent: "center",
+      fontFamily: "system-ui, sans-serif"
+    }}>
+      <div style={{ textAlign: "center" }}>
+        <h1 style={{ fontSize: "3rem", marginBottom: "1rem" }}>404</h1>
+        <h2 style={{ fontSize: "1.5rem", marginBottom: "1rem" }}>Page Not Found</h2>
+        <p style={{ marginBottom: "1rem" }}>The page you are looking for does not exist.</p>
+        <a href="/" style={{ color: "#0070f3", textDecoration: "underline" }}>
+          Return Home
+        </a>
+      </div>
     </div>
   )
 }
+
+export const dynamic = 'force-static';

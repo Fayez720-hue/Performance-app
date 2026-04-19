@@ -7,6 +7,8 @@ import { Toaster } from 'sonner'
 import './globals.css'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 
+export const dynamic = "force-dynamic"
+
 export default function RootLayout({
   children,
 }: Readonly<{
