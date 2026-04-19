@@ -17,7 +17,11 @@ export async function GET() {
 
     // If user cannot view all tasks, filter by name
     if (!permissions.canViewAllTasks) {
-      tasks = tasks.filter(t => t.name.toLowerCase() === user?.name?.toLowerCase() || t.name.toLowerCase() === session.user?.name?.toLowerCase())
+      const searchName = (user?.name || session.user?.name || "").toLowerCase().trim()
+      tasks = tasks.filter(t => {
+        const taskName = (t.name || "").toLowerCase().trim()
+        return taskName === searchName || taskName.includes(searchName) || searchName.includes(taskName)
+      })
     }
 
     return NextResponse.json(tasks)
