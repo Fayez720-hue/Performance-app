@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useSearchParams } from "next/navigation";
-import { useSession } from "@/components/providers/session-provider";
+import { useSession } from "next-auth/react";
 
 export default function EditTaskPage() {
   const searchParams = useSearchParams();

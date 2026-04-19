@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import { getUserByEmail } from "@/lib/google-sheets";
 
 const handler = NextAuth({
   providers: [
@@ -17,15 +18,12 @@ const handler = NextAuth({
       if (session.user && token.email) {
         (session.user as any).id = token.sub;
 
-        // Fetch real user role from Google Sheets
         try {
-          const { getUserByEmail } = await import("@/lib/google-sheets");
           const dbUser = await getUserByEmail(token.email);
           if (dbUser) {
             (session.user as any).role = dbUser.role;
             (session.user as any).name = dbUser.name;
           } else {
-            // Default role if user not in sheet
             const adminEmails = (process.env.ADMIN_EMAILS || "").toLowerCase().split(",").map(e => e.trim());
             if (adminEmails.includes(token.email.toLowerCase())) {
               (session.user as any).role = "Admin";

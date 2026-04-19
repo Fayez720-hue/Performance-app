@@ -1,31 +1,23 @@
-'use client'
+"use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useCustomSession } from "@/lib/auth-client"
+import { useSession } from "next-auth/react"
 
 export default function Home() {
-  const [mounted, setMounted] = useState(false)
   const router = useRouter()
-  const { data: session, status } = useCustomSession()
+  const { status } = useSession()
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    if (!mounted) return
-
     if (status === "unauthenticated") {
       router.push("/login")
     } else if (status === "authenticated") {
       router.push("/dashboard")
     }
-  }, [status, router, mounted])
+  }, [status, router])
 
-  // Return a loading state during SSR/Build to prevent useContext crashes
   return (
-    <div className="flex h-screen items-center justify-center">
+    <div className="flex h-screen items-center justify-center bg-background">
       <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
     </div>
   )
