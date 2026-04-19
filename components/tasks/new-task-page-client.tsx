@@ -2,36 +2,47 @@
 
 import { useSession } from 'next-auth/react'
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Header } from "@/components/layout/header"
 import { TaskForm } from "@/components/tasks/task-form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, Loader2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function NewTaskPageClient() {
   const { data: session, status } = useSession()
   const router = useRouter()
-
   const [employees, setEmployees] = useState<string[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [isLoadingEmployees, setIsLoadingEmployees] = useState(false)
 
-  useEffect(() => {
-    if (status === "authenticated") {
-      fetchEmployees()
-    }
-  }, [status])
-
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
+    setIsLoadingEmployees(true)
     try {
       const res = await fetch("/api/employees")
       if (res.ok) {
         const data = await res.json()
-        setEmployees(data.map((e: any) => e.name))
+        if (Array.isArray(data)) {
+          setEmployees(data.map((e: any) => e.name).filter(Boolean))
+        }
+      } else {
+        console.error("Failed to fetch employees:", res.status)
       }
-    } catch (error) {
-      console.error("Error fetching employees:", error)
+    } catch (err) {
+      console.error("Error fetching employees:", err)
+    } finally {
+      setIsLoadingEmployees(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login")
+    } else if (status === "authenticated") {
+      fetchEmployees()
+    }
+  }, [status, router, fetchEmployees])
 
   if (status === "loading") {
     return (
@@ -42,9 +53,12 @@ export default function NewTaskPageClient() {
   }
 
   if (status === "unauthenticated") {
-    router.replace("/login")
     return null
   }
+
+  // Fallback role/name to avoid undefined crashes
+  const userRole = (session?.user as any)?.role || "Team Member"
+  const userName = session?.user?.name || ""
 
   return (
     <div className="min-h-screen bg-background">
@@ -57,15 +71,26 @@ export default function NewTaskPageClient() {
         >
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Tasks
         </Button>
-        <Card className="max-w-2xl mx-auto border-border">
+
+        {error ? (
+          <Alert variant="destructive" className="max-w-2xl mx-auto mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        ) : null}
+
+        <Card className="max-w-2xl mx-auto border-border shadow-sm">
           <CardHeader>
             <CardTitle>Create New Task</CardTitle>
           </CardHeader>
           <CardContent>
+            {/* We pass a key to force re-render when name/role is finally ready */}
             <TaskForm
+              key={`${userName}-${userRole}`}
               mode="create"
-              userRole={(session?.user as any)?.role}
-              userName={session?.user?.name || ""}
+              userRole={userRole}
+              userName={userName}
               employees={employees}
             />
           </CardContent>

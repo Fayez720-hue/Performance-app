@@ -10,9 +10,9 @@ import type { UserRole } from "@/types/user"
 
 export function Header() {
   const { data: session } = useSession()
-  const role = session?.user?.role as UserRole
+  const role = (session?.user as any)?.role as UserRole
   const permissions = role ? ROLE_PERMISSIONS[role] : null
-  const isAdmin = role === "Admin" || permissions?.canManageUsers
+  const isAdmin = role === "Admin" || (permissions && permissions.canManageUsers)
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
