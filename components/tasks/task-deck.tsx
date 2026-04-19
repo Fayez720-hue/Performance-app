@@ -57,14 +57,12 @@ export function TaskDeck({ user }: TaskDeckProps) {
     if (!Array.isArray(tasks)) return []
 
     return tasks.filter((task) => {
+      // Role-based visibility
+      const canViewAll = permissions.canViewAllTasks
+      const isOwner = task.name === userName
+      if (!canViewAll && !isOwner) return false
+
       // Search filter
-      const searchLower = search.toLowerCase()
-      const matchesSearch =
-        !search ||
-        task.task.toLowerCase().includes(searchLower) ||
-        task.name.toLowerCase().includes(searchLower) ||
-        task.comments?.toLowerCase().includes(searchLower) ||
-        task.references?.toLowerCase().includes(searchLower)
 
       // Progress filter
       const matchesProgress = progressFilter === "all" || task.progress === progressFilter
