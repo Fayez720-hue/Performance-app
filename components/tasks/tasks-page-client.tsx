@@ -2,14 +2,13 @@
 
 import { useSession } from '@/components/providers/session-provider'
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Header } from "@/components/layout/header"
 import { TaskDeck as TaskList } from "@/components/tasks/task-deck"
 import { Loader2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { User, UserRole } from "@/types/user"
 import { ROLE_PERMISSIONS } from "@/types/user"
-import { getApiUrl } from "@/lib/api"
 
 export default function TasksPageClient() {
   const { data: session, status } = useSession()
@@ -17,44 +16,52 @@ export default function TasksPageClient() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const fetchUser = useCallback(async () => {
+    if (!session?.user?.email) return
+
+    try {
+      const res = await fetch("/api/employees")
+      let currentUser: User | undefined
+
+      if (res.ok) {
+        const users = await res.json()
+        if (Array.isArray(users)) {
+          currentUser = users.find((u: User) => u.email.toLowerCase() === session.user?.email?.toLowerCase())
+        }
+      }
+
+      if (currentUser) {
+        setUser(currentUser)
+      } else {
+        const rawRole = (session?.user as any)?.role || "Team Member"
+        const finalRole = (ROLE_PERMISSIONS[rawRole as UserRole] ? rawRole : "Team Member") as UserRole
+        setUser({
+          email: session.user.email,
+          name: session.user.name || "Guest",
+          role: finalRole
+        })
+      }
+    } catch (error) {
+      console.error("Error fetching user:", error)
+      const rawRole = (session?.user as any)?.role || "Team Member"
+      const finalRole = (ROLE_PERMISSIONS[rawRole as UserRole] ? rawRole : "Team Member") as UserRole
+      setUser({
+        email: session?.user?.email || "",
+        name: session?.user?.name || "Guest",
+        role: finalRole
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [session])
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.replace("/login")
     } else if (status === "authenticated") {
       fetchUser()
     }
-  }, [status, router])
-
-  const fetchUser = async () => {
-    try {
-      const res = await fetch("/api/employees")
-      if (!res.ok) throw new Error("Failed to fetch users")
-      const users = await res.json()
-      const currentUser = users.find((u: User) => u.email.toLowerCase() === session?.user?.email?.toLowerCase())
-
-      if (currentUser) {
-        setUser(currentUser)
-      } else {
-        const role = (session?.user as any).role || "Team Member";
-        setUser({
-          email: session?.user?.email || "",
-          name: session?.user?.name || "Guest",
-          role: (ROLE_PERMISSIONS[role as UserRole] ? role : "Team Member") as UserRole
-        })
-      }
-    } catch (error) {
-      console.error("Error fetching user:", error)
-      // Fallback to session data if API fails
-      const role = (session?.user as any).role || "Team Member";
-      setUser({
-        email: session?.user?.email || "",
-        name: session?.user?.name || "Guest",
-        role: (ROLE_PERMISSIONS[role as UserRole] ? role : "Team Member") as UserRole
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [status, router, fetchUser])
 
   if (status === "loading" || loading || !user) {
     return (
@@ -64,7 +71,9 @@ export default function TasksPageClient() {
     )
   }
 
-  const permissions = ROLE_PERMISSIONS[user.role] || ROLE_PERMISSIONS["Viewer"]
+  // Safe permission access
+  const userRole = user.role as UserRole
+  const permissions = ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS["Viewer"]
 
   return (
     <div className="min-h-screen bg-background">
@@ -81,7 +90,7 @@ export default function TasksPageClient() {
             </Button>
           )}
         </div>
-        <TaskList user={user!} />
+        <TaskList user={user} />
       </main>
     </div>
   )
