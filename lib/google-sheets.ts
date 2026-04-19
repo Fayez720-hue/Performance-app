@@ -340,9 +340,16 @@ export async function createTask(data: any): Promise<number> {
 }
 
 export async function updateTask(id: number, data: any): Promise<void> {
+  const res = await sheetsRequest("/values/Performance!A1:A500")
+  const rows = res.values || []
+  const rowIndex = rows.findIndex((row: any[]) => parseInt(row[0]) === id)
+
+  if (rowIndex === -1) throw new Error("Task not found in sheet")
+
+  const realRowNumber = rowIndex + 1
   const values = [
     [
-      id, // Keep the ID in Column A
+      id,
       data.name,
       data.date,
       data.task,
@@ -364,16 +371,36 @@ export async function updateTask(id: number, data: any): Promise<void> {
     ]
   ]
 
-  const rowId = id
-  await sheetsRequest(`/values/Performance!A${rowId}:S${rowId}?valueInputOption=USER_ENTERED`, {
+  await sheetsRequest(`/values/Performance!A${realRowNumber}:S${realRowNumber}?valueInputOption=USER_ENTERED`, {
     method: "PUT",
     body: JSON.stringify({ values })
   })
+
+  // Optional: Sync to user-specific sheet if needed
+  try {
+    const userSheetName = data.name.trim()
+    if (userSheetName) {
+      await sheetsRequest(`/values/'${userSheetName}'!A:S:append?valueInputOption=USER_ENTERED`, {
+        method: "POST",
+        body: JSON.stringify({ values: [[...values[0], "Synced from Main"]] })
+      }).catch(() => {
+        // Ignore if user sheet doesn't exist
+      })
+    }
+  } catch (e) {
+    console.error("User sheet sync failed", e)
+  }
 }
 
 export async function deleteTask(id: number): Promise<void> {
-  // Clearing the entire row A:S
-  await sheetsRequest(`/values/Performance!A${id}:S${id}:clear`, {
+  const res = await sheetsRequest("/values/Performance!A1:A500")
+  const rows = res.values || []
+  const rowIndex = rows.findIndex((row: any[]) => parseInt(row[0]) === id)
+
+  if (rowIndex === -1) return
+
+  const realRowNumber = rowIndex + 1
+  await sheetsRequest(`/values/Performance!A${realRowNumber}:S${realRowNumber}:clear`, {
     method: "POST"
   })
 }

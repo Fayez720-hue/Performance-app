@@ -1,6 +1,7 @@
 "use client"
 
 import { useSession } from '@/components/providers/session-provider'
+import { signOut } from 'next-auth/react'
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { useEffect, useState } from "react"
 
 export default function SettingsPageClient() {
-  const { data: session, status, signOut } = useSession()
+  const { data: session, status } = useSession()
   const router = useRouter()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)

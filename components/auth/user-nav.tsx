@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useSession } from '@/components/providers/session-provider'
+import { signOut } from 'next-auth/react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,7 +16,7 @@ import { LogOut, Shield, User } from "lucide-react"
 import Link from "next/link"
 
 export function UserNav() {
-  const { data: session, signOut } = useSession()
+  const { data: session } = useSession()
 
   if (!session?.user) {
     return (
