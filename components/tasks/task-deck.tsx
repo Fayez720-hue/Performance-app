@@ -63,6 +63,9 @@ export function TaskDeck({ user }: TaskDeckProps) {
       if (!canViewAll && !isOwner) return false
 
       // Search filter
+      const matchesSearch =
+        task.task.toLowerCase().includes(search.toLowerCase()) ||
+        task.name.toLowerCase().includes(search.toLowerCase())
 
       // Progress filter
       const matchesProgress = progressFilter === "all" || task.progress === progressFilter
