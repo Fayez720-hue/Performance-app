@@ -336,15 +336,24 @@ export async function createTask(data: any): Promise<number> {
     body: JSON.stringify({ values })
   })
 
+  // Optional: Sync to user-specific sheet
+  const userSheetName = String(data.name || "").trim()
+  if (userSheetName) {
+    sheetsRequest(`/values/'${userSheetName}'!A:S:append?valueInputOption=USER_ENTERED`, {
+      method: "POST",
+      body: JSON.stringify({ values })
+    }).catch(err => console.log(`User sheet ${userSheetName} not found, skipping sync.`))
+  }
+
   return nextId
 }
 
 export async function updateTask(id: number, data: any): Promise<void> {
-  const res = await sheetsRequest("/values/Performance!A1:A500")
+  const res = await sheetsRequest("/values/Performance!A1:A1000")
   const rows = res.values || []
   const rowIndex = rows.findIndex((row: any[]) => parseInt(row[0]) === id)
 
-  if (rowIndex === -1) throw new Error("Task not found in sheet")
+  if (rowIndex === -1) throw new Error(`Task ID ${id} not found in main sheet`)
 
   const realRowNumber = rowIndex + 1
   const values = [
@@ -376,19 +385,15 @@ export async function updateTask(id: number, data: any): Promise<void> {
     body: JSON.stringify({ values })
   })
 
-  // Optional: Sync to user-specific sheet if needed
-  try {
-    const userSheetName = data.name.trim()
-    if (userSheetName) {
-      await sheetsRequest(`/values/'${userSheetName}'!A:S:append?valueInputOption=USER_ENTERED`, {
-        method: "POST",
-        body: JSON.stringify({ values: [[...values[0], "Synced from Main"]] })
-      }).catch(() => {
-        // Ignore if user sheet doesn't exist
-      })
-    }
-  } catch (e) {
-    console.error("User sheet sync failed", e)
+  // Sync to user-specific sheet
+  const userSheetName = String(data.name || "").trim()
+  if (userSheetName) {
+    // We append updates to user sheets as a log, or we'd need to find the row there too.
+    // Appending is safer for history.
+    sheetsRequest(`/values/'${userSheetName}'!A:S:append?valueInputOption=USER_ENTERED`, {
+      method: "POST",
+      body: JSON.stringify({ values: [[...values[0], `Updated: ${format(new Date(), "yyyy-MM-dd HH:mm")}`]] })
+    }).catch(err => console.log(`User sheet ${userSheetName} not found, skipping sync.`))
   }
 }
 
