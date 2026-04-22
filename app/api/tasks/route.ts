@@ -91,7 +91,7 @@ export async function POST(request: Request) {
 
     const permissions = ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS["Team Member"]
 
-    if (!permissions.canCreateTask) {
+    if (!permissions.canCreateTasks) {
       return NextResponse.json({ error: "Forbidden: You don't have permission to create tasks" }, { status: 403 })
     }
 
