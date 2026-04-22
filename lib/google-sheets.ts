@@ -424,6 +424,7 @@ export async function getDashboardStats() {
     const summary = summaryData.values?.[0] || []
     const employeeData = await sheetsRequest("/values/Employees!A2:I")
     const employeeRows = employeeData.values || []
+
     const employeeStats = employeeRows.map((row: any[]) => ({
       name: String(row[1] || "Unknown").trim(),
       title: String(row[2] || "Employee").trim(),
@@ -434,6 +435,34 @@ export async function getDashboardStats() {
       edits: parseInt(row[7]) || 0,
       performance: String(row[8] || "Good").trim() as any,
     }))
+
+    // Generate Score Distribution (for the bar chart)
+    const distribution = [
+      { range: "0-20", count: 0 },
+      { range: "21-40", count: 0 },
+      { range: "41-60", count: 0 },
+      { range: "61-80", count: 0 },
+      { range: "81-100", count: 0 },
+    ]
+
+    employeeStats.forEach(emp => {
+      const score = emp.overallScore
+      if (score <= 20) distribution[0].count++
+      else if (score <= 40) distribution[1].count++
+      else if (score <= 60) distribution[2].count++
+      else if (score <= 80) distribution[3].count++
+      else distribution[4].count++
+    })
+
+    // Generate Weekly Trend (for the area chart)
+    // In a real app, this would come from a "Trends" sheet
+    const trend = [
+      { week: "Week 1", adherence: 85 },
+      { week: "Week 2", adherence: 88 },
+      { week: "Week 3", adherence: 92 },
+      { week: "Week 4", adherence: 94 },
+    ]
+
     return {
       totalEmployees: parseInt(summary[0]) || employeeStats.length,
       avgScore: parseFloat(summary[1]) || 0,
@@ -442,7 +471,12 @@ export async function getDashboardStats() {
       totalEdits: parseInt(summary[4]) || 0,
       topPerformer: summary[5] || "N/A",
       topPerformerScore: parseFloat(summary[6]) || 0,
-      employees: employeeStats
+      employees: employeeStats,
+      scoreDistribution: distribution,
+      shiftTrend: trend
     }
-  } catch { return { employees: [] } as any }
+  } catch (error) {
+    console.error("Dashboard Stats Error:", error)
+    return { employees: [], scoreDistribution: [], shiftTrend: [] } as any
+  }
 }

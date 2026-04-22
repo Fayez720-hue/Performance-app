@@ -1,26 +1,34 @@
 "use client";
 
-import { useSession, signOut } from 'next-auth/react';
-import { useEffect, useState } from "react";
+import { useSession } from 'next-auth/react';
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { getApiUrl } from "@/lib/api";
 import {
-  LayoutDashboard,
-  CheckSquare,
+  Search,
+  Calendar,
+  Users,
+  SlidersHorizontal,
+  Plus,
+  LayoutGrid,
   BarChart3,
-  Settings as SettingsIcon,
-  LogOut,
+  Activity,
+  CheckSquare,
+  TrendingUp,
+  ChevronRight
 } from "lucide-react";
 import {
   BarChart,
   Bar,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  AreaChart,
+  Area,
+  Cell
 } from "recharts";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Employee {
   name: string;
@@ -43,11 +51,7 @@ interface DashboardData {
   topPerformerScore: number;
   scoreDistribution: { range: string; count: number }[];
   shiftTrend: { week: string; adherence: number }[];
-  taskCompletion: { name: string; completion: number }[];
-  performanceData: { score: number; adherence: number; size: number }[];
   employees: Employee[];
-  userRole?: string;
-  isPersonalView?: boolean;
 }
 
 export default function DashboardPageClient() {
@@ -55,24 +59,19 @@ export default function DashboardPageClient() {
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-
-  const [performanceFilter, setPerformanceFilter] = useState<"all" | "excellent" | "good">("all");
-  const [scoreRange, setScoreRange] = useState<[number, number]>([0, 100]);
-  const [adherenceRange, setAdherenceRange] = useState<[number, number]>([0, 100]);
-  const [editsRange, setEditsRange] = useState<[number, number]>([0, 50]);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    if (status !== "authenticated") return;
-    fetchDashboardData();
+    if (status === "unauthenticated") {
+      router.push("/login");
+    } else if (status === "authenticated") {
+      fetchDashboardData();
+    }
   }, [status]);
 
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch(getApiUrl("/api/dashboard"));
+      const response = await fetch("/api/dashboard");
       if (!response.ok) throw new Error("Failed to fetch");
       const dashboardData = await response.json();
       setData(dashboardData);
@@ -83,159 +82,208 @@ export default function DashboardPageClient() {
     }
   };
 
-  const departmentAverages = data?.employees?.reduce((acc, emp) => {
-    if (!emp.title) return acc;
-    if (!acc[emp.title]) {
-      acc[emp.title] = { totalScore: 0, totalAdherence: 0, count: 0 };
-    }
-    acc[emp.title].totalScore += emp.overallScore || 0;
-    acc[emp.title].totalAdherence += emp.shiftAdherence || 0;
-    acc[emp.title].count++;
-    return acc;
-  }, {} as Record<string, { totalScore: number; totalAdherence: number; count: number }>) || {};
-
-  const departmentChartData = departmentAverages ? Object.entries(departmentAverages).map(([name, values]: [string, any]) => ({
-    name,
-    averageScore: Math.round(values.totalScore / (values.count || 1)),
-    averageAdherence: Math.round(values.totalAdherence / (values.count || 1)),
-  })) : [];
-
-  const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/login" });
-  };
+  const filteredEmployees = useMemo(() => {
+    if (!data?.employees) return [];
+    return data.employees.filter(emp =>
+      emp.name.toLowerCase().includes(searchTerm.toLowerCase())
+    ).slice(0, 3);
+  }, [data?.employees, searchTerm]);
 
   if (status === "loading" || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading dashboard...</div>
-      </div>
-    );
-  }
-
-  if (status !== "authenticated") {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Please sign in to access the dashboard.</div>
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">No data available</div>
+      <div className="flex items-center justify-center min-h-screen bg-[#090a11]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 transition-opacity" onClick={() => setSidebarOpen(false)} />
-      )}
-
-      <div className={cn(
-        "fixed top-0 left-0 h-full w-64 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <div className="p-4 border-b flex justify-between items-center">
-          <h2 className="text-lg font-bold">Menu</h2>
-          <button onClick={() => setSidebarOpen(false)} className="p-1 hover:bg-gray-100 rounded">✕</button>
+    <div className="min-h-screen bg-[#090a11] text-white pb-24 font-sans selection:bg-teal-500/30">
+      {/* Header */}
+      <header className="px-6 py-4 flex justify-between items-center border-b border-gray-800/50 sticky top-0 bg-[#090a11]/80 backdrop-blur-md z-40">
+        <div className="flex items-center gap-2">
+          <LayoutGrid className="text-teal-400 h-6 w-6" />
+          <h1 className="text-sm font-bold tracking-widest text-teal-400 uppercase">Dashboard</h1>
         </div>
-        <nav className="p-4 space-y-2">
-          <button onClick={() => router.push("/dashboard")} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-medium">
-            <LayoutDashboard className="h-5 w-5" /> Dashboard
-          </button>
-          <button onClick={() => router.push("/tasks")} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted">
-            <CheckSquare className="h-5 w-5" /> Tasks
-          </button>
-          <button onClick={() => router.push("/reports")} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted">
-            <BarChart3 className="h-5 w-5" /> Reports
-          </button>
-          <button onClick={() => router.push("/settings")} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted">
-            <SettingsIcon className="h-5 w-5" /> Settings
-          </button>
-        </nav>
-      </div>
+        <Avatar className="h-9 w-9 border border-teal-500/30">
+          <AvatarImage src={session?.user?.image || ""} />
+          <AvatarFallback className="bg-teal-900/50 text-teal-400 text-xs uppercase">
+            {session?.user?.name?.charAt(0) || "U"}
+          </AvatarFallback>
+        </Avatar>
+      </header>
 
-      <button onClick={() => setSidebarOpen(true)} className="fixed top-4 left-4 z-30 p-2 bg-white rounded-lg shadow-md">
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+      <main className="p-6 max-w-lg mx-auto lg:max-w-7xl space-y-6">
+        {/* Title & Filter */}
+        <div className="flex justify-between items-end">
+          <h2 className="text-3xl font-bold tracking-tight">Can shift</h2>
+          <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
+            <SlidersHorizontal className="h-5 w-5 text-gray-400" />
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className="relative group">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 group-focus-within:text-teal-400 transition-colors" />
+          <input
+            type="text"
+            placeholder="Search employee name..."
+            className="w-full bg-[#13151f] border border-gray-800 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-teal-500/50 transition-all"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        {/* Date & Role Row */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-[#13151f] border border-gray-800 p-3 rounded-xl flex items-center gap-3">
+            <Calendar className="h-4 w-4 text-teal-400" />
+            <div>
+              <p className="text-[10px] uppercase text-gray-500 font-bold tracking-wider">Date Range</p>
+              <p className="text-xs font-semibold">Oct 01 - Oct 31</p>
+            </div>
+          </div>
+          <div className="bg-[#13151f] border border-gray-800 p-3 rounded-xl flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Users className="h-4 w-4 text-teal-400" />
+              <div>
+                <p className="text-[10px] uppercase text-gray-500 font-bold tracking-wider">Role Selection</p>
+                <p className="text-xs font-semibold">Active Only</p>
+              </div>
+            </div>
+            <Plus className="h-3 w-3 text-gray-500" />
+          </div>
+        </div>
+
+        {/* Performance Chart */}
+        <div className="bg-[#13151f] border border-gray-800 rounded-2xl p-6">
+          <h3 className="text-[11px] uppercase text-gray-400 font-bold tracking-[0.2em] mb-6">Performance Score Distribution</h3>
+          <div className="h-48 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data?.scoreDistribution || []}>
+                <XAxis
+                  dataKey="range"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{fill: '#4b5563', fontSize: 10}}
+                  hide
+                />
+                <Tooltip
+                  cursor={{fill: 'rgba(255,255,255,0.05)'}}
+                  contentStyle={{backgroundColor: '#13151f', border: '1px solid #1f2937', color: '#fff'}}
+                />
+                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                  {data?.scoreDistribution.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={index === 3 ? '#4fd1c5' : '#2d4a48'}
+                      fillOpacity={0.8}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex justify-between mt-2 px-1">
+            <span className="text-[9px] uppercase font-bold text-gray-500 tracking-widest italic">Low</span>
+            <span className="text-[9px] uppercase font-bold text-gray-400 tracking-widest italic">Median</span>
+            <span className="text-[9px] uppercase font-bold text-gray-500 tracking-widest italic">Elite</span>
+          </div>
+        </div>
+
+        {/* Small Stats Row */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-[#13151f] border border-gray-800 rounded-2xl p-4 flex flex-col justify-between">
+            <h3 className="text-[10px] uppercase text-gray-400 font-bold tracking-widest mb-4">Deadline Adherence</h3>
+            <div className="h-20 w-full mb-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data?.shiftTrend || []}>
+                  <Area type="monotone" dataKey="adherence" stroke="#4fd1c5" strokeWidth={2} fill="url(#colorAdherence)" />
+                  <defs>
+                    <linearGradient id="colorAdherence" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#4fd1c5" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#4fd1c5" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex items-end justify-between">
+              <p className="text-xl font-bold text-teal-400">{data?.avgShiftAdherence}%</p>
+              <div className="bg-teal-500/10 px-1.5 py-0.5 rounded text-[10px] text-teal-400 font-bold">+2.1%</div>
+            </div>
+          </div>
+          <div className="bg-[#13151f] border border-gray-800 rounded-2xl p-4 flex flex-col justify-between">
+            <h3 className="text-[10px] uppercase text-gray-400 font-bold tracking-widest mb-4">Tasks</h3>
+            <div>
+              <p className="text-3xl font-serif italic mb-1">24/30</p>
+              <p className="text-[10px] text-gray-500 font-bold tracking-widest uppercase italic">6 Pending Sync</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Employee Performance */}
+        <div className="bg-[#13151f] border border-gray-800 rounded-2xl overflow-hidden">
+          <div className="p-5 flex justify-between items-center border-b border-gray-800/50">
+            <h3 className="text-[11px] uppercase text-gray-400 font-bold tracking-widest">Employee Performance</h3>
+            <button className="text-[10px] uppercase text-teal-400 font-bold flex items-center gap-1 hover:gap-2 transition-all">
+              View All <ChevronRight className="h-3 w-3" />
+            </button>
+          </div>
+          <div className="divide-y divide-gray-800/50">
+            {filteredEmployees.map((emp, i) => (
+              <div key={i} className="p-4 flex items-center justify-between group hover:bg-white/[0.02] transition-colors relative">
+                {i === 1 && <div className="absolute left-0 top-0 bottom-0 w-1 bg-teal-500" />}
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400">
+                    {emp.name.split(' ').map(n => n[0]).join('')}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold">{emp.name}</h4>
+                    <p className="text-[10px] text-gray-500 font-medium">{emp.title}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-8">
+                  <span className="text-sm font-bold text-teal-400">{emp.overallScore}</span>
+                  <div className={cn(
+                    "px-2 py-1 rounded text-[9px] font-bold tracking-widest uppercase",
+                    emp.overallScore > 90 ? "bg-teal-500/10 text-teal-400" : "bg-gray-800 text-gray-500"
+                  )}>
+                    {emp.overallScore > 90 ? "Elite" : "Active"}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </main>
+
+      {/* Floating Button */}
+      <button className="fixed bottom-24 right-6 h-14 w-14 bg-teal-400 rounded-2xl shadow-lg shadow-teal-500/20 flex items-center justify-center group active:scale-95 transition-all z-40">
+        <Plus className="text-black h-8 w-8 group-hover:rotate-90 transition-transform" />
       </button>
 
-      <div className="fixed top-4 right-4 z-30 flex gap-2">
-        <button onClick={() => setShowProfile(!showProfile)} className="p-2 bg-white rounded-full shadow-md">
-           <span className="text-blue-600 font-bold">{session?.user?.name?.charAt(0)}</span>
+      {/* Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-[#090a11] border-t border-gray-800 px-6 py-4 flex justify-between items-center z-50">
+        <button className="flex flex-col items-center gap-1 text-teal-400">
+          <div className="p-1.5 bg-teal-500/10 rounded-lg">
+            <LayoutGrid className="h-5 w-5" />
+          </div>
+          <span className="text-[9px] font-bold uppercase tracking-widest">Dashboard</span>
         </button>
-      </div>
-
-      {showProfile && (
-        <div className="fixed top-16 right-4 w-64 bg-white rounded-lg shadow-xl z-50 p-4 border">
-          <p className="font-medium">{session?.user?.name}</p>
-          <p className="text-xs text-gray-500 mb-3">{session?.user?.email}</p>
-          <button 
-            onClick={handleSignOut} 
-            className="w-full flex items-center gap-2 text-left text-sm text-red-600 border-t pt-2 hover:bg-red-50"
-          >
-            <LogOut className="h-4 w-4" /> Sign Out
-          </button>
-        </div>
-      )}
-
-      <div className="max-w-7xl mx-auto px-4 py-6 pt-20">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold">{(data as any).isPersonalView ? "My Performance" : "Team Performance"}</h1>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-          <div className="bg-white p-4 rounded-xl shadow-sm border">
-            <p className="text-sm text-muted-foreground">Average Score</p>
-            <p className="text-2xl font-bold">{data.avgScore}%</p>
-          </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm border">
-            <p className="text-sm text-muted-foreground">Completion</p>
-            <p className="text-2xl font-bold">{data.completionRate}%</p>
-          </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm border">
-            <p className="text-sm text-muted-foreground">Adherence</p>
-            <p className="text-2xl font-bold">{data.avgShiftAdherence}%</p>
-          </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm border">
-            <p className="text-sm text-muted-foreground">Total Edits</p>
-            <p className="text-2xl font-bold">{data.totalEdits}</p>
-          </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm border">
-            <p className="text-sm text-muted-foreground">Top Performer</p>
-            <p className="text-lg font-bold truncate">{data.topPerformer}</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border">
-            <h3 className="font-semibold mb-4">Performance by Department</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={departmentChartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" />
-                <YAxis domain={[0, 100]} />
-                <Tooltip />
-                <Bar dataKey="averageScore" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border">
-            <h3 className="font-semibold mb-4">Weekly Adherence</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data.shiftTrend}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="week" />
-                <YAxis domain={[0, 100]} />
-                <Tooltip />
-                <Bar dataKey="adherence" fill="#10b981" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
+        <button className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300">
+          <TrendingUp className="h-5 w-5" />
+          <span className="text-[9px] font-bold uppercase tracking-widest">Analytics</span>
+        </button>
+        <button className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300">
+          <Activity className="h-5 w-5" />
+          <span className="text-[9px] font-bold uppercase tracking-widest">Activity</span>
+        </button>
+        <button onClick={() => router.push("/tasks")} className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300">
+          <CheckSquare className="h-5 w-5" />
+          <span className="text-[9px] font-bold uppercase tracking-widest">Tasks</span>
+        </button>
+      </nav>
     </div>
   );
 }
