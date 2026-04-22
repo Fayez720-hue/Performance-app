@@ -259,7 +259,10 @@ export default function DashboardPageClient() {
       </main>
 
       {/* Floating Button */}
-      <button className="fixed bottom-24 right-6 h-14 w-14 bg-teal-400 rounded-2xl shadow-lg shadow-teal-500/20 flex items-center justify-center group active:scale-95 transition-all z-40">
+      <button
+        onClick={() => router.push("/tasks/new")}
+        className="fixed bottom-24 right-6 h-14 w-14 bg-teal-400 rounded-2xl shadow-lg shadow-teal-500/20 flex items-center justify-center group active:scale-95 transition-all z-40"
+      >
         <Plus className="text-black h-8 w-8 group-hover:rotate-90 transition-transform" />
       </button>
 
