@@ -349,34 +349,44 @@ export async function createTask(data: any): Promise<number> {
 }
 
 export async function updateTask(id: number, data: any): Promise<void> {
-  const res = await sheetsRequest("/values/Performance!A1:A1000")
+  // Search in a larger range to find the ID
+  const res = await sheetsRequest("/values/Performance!A1:A2000")
   const rows = res.values || []
-  const rowIndex = rows.findIndex((row: any[]) => parseInt(row[0]) === id)
 
-  if (rowIndex === -1) throw new Error(`Task ID ${id} not found in main sheet`)
+  // Find row index by matching ID (handling both string and number)
+  const rowIndex = rows.findIndex((row: any[]) => {
+    if (!row[0]) return false
+    const rowId = String(row[0]).trim()
+    return rowId === String(id).trim()
+  })
+
+  if (rowIndex === -1) {
+    console.error(`Task ID ${id} not found. Available IDs:`, rows.slice(0, 10).map(r => r[0]))
+    throw new Error(`Task ID ${id} not found in main sheet. Please ensure the ID exists in Column A.`)
+  }
 
   const realRowNumber = rowIndex + 1
   const values = [
     [
       id,
-      data.name,
-      data.date,
-      data.task,
-      data.references,
-      data.comments,
-      data.progress,
-      data.taskStartingDate,
-      data.deadline,
-      data.taskEstimatedTime,
-      data.taskTimeTaken,
-      data.submissionLink,
-      data.submissionDate,
-      data.deadlineAdherence,
-      data.grading,
-      data.overallScore,
-      data.taskTimeStamp,
-      data.edits,
-      data.noOfEdits
+      data.name || "",
+      data.date || "",
+      data.task || "",
+      data.references || "",
+      data.comments || "",
+      data.progress || "To-do",
+      data.taskStartingDate || "",
+      data.deadline || "",
+      data.taskEstimatedTime || "",
+      data.taskTimeTaken || "",
+      data.submissionLink || "",
+      data.submissionDate || "",
+      data.deadlineAdherence || "",
+      data.grading || "",
+      data.overallScore || "",
+      data.taskTimeStamp || "",
+      data.edits || "",
+      data.noOfEdits || 0
     ]
   ]
 
@@ -385,15 +395,13 @@ export async function updateTask(id: number, data: any): Promise<void> {
     body: JSON.stringify({ values })
   })
 
-  // Sync to user-specific sheet
+  // Silent sync to user sheet
   const userSheetName = String(data.name || "").trim()
   if (userSheetName) {
-    // We append updates to user sheets as a log, or we'd need to find the row there too.
-    // Appending is safer for history.
     sheetsRequest(`/values/'${userSheetName}'!A:S:append?valueInputOption=USER_ENTERED`, {
       method: "POST",
-      body: JSON.stringify({ values: [[...values[0], `Updated: ${format(new Date(), "yyyy-MM-dd HH:mm")}`]] })
-    }).catch(err => console.log(`User sheet ${userSheetName} not found, skipping sync.`))
+      body: JSON.stringify({ values: [[...values[0], `Last Sync: ${new Date().toLocaleString()}`]] })
+    }).catch(() => {/* Ignore errors for individual user sheets */})
   }
 }
 
