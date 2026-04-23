@@ -454,16 +454,26 @@ export async function getDashboardStats(startDate?: string, endDate?: string, us
     }
 
     if (currentEmployee) {
-      // For Team Members: Filter Performance sheet by their name to match Tasks page
-      const userTasks = taskRows.filter((row: any[]) =>
-        String(row[1] || "").trim().toLowerCase() === currentEmployee.name.toLowerCase()
-      )
+      // For Team Members: Filter Performance sheet by their email/name to match Tasks page
+      const userTasks = taskRows.filter((row: any[]) => {
+        const taskName = String(row[1] || "").trim().toLowerCase()
+        const empName = currentEmployee.name.toLowerCase()
+        return taskName === empName || taskName === userEmail.toLowerCase()
+      })
       totalTasks = userTasks.length
-      completedTasks = userTasks.filter((row: any[]) => row[6] === "Completed").length
+      completedTasks = userTasks.filter((row: any[]) => {
+        const status = String(row[6] || "").trim().toLowerCase()
+        return status === "completed"
+      }).length
     } else {
       // For Admin/Manager: Show global totals from Performance sheet
-      totalTasks = taskRows.length
-      completedTasks = taskRows.filter((row: any[]) => row[6] === "Completed").length
+      // Skip the header if it exists in data
+      const tasks = taskRows.filter(row => row[1] && row[1] !== "Name")
+      totalTasks = tasks.length
+      completedTasks = tasks.filter((row: any[]) => {
+        const status = String(row[6] || "").trim().toLowerCase()
+        return status === "completed"
+      }).length
     }
 
     // Generate Score Distribution
