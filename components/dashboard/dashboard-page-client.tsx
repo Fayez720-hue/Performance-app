@@ -17,7 +17,8 @@ import {
   CheckSquare,
   TrendingUp,
   ChevronRight,
-  CalendarDays
+  CalendarDays,
+  Clock
 } from "lucide-react";
 import {
   BarChart,
