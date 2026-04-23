@@ -13,8 +13,9 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get("startDate") || undefined
     const endDate = searchParams.get("endDate") || undefined
+    const userEmail = (session.user as any)?.email
 
-    const stats = await getDashboardStats(startDate, endDate)
+    const stats = await getDashboardStats(startDate, endDate, userEmail)
 
     // Add role and context to the response
     return NextResponse.json({

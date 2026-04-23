@@ -421,16 +421,16 @@ export async function deleteTask(id: number): Promise<void> {
   })
 }
 
-export async function getDashboardStats(startDate?: string, endDate?: string) {
+export async function getDashboardStats(startDate?: string, endDate?: string, userEmail?: string) {
   try {
-    const summaryData = await sheetsRequest("/values/Summary!A2:G2")
+    const summaryData = await sheetsRequest("/values/Summary!A2:I2")
     const summary = summaryData.values?.[0] || []
     const employeeData = await sheetsRequest("/values/Employees!A2:I")
     const employeeRows = employeeData.values || []
 
-    // If dates are provided, we should ideally fetch from the Performance sheet and recalculate
-    // For now, let's enable the structure to support it
+    // Map employee stats
     let employeeStats = employeeRows.map((row: any[]) => ({
+      email: String(row[0] || "").trim().toLowerCase(),
       name: String(row[1] || "Unknown").trim(),
       title: String(row[2] || "Employee").trim(),
       tasks: parseInt(row[3]) || 0,
@@ -441,14 +441,26 @@ export async function getDashboardStats(startDate?: string, endDate?: string) {
       performance: String(row[8] || "Good").trim() as any,
     }))
 
-    // Simulating date filtering logic if parameters exist
-    if (startDate && endDate) {
-      // In a real scenario, you'd fetch tasks from 'Performance' sheet within this range
-      // and aggregate them per employee. For this demo/fix, we'll simulate variability.
-      console.log(`Filtering dashboard for range: ${startDate} to ${endDate}`);
+    let totalTasks = 0
+    let completedTasks = 0
+    let currentEmployee: any = null
+
+    if (userEmail) {
+      currentEmployee = employeeStats.find(emp => emp.email === userEmail.toLowerCase())
     }
 
-    // Generate Score Distribution (for the bar chart)
+    if (currentEmployee) {
+      // For Team Members: Show their personal stats from the Employee row
+      totalTasks = currentEmployee.tasks
+      completedTasks = currentEmployee.completed
+    } else {
+      // For Admin/Manager: Show global totals from Summary sheet (Indices H and I)
+      // If Summary doesn't have them, fall back to aggregating all employees
+      totalTasks = parseInt(summary[7]) || employeeStats.reduce((acc, emp) => acc + emp.tasks, 0)
+      completedTasks = parseInt(summary[8]) || employeeStats.reduce((acc, emp) => acc + emp.completed, 0)
+    }
+
+    // Generate Score Distribution
     const distribution = [
       { range: "0-20", count: 0 },
       { range: "21-40", count: 0 },
@@ -456,34 +468,6 @@ export async function getDashboardStats(startDate?: string, endDate?: string) {
       { range: "61-80", count: 0 },
       { range: "81-100", count: 0 },
     ]
-
-    employeeStats.forEach(emp => {
-      const score = emp.overallScore
-      if (score <= 20) distribution[0].count++
-      else if (score <= 40) distribution[1].count++
-      else if (score <= 60) distribution[2].count++
-      else if (score <= 80) distribution[3].count++
-      else distribution[4].count++
-    })
-
-    // Generate Weekly Trend (for the area chart)
-    // In a real app, this would come from a "Trends" sheet
-    const trend = [
-      { week: "Week 1", adherence: 85 },
-      { week: "Week 2", adherence: 88 },
-      { week: "Week 3", adherence: 92 },
-      { week: "Week 4", adherence: 94 },
-    ]
-
-    const totalTasks = employeeStats.reduce((acc, emp) => acc + (emp.tasks || 0), 0)
-    const completedTasks = employeeStats.reduce((acc, emp) => acc + (emp.completed || 0), 0)
-
-    return {
-      totalEmployees: parseInt(summary[0]) || employeeStats.length,
-      avgScore: parseFloat(summary[1]) || 0,
-      completionRate: parseFloat(summary[2]) || 0,
-      totalTasks,
-      completedTasks,
       avgShiftAdherence: parseFloat(summary[3]) || 0,
       totalEdits: parseInt(summary[4]) || 0,
       topPerformer: summary[5] || "N/A",
