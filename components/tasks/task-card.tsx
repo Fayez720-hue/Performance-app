@@ -20,6 +20,7 @@ import { getApiUrl } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { MediaRenderer } from "./media-renderer"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -284,7 +285,7 @@ export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) 
             {task.references && (
               <div>
                 <h4 className="mb-2 text-sm font-medium text-muted-foreground">References</h4>
-                <p className="whitespace-pre-wrap text-sm">{task.references}</p>
+                <MediaRenderer text={task.references} />
               </div>
             )}
 
@@ -292,7 +293,7 @@ export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) 
             {task.comments && (
               <div>
                 <h4 className="mb-2 text-sm font-medium text-muted-foreground">Comments</h4>
-                <p className="whitespace-pre-wrap text-sm">{task.comments}</p>
+                <MediaRenderer text={task.comments} />
               </div>
             )}
 
@@ -319,7 +320,7 @@ export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) 
                   <MessageSquare className="h-4 w-4" />
                   Revision Feedback ({task.noOfEdits} revision{task.noOfEdits !== 1 ? "s" : ""})
                 </h4>
-                <p className="whitespace-pre-wrap text-sm mb-4">{task.edits}</p>
+                <MediaRenderer text={task.edits} />
 
                 {task.performanceHistory && (
                   <div className="mt-4 pt-4 border-t border-amber-500/20">

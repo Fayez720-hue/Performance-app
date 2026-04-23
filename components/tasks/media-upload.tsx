@@ -21,12 +21,26 @@ export function MediaUpload({ onUpload, label }: MediaUploadProps) {
       setIsUploading(true);
       const media = await pickMedia();
 
-      if (media) {
-        onUpload(`\n[Attached ${media.type}: ${media.name}]`);
-        toast.success(`${media.type} attached`);
+      if (media && media.base64) {
+        // Upload base64 to server
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            file: media.base64,
+            name: media.name,
+            type: media.type
+          }),
+        });
+
+        if (!response.ok) throw new Error("Native upload failed");
+
+        const data = await response.json();
+        onUpload(`\n[Attached ${media.type}: ${data.url}]`);
+        toast.success(`${media.type} uploaded`);
       }
     } catch (error) {
-      console.error('Native pick failed', error);
+      console.error('Native pick/upload failed', error);
       // Fallback to web pick if native fails
       fileInputRef.current?.click();
     } finally {
@@ -38,14 +52,33 @@ export function MediaUpload({ onUpload, label }: MediaUploadProps) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File too large (max 5MB)");
+      return;
+    }
+
     setIsUploading(true);
-    // Simulate upload or handle small files
-    setTimeout(() => {
-      onUpload(`\n[Uploaded: ${file.name}]`);
-      toast.success("File attached");
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Upload failed");
+
+      const data = await response.json();
+      onUpload(`\n[Uploaded: ${data.url}]`);
+      toast.success("File uploaded successfully");
+    } catch (error) {
+      console.error('Web upload failed', error);
+      toast.error("Failed to upload file");
+    } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
-    }, 1000);
+    }
   };
 
   const handleClick = () => {

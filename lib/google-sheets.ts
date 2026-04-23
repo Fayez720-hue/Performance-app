@@ -524,7 +524,7 @@ export async function getDashboardStats(startDate?: string, endDate?: string, us
       }
     })
 
-    const avgAdherence = adherenceCount > 0 ? (totalAdherence / adherenceCount) : 0
+    const avgAdherence = adherenceCount > 0 ? Math.round(totalAdherence / adherenceCount) : 0
 
     // Generate Weekly Trend (for the area chart)
     // In a real app, this would come from a "Trends" sheet

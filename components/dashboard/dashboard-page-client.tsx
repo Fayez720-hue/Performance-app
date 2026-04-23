@@ -281,7 +281,11 @@ export default function DashboardPageClient() {
               </ResponsiveContainer>
             </div>
             <div className="flex items-end justify-between">
-              <p className="text-xl font-bold text-teal-400">{data?.avgShiftAdherence}%</p>
+              <p className="text-xl font-bold text-teal-400">
+                {typeof data?.avgShiftAdherence === 'number'
+                  ? data.avgShiftAdherence.toFixed(1).replace(/\.0$/, '')
+                  : 0}%
+              </p>
               <div className="bg-teal-500/10 px-1.5 py-0.5 rounded text-[10px] text-teal-400 font-bold">+2.1%</div>
             </div>
           </div>
