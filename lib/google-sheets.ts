@@ -496,8 +496,8 @@ export async function getAttendance(email: string): Promise<any[]> {
   try {
     const data = await sheetsRequest("/values/Attendance!A2:F")
     const rows = data.values || []
-    return rows
-      .filter((row: any[]) => String(row[0]).toLowerCase() === email.toLowerCase())
+    return (rows || [])
+      .filter((row: any[]) => row && row[0] && String(row[0]).toLowerCase() === email.toLowerCase())
       .map((row: any[]) => ({
         email: row[0],
         name: row[1],
@@ -506,8 +506,9 @@ export async function getAttendance(email: string): Promise<any[]> {
         clockOut: row[4],
         totalHours: row[5]
       }))
-  } catch (error) {
-    console.error("getAttendance error:", error)
+  } catch (error: any) {
+    console.error("getAttendance error:", error.message)
+    // Return empty if sheet doesn't exist yet to prevent UI crash
     return []
   }
 }
