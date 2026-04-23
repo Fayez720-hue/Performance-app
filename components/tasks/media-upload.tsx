@@ -2,10 +2,6 @@
 
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-'use client';
-
-import { useState, useRef } from 'react';
-import { Button } from '@/components/ui/button';
 import { Paperclip, Loader2, Mic, FileUp, Camera, Image as ImageIcon } from 'lucide-react';
 import { pickMedia } from '@/lib/media';
 import { toast } from 'sonner';
