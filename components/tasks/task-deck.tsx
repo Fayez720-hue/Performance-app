@@ -191,7 +191,10 @@ export function TaskDeck({ user }: TaskDeckProps) {
                   {statusTasks.map((task) => {
                     const canEdit =
                       permissions.canEditAllTasks ||
-                      (permissions.canEditOwnTasks && task.name === userName)
+                      (permissions.canEditOwnTasks && (
+                        task.name.toLowerCase() === userName.toLowerCase() ||
+                        (user.email && task.name.toLowerCase() === user.email.toLowerCase())
+                      ))
                     const canDelete = permissions.canDeleteTasks
 
                     return (
