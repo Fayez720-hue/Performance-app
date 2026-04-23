@@ -52,19 +52,25 @@ function isValidDate(date: any): date is Date {
 function safeFormat(dateStr: string | undefined, formatStr: string) {
   if (!dateStr) return "N/A"
 
-  // Try parsing DD/MM/YYYY HH:mm format
-  const ddmmyyyyMatch = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/)
-  if (ddmmyyyyMatch) {
-    const [_, d, m, y] = ddmmyyyyMatch
-    const [time] = dateStr.split(' ').reverse()
-    const [h = "00", min = "00"] = time.includes(':') ? time.split(':') : []
-    const date = new Date(Number(y), Number(m) - 1, Number(d), Number(h), Number(min))
+  try {
+    // 1. Try parsing DD/MM/YYYY HH:mm format (common in Sheets)
+    const ddmmyyyyMatch = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/)
+    if (ddmmyyyyMatch) {
+      const [_, d, m, y] = ddmmyyyyMatch
+      const timePart = dateStr.split(' ').reverse()[0]
+      const [h = "00", min = "00", s = "00"] = timePart.includes(':') ? timePart.split(':') : []
+      const date = new Date(Number(y), Number(m) - 1, Number(d), Number(h), Number(min), Number(s))
+      if (isValidDate(date)) return format(date, formatStr)
+    }
+
+    // 2. Try standard ISO or JS date parsing
+    const date = new Date(dateStr)
     if (isValidDate(date)) return format(date, formatStr)
+  } catch (e) {
+    console.error("Date parsing error for:", dateStr, e)
   }
 
-  const date = new Date(dateStr)
-  if (!isValidDate(date)) return dateStr
-  return format(date, formatStr)
+  return dateStr // Fallback to raw string
 }
 
 interface TaskCardProps {

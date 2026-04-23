@@ -329,11 +329,14 @@ export async function createTask(data: any): Promise<number> {
   const lastId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) : 0
   const nextId = lastId + 1
 
+  // Use a format that Google Sheets is less likely to strip time from
+  const currentTimestamp = format(new Date(), "yyyy-MM-dd HH:mm:ss")
+
   const values = [
     [
       nextId,
       data.name,
-      data.date || format(new Date(), "yyyy-MM-dd HH:mm:ss"),
+      data.date || currentTimestamp,
       data.task,
       data.references || "",
       data.comments || "",
