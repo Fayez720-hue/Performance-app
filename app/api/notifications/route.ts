@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
-// Notifications are not in the core sheet yet, so return an empty list for now
-// to prevent the 404 error from crashing the client.
+import { getNotifications } from "@/lib/google-sheets"
 
 export async function GET() {
   try {
     const session = await getServerSession()
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-    return NextResponse.json([])
+    const notifications = await getNotifications(session.user.email)
+    return NextResponse.json(notifications)
   } catch (error) {
+    console.error("Notifications API Error:", error)
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }

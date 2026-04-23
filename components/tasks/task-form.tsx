@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils"
 import { taskFormSchema, type TaskFormValues } from "@/lib/validations/task"
 import { PROGRESS_OPTIONS, type Task } from "@/types/task"
 import { getApiUrl } from "@/lib/api"
+import { MediaUpload } from "./media-upload"
 
 interface TaskFormProps {
   task?: Task
@@ -256,12 +257,19 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
             <FormItem>
               <FormLabel>References</FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="Add any references or links..."
-                  className="min-h-[80px] resize-none disabled:bg-muted"
-                  {...field}
-                  disabled={!canEditAllFields}
-                />
+                <div className="space-y-2">
+                  <Textarea
+                    placeholder="Add any references or links..."
+                    className="min-h-[80px] resize-none disabled:bg-muted"
+                    {...field}
+                    disabled={!canEditAllFields}
+                  />
+                  {canEditAllFields && (
+                    <MediaUpload
+                      onUpload={(attachment) => field.onChange(`${field.value}${field.value ? '\n' : ''}${attachment}`)}
+                    />
+                  )}
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -468,12 +476,19 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
             <FormItem>
               <FormLabel>Comments</FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="Add any comments..."
-                  className="min-h-[80px] resize-none disabled:bg-muted"
-                  {...field}
-                  disabled={!canEditAllFields}
-                />
+                <div className="space-y-2">
+                  <Textarea
+                    placeholder="Add any comments..."
+                    className="min-h-[80px] resize-none disabled:bg-muted"
+                    {...field}
+                    disabled={!canEditAllFields}
+                  />
+                  {canEditAllFields && (
+                    <MediaUpload
+                      onUpload={(attachment) => field.onChange(`${field.value}${field.value ? '\n' : ''}${attachment}`)}
+                    />
+                  )}
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>

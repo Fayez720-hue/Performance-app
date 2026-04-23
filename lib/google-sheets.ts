@@ -602,3 +602,64 @@ export async function clockOut(email: string): Promise<void> {
     body: JSON.stringify({ values: [row] })
   })
 }
+
+// ============ NOTIFICATIONS ============
+
+export async function createNotification(notification: Notification): Promise<void> {
+  const values = [
+    [
+      notification.userEmail,
+      notification.type,
+      notification.taskId || "",
+      notification.message,
+      notification.read ? "TRUE" : "FALSE",
+      notification.timestamp,
+    ],
+  ]
+
+  await sheetsRequest("/values/Notifications!A:F:append?valueInputOption=USER_ENTERED", {
+    method: "POST",
+    body: JSON.stringify({ values }),
+  })
+}
+
+export async function getNotifications(email: string): Promise<Notification[]> {
+  try {
+    const data = await sheetsRequest("/values/Notifications!A2:F")
+    const rows = data.values || []
+    return rows
+      .filter((row: any[]) => row && row[0] && String(row[0]).toLowerCase() === email.toLowerCase())
+      .map((row: any[]) => ({
+        userEmail: row[0],
+        type: row[1] as any,
+        taskId: row[2],
+        message: row[3],
+        read: row[4] === "TRUE",
+        timestamp: row[5],
+      }))
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+  } catch (error) {
+    console.error("getNotifications error:", error)
+    return []
+  }
+}
+
+export async function markNotificationAsRead(email: string, timestamp: string): Promise<void> {
+  const res = await sheetsRequest("/values/Notifications!A1:F2000")
+  const rows = res.values || []
+
+  const rowIndex = rows.findIndex(
+    (row: any[]) => row[0].toLowerCase() === email.toLowerCase() && row[5] === timestamp
+  )
+
+  if (rowIndex !== -1) {
+    const realRowNumber = rowIndex + 1
+    const row = rows[rowIndex]
+    row[4] = "TRUE"
+
+    await sheetsRequest(`/values/Notifications!A${realRowNumber}:F${realRowNumber}?valueInputOption=USER_ENTERED`, {
+      method: "PUT",
+      body: JSON.stringify({ values: [row] }),
+    })
+  }
+}

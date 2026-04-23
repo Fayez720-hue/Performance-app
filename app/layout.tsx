@@ -7,6 +7,7 @@ import { Toaster } from 'sonner'
 import './globals.css'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { ReturnToAppHandler } from '@/components/auth/return-to-app-handler'
+import { NotificationManager } from '@/components/notifications/notification-manager'
 
 export const dynamic = "force-dynamic"
 
@@ -29,6 +30,7 @@ export default function RootLayout({
         >
           <AuthProvider>
             <ReturnToAppHandler />
+            <NotificationManager />
             {children}
             <Toaster position="top-right" richColors />
           </AuthProvider>
