@@ -86,14 +86,44 @@ export default function ReportsPageClient() {
     },
   ]
 
+  const handleExport = () => {
+    if (!stats?.employees) return;
+
+    // Create CSV content
+    const headers = ["Name", "Title", "Overall Score", "Shift Adherence", "Tasks Completed"];
+    const rows = stats.employees.map((emp: any) => [
+      emp.name,
+      emp.title,
+      `${Math.round(emp.overallScore)}%`,
+      `${Math.round(emp.shiftAdherence)}%`,
+      emp.completedTasks
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row: any) => row.join(","))
+    ].join("\n");
+
+    // Create a blob and download it
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Performance_Report_${new Date().toLocaleDateString()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container mx-auto px-4 py-8 max-w-6xl pb-24">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <BarChart3 className="h-6 w-6 text-primary" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-500/10">
+              <BarChart3 className="h-6 w-6 text-teal-400" />
             </div>
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Performance Reports</h1>
@@ -102,8 +132,8 @@ export default function ReportsPageClient() {
               </p>
             </div>
           </div>
-          <Button variant="outline" className="w-full md:w-auto" onClick={() => window.print()}>
-            <Download className="mr-2 h-4 w-4" /> Export Report
+          <Button variant="outline" className="w-full md:w-auto border-teal-500/20 hover:bg-teal-500/10 text-teal-400" onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" /> Export CSV
           </Button>
         </div>
 
