@@ -328,10 +328,11 @@ export async function createTask(data: any): Promise<number> {
       format(new Date(), "yyyy-MM-dd HH:mm:ss"), // taskTimeStamp
       data.edits || "",
       0, // noOfEdits
+      `Created: ${new Date().toLocaleString()}` // Metadata/Col 20
     ]
   ]
 
-  await sheetsRequest("/values/Performance!A:S:append?valueInputOption=USER_ENTERED", {
+  await sheetsRequest("/values/Performance!A:T:append?valueInputOption=USER_ENTERED", {
     method: "POST",
     body: JSON.stringify({ values })
   })
@@ -386,11 +387,12 @@ export async function updateTask(id: number, data: any): Promise<void> {
       data.overallScore || "",
       data.taskTimeStamp || "",
       data.edits || "",
-      data.noOfEdits || 0
+      data.noOfEdits || 0,
+      `Updated: ${new Date().toLocaleString()}`
     ]
   ]
 
-  await sheetsRequest(`/values/Performance!A${realRowNumber}:S${realRowNumber}?valueInputOption=USER_ENTERED`, {
+  await sheetsRequest(`/values/Performance!A${realRowNumber}:T${realRowNumber}?valueInputOption=USER_ENTERED`, {
     method: "PUT",
     body: JSON.stringify({ values })
   })
