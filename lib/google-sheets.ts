@@ -312,7 +312,7 @@ export async function createTask(data: any): Promise<number> {
     [
       nextId,
       data.name,
-      data.date || format(new Date(), "yyyy-MM-dd"),
+      data.date || format(new Date(), "yyyy-MM-dd HH:mm:ss"),
       data.task,
       data.references || "",
       data.comments || "",

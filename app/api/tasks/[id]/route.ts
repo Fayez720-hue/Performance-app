@@ -103,17 +103,24 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
       // Update Performance History
       const timestamp = now.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
-      const newHistoryEntry = `[${timestamp}] Adherence: ${adherence}, Time: ${timeTaken}`
+      const newHistoryEntry = `[${timestamp}] Adh: ${adherence}, Time: ${timeTaken}, Dead: ${data.deadline || existingTask.deadline || "N/A"}`
       performanceHistory = performanceHistory
         ? `${performanceHistory} | ${newHistoryEntry}`
         : newHistoryEntry
       updateData.performanceHistory = performanceHistory
-    } else {
-      // Preserve existing values if the link hasn't changed
-      updateData.submissionDate = existingTask.submissionDate
-      updateData.deadlineAdherence = existingTask.deadlineAdherence
-      updateData.taskTimeTaken = existingTask.taskTimeTaken
-      updateData.performanceHistory = existingTask.performanceHistory
+
+      // Calculate Total Time Taken across all submissions
+      const historyEntries = performanceHistory.split('|')
+      let totalMinutes = 0
+      historyEntries.forEach(entry => {
+        const timeMatch = entry.match(/Time: (\d+)h (\d+)m/)
+        if (timeMatch) {
+          totalMinutes += (parseInt(timeMatch[1]) * 60) + parseInt(timeMatch[2])
+        }
+      })
+      const totalH = Math.floor(totalMinutes / 60)
+      const totalM = totalMinutes % 60
+      updateData.taskTimeTaken = `${totalH}h ${totalM}m`
     }
 
     // 3. Increment Edits count if Manager adds new feedback
