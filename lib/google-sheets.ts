@@ -421,7 +421,7 @@ export async function deleteTask(id: number): Promise<void> {
   })
 }
 
-export async function getDashboardStats(startDate?: string, endDate?: string, userEmail?: string) {
+export async function getDashboardStats(startDate?: string, endDate?: string, userEmail?: string, userRole?: string) {
   try {
     const summaryData = await sheetsRequest("/values/Summary!A2:I2")
     const summary = summaryData.values?.[0] || []
@@ -443,37 +443,32 @@ export async function getDashboardStats(startDate?: string, endDate?: string, us
 
     // Get real-time task data from Performance sheet to ensure consistency with Tasks page
     const tasksData = await sheetsRequest("/values/Performance!A2:T")
-    const taskRows = tasksData.values || []
+    const taskRows = (tasksData.values || []).filter((row: any[]) => row[1] && row[1] !== "Name")
 
     let totalTasks = 0
     let completedTasks = 0
-    let currentEmployee: any = null
+    let relevantTasks: any[] = []
 
-    if (userEmail) {
-      currentEmployee = employeeStats.find(emp => emp.email === userEmail.toLowerCase())
-    }
+    const isAdminOrManager = userRole === "Admin" || userRole === "Manager"
 
-    if (currentEmployee) {
-      // For Team Members: Filter Performance sheet by their email/name to match Tasks page
-      const userTasks = taskRows.filter((row: any[]) => {
+    if (!isAdminOrManager && userEmail) {
+      // Team Member View: Filter by their specific records
+      const currentEmployee = employeeStats.find(emp => emp.email === userEmail.toLowerCase())
+
+      relevantTasks = taskRows.filter((row: any[]) => {
         const taskName = String(row[1] || "").trim().toLowerCase()
-        const empName = currentEmployee.name.toLowerCase()
-        return taskName === empName || taskName === userEmail.toLowerCase()
+        const empName = currentEmployee?.name.toLowerCase() || ""
+        const empEmail = currentEmployee?.email.toLowerCase() || ""
+        return taskName === empName || taskName === empEmail || taskName === userEmail.toLowerCase()
       })
-      totalTasks = userTasks.length
-      completedTasks = userTasks.filter((row: any[]) => {
-        const status = String(row[6] || "").trim().toLowerCase()
-        return status === "completed"
-      }).length
+
+      totalTasks = relevantTasks.length
+      completedTasks = relevantTasks.filter((row: any[]) => String(row[6] || "").trim().toLowerCase() === "completed").length
     } else {
-      // For Admin/Manager: Show global totals from Performance sheet
-      // Skip the header if it exists in data
-      const tasks = taskRows.filter(row => row[1] && row[1] !== "Name")
-      totalTasks = tasks.length
-      completedTasks = tasks.filter((row: any[]) => {
-        const status = String(row[6] || "").trim().toLowerCase()
-        return status === "completed"
-      }).length
+      // Admin/Manager View: Show Global Stats
+      relevantTasks = taskRows
+      totalTasks = relevantTasks.length
+      completedTasks = relevantTasks.filter((row: any[]) => String(row[6] || "").trim().toLowerCase() === "completed").length
     }
 
     // Generate Score Distribution
@@ -488,9 +483,6 @@ export async function getDashboardStats(startDate?: string, endDate?: string, us
     // Calculate real-time adherence and distribution
     let totalAdherence = 0
     let adherenceCount = 0
-    const relevantTasks = currentEmployee ?
-      taskRows.filter((row: any[]) => String(row[1] || "").trim().toLowerCase() === currentEmployee.name.toLowerCase()) :
-      taskRows
 
     relevantTasks.forEach(row => {
       const adhStr = String(row[13] || "")
