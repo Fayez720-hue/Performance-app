@@ -13,7 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 export default function NewTaskPageClient() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [employees, setEmployees] = useState<string[]>([])
+  const [employees, setEmployees] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoadingEmployees, setIsLoadingEmployees] = useState(false)
 
@@ -24,7 +24,7 @@ export default function NewTaskPageClient() {
       if (res.ok) {
         const data = await res.json()
         if (Array.isArray(data)) {
-          setEmployees(data.map((e: any) => e.name).filter(Boolean))
+          setEmployees(data)
         }
       } else {
         console.error("Failed to fetch employees:", res.status)

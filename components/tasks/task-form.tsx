@@ -39,7 +39,7 @@ interface TaskFormProps {
   mode: "create" | "edit"
   userRole?: string
   userName?: string
-  employees?: string[]
+  employees?: any[] // Changed from string[] to any[] to handle user objects
 }
 
 export function TaskForm({ task, mode, userRole, userName, employees }: TaskFormProps) {
@@ -127,11 +127,17 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
                   </FormControl>
                   <SelectContent>
                     {employees && employees.length > 0 ? (
-                      employees.map((name) => (
-                        <SelectItem key={name} value={name}>
-                          {name}
-                        </SelectItem>
-                      ))
+                      employees.map((emp) => {
+                        const name = typeof emp === 'string' ? emp : emp.name;
+                        const email = typeof emp === 'string' ? null : emp.email;
+                        const value = typeof emp === 'string' ? emp : emp.name;
+
+                        return (
+                          <SelectItem key={email || name} value={value}>
+                            {name} {email ? `(${email})` : ''}
+                          </SelectItem>
+                        );
+                      })
                     ) : (
                       <SelectItem value={userName || "Default"}>{userName || "Default"}</SelectItem>
                     )}

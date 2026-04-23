@@ -20,7 +20,7 @@ export default function EditTaskPageClient({ id }: { id?: string }) {
   const [task, setTask] = useState<Task | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const [employees, setEmployees] = useState<string[]>([])
+  const [employees, setEmployees] = useState<any[]>([])
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -36,7 +36,7 @@ export default function EditTaskPageClient({ id }: { id?: string }) {
       const res = await fetch("/api/employees")
       if (res.ok) {
         const data = await res.json()
-        setEmployees(data.map((e: any) => e.name))
+        setEmployees(data)
       }
     } catch (error) {
       console.error("Error fetching employees:", error)
