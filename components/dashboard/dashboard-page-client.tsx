@@ -4,9 +4,10 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { format, subDays } from "date-fns";
 import {
   Search,
-  Calendar,
+  Calendar as CalendarIcon,
   Users,
   SlidersHorizontal,
   Plus,
@@ -15,7 +16,8 @@ import {
   Activity,
   CheckSquare,
   TrendingUp,
-  ChevronRight
+  ChevronRight,
+  CalendarDays
 } from "lucide-react";
 import {
   BarChart,
@@ -29,6 +31,13 @@ import {
   Cell
 } from "recharts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface Employee {
   name: string;
@@ -63,6 +72,15 @@ export default function DashboardPageClient() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Date Range State
+  const [dateRange, setDateRange] = useState<{
+    from: Date;
+    to: Date;
+  }>({
+    from: subDays(new Date(), 30),
+    to: new Date(),
+  });
+
   const isTeamMember = data?.userRole === "Team Member" || data?.isPersonalView;
   const canManage = data?.userRole === "Admin" || data?.userRole === "Manager";
 
@@ -72,11 +90,16 @@ export default function DashboardPageClient() {
     } else if (status === "authenticated") {
       fetchDashboardData();
     }
-  }, [status]);
+  }, [status, dateRange]);
 
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch("/api/dashboard");
+      setLoading(true);
+      const params = new URLSearchParams({
+        startDate: format(dateRange.from, "yyyy-MM-dd"),
+        endDate: format(dateRange.to, "yyyy-MM-dd"),
+      });
+      const response = await fetch(`/api/dashboard?${params.toString()}`);
       if (!response.ok) throw new Error("Failed to fetch");
       const dashboardData = await response.json();
       setData(dashboardData);
@@ -153,13 +176,37 @@ export default function DashboardPageClient() {
 
         {/* Date & Role Row */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-[#13151f] border border-gray-800 p-3 rounded-xl flex items-center gap-3">
-            <Calendar className="h-4 w-4 text-teal-400" />
-            <div>
-              <p className="text-[10px] uppercase text-gray-500 font-bold tracking-wider">Date Range</p>
-              <p className="text-xs font-semibold">Oct 01 - Oct 31</p>
-            </div>
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="bg-[#13151f] border border-gray-800 p-3 rounded-xl flex items-center gap-3 text-left hover:border-teal-500/50 transition-all">
+                <CalendarDays className="h-4 w-4 text-teal-400" />
+                <div>
+                  <p className="text-[10px] uppercase text-gray-500 font-bold tracking-wider">Date Range</p>
+                  <p className="text-[11px] font-semibold">
+                    {format(dateRange.from, "MMM dd")} - {format(dateRange.to, "MMM dd")}
+                  </p>
+                </div>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 bg-[#090a11] border-gray-800" align="start">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={dateRange.from}
+                selected={{
+                  from: dateRange.from,
+                  to: dateRange.to,
+                }}
+                onSelect={(range: any) => {
+                  if (range?.from && range?.to) {
+                    setDateRange({ from: range.from, to: range.to });
+                  }
+                }}
+                numberOfMonths={1}
+                className="bg-[#090a11] text-white"
+              />
+            </PopoverContent>
+          </Popover>
           <div className={cn(
             "bg-[#13151f] border border-gray-800 p-3 rounded-xl flex items-center justify-between",
             !canManage && "opacity-50 pointer-events-none"
@@ -300,21 +347,40 @@ export default function DashboardPageClient() {
 
       {/* Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-[#090a11] border-t border-gray-800 px-6 py-4 flex justify-between items-center z-50">
-        <button className="flex flex-col items-center gap-1 text-teal-400">
+        <button
+          onClick={() => router.push("/dashboard")}
+          className="flex flex-col items-center gap-1 text-teal-400"
+        >
           <div className="p-1.5 bg-teal-500/10 rounded-lg">
             <LayoutGrid className="h-5 w-5" />
           </div>
           <span className="text-[9px] font-bold uppercase tracking-widest">Dashboard</span>
         </button>
-        <button className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300">
+
+        <button
+          onClick={() => router.push(canManage ? "/reports" : "/analytics")}
+          className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300"
+        >
           <TrendingUp className="h-5 w-5" />
-          <span className="text-[9px] font-bold uppercase tracking-widest">Analytics</span>
+          <span className="text-[9px] font-bold uppercase tracking-widest">
+            {canManage ? "Reports" : "Analytics"}
+          </span>
         </button>
-        <button className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300">
-          <Activity className="h-5 w-5" />
-          <span className="text-[9px] font-bold uppercase tracking-widest">Activity</span>
+
+        <button
+          onClick={() => router.push(canManage ? "/users" : "/activity")}
+          className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300"
+        >
+          {canManage ? <Users className="h-5 w-5" /> : <Activity className="h-5 w-5" />}
+          <span className="text-[9px] font-bold uppercase tracking-widest">
+            {canManage ? "Users" : "Activity"}
+          </span>
         </button>
-        <button onClick={() => router.push("/tasks")} className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300">
+
+        <button
+          onClick={() => router.push("/tasks")}
+          className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300"
+        >
           <CheckSquare className="h-5 w-5" />
           <span className="text-[9px] font-bold uppercase tracking-widest">Tasks</span>
         </button>
