@@ -94,9 +94,42 @@ async function recordAudio(): Promise<MediaAttachment | null> {
     const canRecord = await VoiceRecorder.canDeviceVoiceRecord();
     if (!canRecord.value) throw new Error('Device cannot record voice');
 
-    // This is a simplified version. A real UI would need Start/Stop buttons.
-    // For now, let's just return a placeholder or implement a basic flow.
-    // Since we are in a hook/component, we might need a more interactive UI.
+    const permission = await VoiceRecorder.requestAudioRecordingPermission();
+    if (!permission.value) throw new Error('Recording permission denied');
+
+    await VoiceRecorder.startRecording();
+
+    // Show a "Stop" action sheet to allow user to end recording without a time limit
+    const stopResult = await ActionSheet.showActions({
+      title: 'Recording Voice...',
+      message: 'The recording has started. Tap stop when you are finished.',
+      options: [
+        {
+          title: 'Stop & Save Recording',
+          style: ActionSheetButtonStyle.Destructive,
+        },
+        {
+          title: 'Cancel (Discard)',
+          style: ActionSheetButtonStyle.Cancel,
+        }
+      ],
+    });
+
+    if (stopResult.index === 0) {
+      const result = await VoiceRecorder.stopRecording();
+      if (result.value && result.value.recordDataBase64) {
+        return {
+          type: 'audio',
+          path: `data:audio/aac;base64,${result.value.recordDataBase64}`,
+          name: `voice_${Date.now()}.aac`,
+          base64: result.value.recordDataBase64,
+        };
+      }
+    } else {
+      // User cancelled
+      await VoiceRecorder.stopRecording();
+    }
+
     return null;
   } catch (e) {
     console.error('Audio recording error', e);

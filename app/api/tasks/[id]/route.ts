@@ -33,25 +33,55 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     // --- AUTO-CALCULATION ENGINE ---
     const now = new Date()
 
-    // Initialize updateData by merging existing and new,
-    // but be careful not to overwrite with empty strings from the form for key calculated fields
+    // 1. Accumulate Time Taken ONLY when transition happens FROM "In Progress"
+    let totalTimeTakenStr = existingTask.taskTimeTaken || "0h 0m"
+    if (existingTask.progress === "In Progress" && data.progress && data.progress !== "In Progress") {
+      if (existingTask.taskStartingDate) {
+        try {
+          const start = new Date(existingTask.taskStartingDate)
+          if (!isNaN(start.getTime())) {
+            const diffMs = now.getTime() - start.getTime()
+            const diffMins = Math.floor(diffMs / (1000 * 60))
+
+            // Parse existing time
+            const timeMatch = totalTimeTakenStr.match(/(\d+)h\s*(\d+)m/)
+            let totalMins = diffMins
+            if (timeMatch) {
+              totalMins += (parseInt(timeMatch[1]) * 60) + parseInt(timeMatch[2])
+            }
+
+            const h = Math.floor(totalMins / 60)
+            const m = totalMins % 60
+            totalTimeTakenStr = `${h}h ${m}m`
+          }
+        } catch (e) {
+          console.error("Accumulation error:", e)
+        }
+      }
+    }
+
+    // 2. Set Starting Date when transition happens TO "In Progress"
+    let taskStartingDate = data.taskStartingDate || existingTask.taskStartingDate || ""
+    if (data.progress === "In Progress" && existingTask.progress !== "In Progress") {
+      taskStartingDate = now.toISOString()
+    }
+
+    // Initialize updateData
     let updateData = {
       ...existingTask,
       ...data,
+      taskStartingDate,
+      taskTimeTaken: totalTimeTakenStr,
       noOfEdits: Number(existingTask.noOfEdits) || 0,
-      taskTimeTaken: data.taskTimeTaken || existingTask.taskTimeTaken || "",
       deadlineAdherence: data.deadlineAdherence || existingTask.deadlineAdherence || "",
       overallScore: data.overallScore || existingTask.overallScore || "",
       submissionDate: data.submissionDate || existingTask.submissionDate || "",
     }
 
-    // 1. Calculate Submission Date and Adherence for every submission update
-    // Also trigger if progress changes to Review or Completed for the first time (even without link change)
+    // 3. Handle Submission specific logic (Review/Completed)
     const isStatusTransitionToFinished = (data.progress === "Review" || data.progress === "Completed") &&
                                          (existingTask.progress !== "Review" && existingTask.progress !== "Completed")
     const isSubmissionUpdate = (data.submissionLink && data.submissionLink !== existingTask.submissionLink) || isStatusTransitionToFinished
-
-    let performanceHistory = existingTask.performanceHistory || ""
 
     if (isSubmissionUpdate) {
       updateData.submissionDate = now.toLocaleString('en-GB', {
@@ -62,77 +92,37 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         minute: '2-digit'
       }).replace(',', '')
 
-      // Calculate Deadline Adherence as Latency Percentage
-      let adherence = "Pending"
-      if (data.deadline) {
-        try {
-          const deadDate = new Date(data.deadline)
-          if (!isNaN(deadDate.getTime())) {
-            const submissionTime = now.getTime()
-            const deadlineTime = deadDate.getTime()
+      // Update Adherence only on first submission or if it was "0%"
+      if (!existingTask.deadlineAdherence || existingTask.deadlineAdherence === "Pending" || existingTask.deadlineAdherence === "0%") {
+        let adherence = "Pending"
+        if (data.deadline || existingTask.deadline) {
+          try {
+            const deadDate = new Date(data.deadline || existingTask.deadline)
+            if (!isNaN(deadDate.getTime())) {
+              const submissionTime = now.getTime()
+              const deadlineTime = deadDate.getTime()
 
-            if (submissionTime <= deadlineTime) {
-              adherence = "100%"
-            } else {
-              const latencyMs = submissionTime - deadlineTime
-              const estTimeStr = data.taskEstimatedTime || existingTask.taskEstimatedTime || "01:00"
-              const [estH, estM] = estTimeStr.split(":").map(Number)
-              const estMs = ((estH || 0) * 3600000) + ((estM || 0) * 60000)
-
-              if (estMs > 0) {
-                const latencyPercentage = (latencyMs / estMs) * 100
-                const calculatedAdherence = Math.max(0, 100 - latencyPercentage)
-                adherence = `${calculatedAdherence.toFixed(1)}%`
+              if (submissionTime <= deadlineTime) {
+                adherence = "100%"
               } else {
-                adherence = "0%"
+                const latencyMs = submissionTime - deadlineTime
+                const estTimeStr = data.taskEstimatedTime || existingTask.taskEstimatedTime || "01:00"
+                const [estH, estM] = estTimeStr.split(":").map(Number)
+                const estMs = ((estH || 0) * 3600000) + ((estM || 0) * 60000)
+
+                if (estMs > 0) {
+                  const latencyPercentage = (latencyMs / estMs) * 100
+                  const calculatedAdherence = Math.max(0, 100 - latencyPercentage)
+                  adherence = `${Math.round(calculatedAdherence)}%`
+                } else {
+                  adherence = "0%"
+                }
               }
             }
-          }
-        } catch (e) {
-          console.error("Deadline adherence calculation error:", e)
+          } catch (e) {}
         }
+        updateData.deadlineAdherence = adherence
       }
-      updateData.deadlineAdherence = adherence
-
-      // Calculate Task Time Taken
-      let timeTaken = "N/A"
-      if (data.taskStartingDate || existingTask.taskStartingDate) {
-        try {
-          const startDateStr = data.taskStartingDate || existingTask.taskStartingDate
-          const start = new Date(startDateStr)
-          if (!isNaN(start.getTime())) {
-            const diffMs = now.getTime() - start.getTime()
-            const totalMins = Math.floor(diffMs / (1000 * 60))
-            const hrs = Math.floor(totalMins / 60)
-            const mins = totalMins % 60
-            timeTaken = `${hrs}h ${mins}m`
-          }
-        } catch (e) {
-          console.error("Error calculating time taken:", e)
-        }
-      }
-      updateData.taskTimeTaken = timeTaken
-
-      // Update Performance History
-      const timestamp = now.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
-      const newHistoryEntry = `[${timestamp}] Adh: ${adherence}, Time: ${timeTaken}, Dead: ${data.deadline || existingTask.deadline || "N/A"}`
-      performanceHistory = performanceHistory
-        ? `${performanceHistory} | ${newHistoryEntry}`
-        : newHistoryEntry
-      updateData.performanceHistory = performanceHistory
-
-      // Calculate Total Time Taken across all submissions
-      const historyEntries = performanceHistory.split('|')
-      let totalMinutes = 0
-      historyEntries.forEach(entry => {
-        const timeMatch = entry.match(/Time: (\d+)h (\d+)m/)
-        if (timeMatch) {
-          totalMinutes += (parseInt(timeMatch[1]) * 60) + parseInt(timeMatch[2])
-        }
-      })
-      const totalH = Math.floor(totalMinutes / 60)
-      const totalM = totalMinutes % 60
-      updateData.taskTimeTaken = `${totalH}h ${totalM}m`
     }
 
     // 3. Increment Edits count if Manager adds new feedback

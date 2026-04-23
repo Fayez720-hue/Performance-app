@@ -77,7 +77,7 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
     resolver: zodResolver(taskFormSchema),
     defaultValues: {
       name: task?.name || userName || "",
-      date: task?.date || format(new Date(), "yyyy-MM-dd"),
+      date: task?.date || format(new Date(), "yyyy-MM-dd HH:mm:ss"),
       task: task?.task || "",
       references: task?.references || "",
       comments: task?.comments || "",
