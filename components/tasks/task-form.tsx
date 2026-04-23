@@ -511,11 +511,16 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
                   ) : null}
                 </FormLabel>
                 <FormControl>
-                  <Textarea
-                    placeholder="Add revision feedback..."
-                    className="min-h-[80px] resize-none"
-                    {...field}
-                  />
+                  <div className="space-y-2">
+                    <Textarea
+                      placeholder="Add revision feedback..."
+                      className="min-h-[80px] resize-none"
+                      {...field}
+                    />
+                    <MediaUpload
+                      onUpload={(attachment) => field.onChange(`${field.value}${field.value ? '\n' : ''}${attachment}`)}
+                    />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
