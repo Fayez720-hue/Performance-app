@@ -194,6 +194,13 @@ export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) 
               </div>
             )}
 
+            {task.taskTimeTaken && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock className="h-3.5 w-3.5" />
+                <span>{task.taskTimeTaken}</span>
+              </div>
+            )}
+
             {task.edits && task.noOfEdits > 0 && (
               <div className="flex items-center gap-2 text-sm text-amber-400">
                 <MessageSquare className="h-3.5 w-3.5" />
