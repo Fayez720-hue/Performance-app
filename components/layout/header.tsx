@@ -33,13 +33,13 @@ export function Header() {
               Dashboard
             </Link>
             <Link
-              href={canManage ? "/reports" : "/analytics"}
+              href="/reports"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-teal-400"
             >
               {canManage ? "Reports" : "Analytics"}
             </Link>
             <Link
-              href={canManage ? "/users" : "/activity"}
+              href={canManage ? "/admin/users" : "/activity"}
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-teal-400"
             >
               {canManage ? "Users" : "Activity"}

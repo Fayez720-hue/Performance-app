@@ -358,7 +358,7 @@ export default function DashboardPageClient() {
         </button>
 
         <button
-          onClick={() => router.push(canManage ? "/reports" : "/analytics")}
+          onClick={() => router.push("/reports")}
           className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300"
         >
           <TrendingUp className="h-5 w-5" />
@@ -368,7 +368,7 @@ export default function DashboardPageClient() {
         </button>
 
         <button
-          onClick={() => router.push(canManage ? "/users" : "/activity")}
+          onClick={() => router.push(canManage ? "/admin/users" : "/activity")}
           className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300"
         >
           {canManage ? <Users className="h-5 w-5" /> : <Activity className="h-5 w-5" />}
