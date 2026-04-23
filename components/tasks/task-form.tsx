@@ -88,7 +88,7 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
 
   // Filter progress options for Team Members
   const availableProgressOptions = isTeamMember
-    ? PROGRESS_OPTIONS.filter(opt => opt !== "Completed")
+    ? PROGRESS_OPTIONS.filter(opt => opt !== "Completed" && opt !== "To-do")
     : PROGRESS_OPTIONS
 
   async function onSubmit(values: TaskFormValues) {

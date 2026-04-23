@@ -189,9 +189,11 @@ export function TaskDeck({ user }: TaskDeckProps) {
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {statusTasks.map((task) => {
+                    const isUnderReview = task.progress === "Review" || task.progress === "Completed"
                     const canEdit =
                       permissions.canEditAllTasks ||
-                      (permissions.canEditOwnTasks && (
+                      (permissions.canEditOwnTasks &&
+                        !isUnderReview && (
                         task.name.toLowerCase() === userName.toLowerCase() ||
                         (user.email && task.name.toLowerCase() === user.email.toLowerCase())
                       ))
