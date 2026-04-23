@@ -34,6 +34,7 @@ import { taskFormSchema, type TaskFormValues } from "@/lib/validations/task"
 import { PROGRESS_OPTIONS, type Task } from "@/types/task"
 import { getApiUrl } from "@/lib/api"
 import { MediaUpload } from "./media-upload"
+import { MediaRenderer } from "./media-renderer"
 
 interface TaskFormProps {
   task?: Task
@@ -269,6 +270,9 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
                       onUpload={(attachment) => field.onChange(`${field.value}${field.value ? '\n' : ''}${attachment}`)}
                     />
                   )}
+                  <div className="mt-2">
+                    <MediaRenderer text={field.value} />
+                  </div>
                 </div>
               </FormControl>
               <FormMessage />
@@ -488,6 +492,9 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
                       onUpload={(attachment) => field.onChange(`${field.value}${field.value ? '\n' : ''}${attachment}`)}
                     />
                   )}
+                  <div className="mt-2">
+                    <MediaRenderer text={field.value} />
+                  </div>
                 </div>
               </FormControl>
               <FormMessage />
@@ -520,6 +527,9 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
                     <MediaUpload
                       onUpload={(attachment) => field.onChange(`${field.value}${field.value ? '\n' : ''}${attachment}`)}
                     />
+                  </div>
+                  <div className="mt-2">
+                    <MediaRenderer text={field.value} />
                   </div>
                 </FormControl>
                 <FormMessage />
