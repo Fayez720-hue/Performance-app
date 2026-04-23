@@ -206,7 +206,7 @@ export async function addUser(data: { email: string; name: string; role: UserRol
   })
 }
 
-export async function updateUser(email: string, data: Partial<User>): Promise<void> {
+export async function updateUser(email: string, data: Partial<User>, oldEmail?: string): Promise<void> {
   const res = await sheetsRequest("/values/Employees!A1:Z100")
   const rows = res.values || []
   const headers = (rows[0] || []).map((h: any) => String(h).toLowerCase().trim())
@@ -214,15 +214,28 @@ export async function updateUser(email: string, data: Partial<User>): Promise<vo
 
   if (emailIndex === -1) throw new Error("Email column not found in Employees sheet")
 
-  const rowIndex = rows.findIndex((row: any[]) =>
-    String(row[emailIndex] || "").trim().toLowerCase() === email.toLowerCase()
-  )
+  const searchEmail = (oldEmail || email).toLowerCase()
+  let rowIndex = -1
 
-  if (rowIndex === -1) throw new Error("User not found")
+  if (searchEmail.startsWith("no-email-")) {
+    const placeholderIndex = parseInt(searchEmail.replace("no-email-", ""))
+    rowIndex = placeholderIndex + 1 // +1 because data starts at row 2 (index 1)
+  } else {
+    rowIndex = rows.findIndex((row: any[]) =>
+      String(row[emailIndex] || "").trim().toLowerCase() === searchEmail
+    )
+  }
+
+  if (rowIndex === -1 || !rows[rowIndex]) throw new Error("User not found")
 
   const currentRow = rows[rowIndex]
   const nameIndex = headers.findIndex((h: string) => h.includes("name"))
   const roleIndex = headers.findIndex((h: string) => h.includes("role") || h.includes("title"))
+
+  // Update email if it changed
+  if (email !== searchEmail && !email.startsWith("no-email-") && emailIndex !== -1) {
+    currentRow[emailIndex] = email.toLowerCase()
+  }
 
   if (data.name !== undefined && nameIndex !== -1) currentRow[nameIndex] = data.name
   if (data.role !== undefined && roleIndex !== -1) currentRow[roleIndex] = data.role
@@ -242,9 +255,17 @@ export async function deleteUserByEmail(email: string): Promise<void> {
 
   if (emailIndex === -1) throw new Error("Email column not found")
 
-  const rowIndex = rows.findIndex((row: any[]) =>
-    String(row[emailIndex] || "").trim().toLowerCase() === email.toLowerCase()
-  )
+  let rowIndex = -1
+  const searchEmail = email.toLowerCase()
+
+  if (searchEmail.startsWith("no-email-")) {
+    const placeholderIndex = parseInt(searchEmail.replace("no-email-", ""))
+    rowIndex = placeholderIndex + 1
+  } else {
+    rowIndex = rows.findIndex((row: any[]) =>
+      String(row[emailIndex] || "").trim().toLowerCase() === searchEmail
+    )
+  }
 
   if (rowIndex === -1) return // Already gone
 

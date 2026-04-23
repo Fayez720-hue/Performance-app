@@ -113,10 +113,14 @@ export function UserManagement() {
 
     try {
       const method = editingUser ? "PUT" : "POST"
+      const body = editingUser
+        ? { ...values, oldEmail: editingUser.email }
+        : values
+
       const response = await fetch(getApiUrl("/api/users"), {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify(body),
       })
 
       if (!response.ok) {
@@ -267,7 +271,6 @@ export function UserManagement() {
                           <Input
                             placeholder="user@example.com"
                             {...field}
-                            disabled={!!editingUser}
                           />
                         </FormControl>
                         <FormMessage />

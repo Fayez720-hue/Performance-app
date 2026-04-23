@@ -42,8 +42,8 @@ export async function PUT(request: Request) {
     const data = await request.json()
     if (!data.email) return NextResponse.json({ error: "Email is required" }, { status: 400 })
 
-    const { email, ...updateData } = data
-    await updateUser(email, updateData)
+    const { email, oldEmail, ...updateData } = data
+    await updateUser(email, updateData, oldEmail)
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error("Update User API Error:", error)

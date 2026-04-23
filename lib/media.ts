@@ -43,6 +43,12 @@ export async function pickMedia(): Promise<MediaAttachment | null> {
 
 async function takePhoto(): Promise<MediaAttachment | null> {
   try {
+    const permissions = await Camera.checkPermissions();
+    if (permissions.camera !== 'granted') {
+      const request = await Camera.requestPermissions();
+      if (request.camera !== 'granted') return null;
+    }
+
     const image = await Camera.getPhoto({
       quality: 90,
       allowEditing: false,
