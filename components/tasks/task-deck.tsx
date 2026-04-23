@@ -57,18 +57,9 @@ export function TaskDeck({ user }: TaskDeckProps) {
     if (!Array.isArray(tasks)) return []
 
     return tasks.filter((task) => {
-      // Role-based visibility
-      const canViewAll = permissions.canViewAllTasks
-
-      const searchName = userName.toLowerCase().trim()
-      const taskAssignee = (task.name || "").toLowerCase().trim()
-
-      // Matches if user is Admin/Manager OR if their name is exactly the same OR if one contains the other
-      const isOwner = taskAssignee === searchName ||
-                      taskAssignee.includes(searchName) ||
-                      searchName.includes(taskAssignee)
-
-      if (!canViewAll && !isOwner) return false
+      // Role-based visibility:
+      // We TRUST the API to have already filtered tasks for Team Members.
+      // We only apply search and filter selections here.
 
       // Search filter
       const matchesSearch =
@@ -83,7 +74,7 @@ export function TaskDeck({ user }: TaskDeckProps) {
 
       return matchesSearch && matchesProgress && matchesAssignee
     })
-  }, [tasks, search, progressFilter, assigneeFilter, userName, permissions])
+  }, [tasks, search, progressFilter, assigneeFilter])
 
   // Group tasks by progress
   const groupedTasks = useMemo(() => {
