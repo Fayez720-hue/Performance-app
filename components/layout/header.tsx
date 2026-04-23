@@ -11,49 +11,45 @@ import type { UserRole } from "@/types/user"
 export function Header() {
   const { data: session } = useSession()
   const role = (session?.user as any)?.role as UserRole
-  const permissions = role ? ROLE_PERMISSIONS[role] : null
-  const isAdmin = role === "Admin" || (permissions && permissions.canManageUsers)
+  const permissions = role ? ROLE_PERMISSIONS[role] : ROLE_PERMISSIONS["Team Member"]
+  const canManage = role === "Admin" || role === "Manager"
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-              <ClipboardList className="h-5 w-5 text-primary" suppressHydrationWarning />
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-500/10">
+              <ClipboardList className="h-5 w-5 text-teal-400" suppressHydrationWarning />
             </div>
-            <span className="text-lg font-semibold text-foreground">Task Manager</span>
+            <span className="text-lg font-semibold text-foreground tracking-tight">Can shift</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-4">
             <Link
               href="/dashboard"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-teal-400"
             >
               Dashboard
             </Link>
             <Link
+              href={canManage ? "/reports" : "/analytics"}
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-teal-400"
+            >
+              {canManage ? "Reports" : "Analytics"}
+            </Link>
+            <Link
+              href={canManage ? "/users" : "/activity"}
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-teal-400"
+            >
+              {canManage ? "Users" : "Activity"}
+            </Link>
+            <Link
               href="/tasks"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-teal-400"
             >
               Tasks
             </Link>
-            <Link
-              href="/reports"
-              className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            >
-              <BarChart3 className="h-4 w-4" suppressHydrationWarning />
-              Reports
-            </Link>
-            {isAdmin && (
-              <Link
-                href="/admin/users"
-                className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-              >
-                <Users className="h-4 w-4" suppressHydrationWarning />
-                Users
-              </Link>
-            )}
           </nav>
         </div>
 
