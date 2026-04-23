@@ -368,12 +368,12 @@ export default function DashboardPageClient() {
         </button>
 
         <button
-          onClick={() => router.push(canManage ? "/admin/users" : "/activity")}
+          onClick={() => router.push(canManage ? "/admin/users" : "/clock-in")}
           className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300"
         >
-          {canManage ? <Users className="h-5 w-5" /> : <Activity className="h-5 w-5" />}
+          {canManage ? <Users className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
           <span className="text-[9px] font-bold uppercase tracking-widest">
-            {canManage ? "Users" : "Activity"}
+            {canManage ? "Users" : "Attendance"}
           </span>
         </button>
 

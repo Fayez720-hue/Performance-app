@@ -39,10 +39,10 @@ export function Header() {
               {canManage ? "Reports" : "Analytics"}
             </Link>
             <Link
-              href={canManage ? "/admin/users" : "/activity"}
+              href={canManage ? "/admin/users" : "/clock-in"}
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-teal-400"
             >
-              {canManage ? "Users" : "Activity"}
+              {canManage ? "Users" : "Attendance"}
             </Link>
             <Link
               href="/tasks"
