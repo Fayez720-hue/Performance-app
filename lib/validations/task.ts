@@ -21,7 +21,7 @@ export const taskFormSchema = z.object({
 export type TaskFormValues = z.infer<typeof taskFormSchema>
 
 export const userSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z.string().min(1, "Email is required"),
   name: z.string().min(1, "Name is required"),
   role: z.enum(["Admin", "Manager", "Team Member", "Viewer"]),
 })
