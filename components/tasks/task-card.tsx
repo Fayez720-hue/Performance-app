@@ -197,7 +197,9 @@ export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) 
             {task.taskEstimatedTime && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="h-3.5 w-3.5" />
-                <span>Est: {task.taskEstimatedTime}</span>
+                <span>Est: {task.taskEstimatedTime.includes(':')
+                  ? `${parseInt(task.taskEstimatedTime.split(':')[0])}h ${parseInt(task.taskEstimatedTime.split(':')[1])}m`
+                  : task.taskEstimatedTime}</span>
               </div>
             )}
 
@@ -276,7 +278,11 @@ export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) 
               {task.taskEstimatedTime && (
                 <div className="rounded-lg border border-border bg-muted/30 p-3">
                   <p className="text-xs text-muted-foreground">Estimated Time</p>
-                  <p className="font-medium">{task.taskEstimatedTime}</p>
+                  <p className="font-medium">
+                    {task.taskEstimatedTime.includes(':')
+                      ? `${parseInt(task.taskEstimatedTime.split(':')[0])}h ${parseInt(task.taskEstimatedTime.split(':')[1])}m`
+                      : task.taskEstimatedTime}
+                  </p>
                 </div>
               )}
               {task.taskTimeTaken && (

@@ -86,13 +86,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     let performanceHistory = existingTask.performanceHistory || ""
 
     if (isSubmissionUpdate) {
-      updateData.submissionDate = now.toLocaleString('en-GB', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }).replace(',', '')
+      // Use toISOString to avoid timezone shifts during storage
+      updateData.submissionDate = now.toISOString()
 
       // Update Adherence only on first submission or if it was "0%"
       let adherence = existingTask.deadlineAdherence || "Pending"
@@ -141,6 +136,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       const newEntry = `[${timestamp}] Revision Requested #${updateData.noOfEdits}`
       performanceHistory = performanceHistory ? `${performanceHistory} | ${newEntry}` : newEntry
       updateData.performanceHistory = performanceHistory
+
+      // Automatically switch from Review back to To-do if manager adds an edit
+      if (existingTask.progress === "Review") {
+        updateData.progress = "To-do"
+      }
     }
 
     // 3. Increment Edits count if Manager adds new feedback
