@@ -83,6 +83,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
                                          (existingTask.progress !== "Review" && existingTask.progress !== "Completed")
     const isSubmissionUpdate = (data.submissionLink && data.submissionLink !== existingTask.submissionLink) || isStatusTransitionToFinished
 
+    let performanceHistory = existingTask.performanceHistory || ""
+
     if (isSubmissionUpdate) {
       updateData.submissionDate = now.toLocaleString('en-GB', {
         day: '2-digit',
@@ -93,8 +95,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       }).replace(',', '')
 
       // Update Adherence only on first submission or if it was "0%"
+      let adherence = existingTask.deadlineAdherence || "Pending"
       if (!existingTask.deadlineAdherence || existingTask.deadlineAdherence === "Pending" || existingTask.deadlineAdherence === "0%") {
-        let adherence = "Pending"
         if (data.deadline || existingTask.deadline) {
           try {
             const deadDate = new Date(data.deadline || existingTask.deadline)
@@ -123,6 +125,22 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         }
         updateData.deadlineAdherence = adherence
       }
+
+      // Add to History
+      const timestamp = now.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+      const newEntry = `[${timestamp}] Submitted (${data.progress || existingTask.progress}) - Adh: ${adherence}`
+      performanceHistory = performanceHistory ? `${performanceHistory} | ${newEntry}` : newEntry
+      updateData.performanceHistory = performanceHistory
+    }
+
+    // 4. Log "Edits Requested" in history
+    if ((data.userRole === "Admin" || data.userRole === "Manager") && data.edits && data.edits !== existingTask.edits) {
+      updateData.noOfEdits = (Number(existingTask.noOfEdits) || 0) + 1
+
+      const timestamp = now.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+      const newEntry = `[${timestamp}] Revision Requested #${updateData.noOfEdits}`
+      performanceHistory = performanceHistory ? `${performanceHistory} | ${newEntry}` : newEntry
+      updateData.performanceHistory = performanceHistory
     }
 
     // 3. Increment Edits count if Manager adds new feedback
