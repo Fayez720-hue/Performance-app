@@ -15,10 +15,11 @@ export default function ClockPageClient() {
   const { data: session } = useSession()
   const { data: history, mutate, isLoading } = useSWR("/api/attendance", fetcher)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [currentTime, setCurrentTime] = useState(new Date())
+  const [currentTime, setCurrentTime] = useState<Date | null>(null)
 
   // Update clock every second
   useEffect(() => {
+    setCurrentTime(new Date()) // Set initial time on mount
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
@@ -48,6 +49,10 @@ export default function ClockPageClient() {
     }
   }
 
+  // Prevent hydration error by not rendering the clock until mounted
+  const timeString = currentTime ? format(currentTime, "HH:mm:ss") : "--:--:--"
+  const dateString = currentTime ? format(currentTime, "EEEE, MMMM do") : "Loading..."
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -57,9 +62,9 @@ export default function ClockPageClient() {
             <Clock className="h-10 w-10 text-teal-400" />
           </div>
           <h1 className="text-4xl font-bold tracking-tight">Attendance</h1>
-          <p className="text-muted-foreground mt-2">{format(currentTime, "EEEE, MMMM do")}</p>
+          <p className="text-muted-foreground mt-2">{dateString}</p>
           <p className="text-5xl font-mono mt-4 font-bold text-foreground">
-            {format(currentTime, "HH:mm:ss")}
+            {timeString}
           </p>
         </div>
 
