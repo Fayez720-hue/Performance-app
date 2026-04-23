@@ -489,3 +489,71 @@ export async function getDashboardStats(startDate?: string, endDate?: string) {
     return { employees: [], scoreDistribution: [], shiftTrend: [] } as any
   }
 }
+
+// ============ ATTENDANCE ============
+
+export async function getAttendance(email: string): Promise<any[]> {
+  try {
+    const data = await sheetsRequest("/values/Attendance!A2:F")
+    const rows = data.values || []
+    return rows
+      .filter((row: any[]) => String(row[0]).toLowerCase() === email.toLowerCase())
+      .map((row: any[]) => ({
+        email: row[0],
+        name: row[1],
+        date: row[2],
+        clockIn: row[3],
+        clockOut: row[4],
+        totalHours: row[5]
+      }))
+  } catch (error) {
+    console.error("getAttendance error:", error)
+    return []
+  }
+}
+
+export async function clockIn(email: string, name: string): Promise<void> {
+  const date = format(new Date(), "yyyy-MM-dd")
+  const time = format(new Date(), "HH:mm:ss")
+
+  const values = [[email, name, date, time, "", ""]]
+
+  await sheetsRequest("/values/Attendance!A:F:append?valueInputOption=USER_ENTERED", {
+    method: "POST",
+    body: JSON.stringify({ values })
+  })
+}
+
+export async function clockOut(email: string): Promise<void> {
+  const date = format(new Date(), "yyyy-MM-dd")
+  const time = format(new Date(), "HH:mm:ss")
+
+  const res = await sheetsRequest("/values/Attendance!A1:E2000")
+  const rows = res.values || []
+
+  // Find today's clock-in with no clock-out
+  const rowIndex = rows.findLastIndex((row: any[]) =>
+    String(row[0]).toLowerCase() === email.toLowerCase() &&
+    row[2] === date &&
+    (!row[4] || row[4] === "")
+  )
+
+  if (rowIndex === -1) throw new Error("No active clock-in found for today")
+
+  const realRowNumber = rowIndex + 1
+  const row = rows[rowIndex]
+  row[4] = time // Set clock-out time
+
+  // Calculate hours if possible
+  if (row[3]) {
+    const start = new Date(`${date}T${row[3]}`)
+    const end = new Date(`${date}T${time}`)
+    const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+    row[5] = hours.toFixed(2)
+  }
+
+  await sheetsRequest(`/values/Attendance!A${realRowNumber}:F${realRowNumber}?valueInputOption=USER_ENTERED`, {
+    method: "PUT",
+    body: JSON.stringify({ values: [row] })
+  })
+}
