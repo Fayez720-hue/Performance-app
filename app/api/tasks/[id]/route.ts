@@ -37,10 +37,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       noOfEdits: existingTask.noOfEdits || 0
     }
 
-    // 1. Set Submission Date automatically if link is added/changed
-    const isNewSubmission = data.submissionLink && (!existingTask.submissionLink || data.submissionLink !== existingTask.submissionLink)
+    // 1. Calculate Submission Date and Adherence for every submission update
+    const isSubmissionUpdate = data.submissionLink && data.submissionLink !== existingTask.submissionLink
+    let performanceHistory = existingTask.performanceHistory || ""
 
-    if (isNewSubmission) {
+    if (isSubmissionUpdate) {
       updateData.submissionDate = now.toLocaleString('en-GB', {
         day: '2-digit',
         month: '2-digit',
@@ -49,7 +50,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         minute: '2-digit'
       }).replace(',', '')
 
-      // 2. Calculate Deadline Adherence as Latency Percentage
+      // Calculate Deadline Adherence as Latency Percentage
+      let adherence = "Pending"
       if (data.deadline) {
         try {
           const deadDate = new Date(data.deadline)
@@ -58,57 +60,60 @@ export async function PUT(request: Request, { params }: { params: { id: string }
             const deadlineTime = deadDate.getTime()
 
             if (submissionTime <= deadlineTime) {
-              updateData.deadlineAdherence = "100%"
+              adherence = "100%"
             } else {
-              // Calculate latency percentage relative to estimated time
               const latencyMs = submissionTime - deadlineTime
-
-              // Get estimated time in ms
               const estTimeStr = data.taskEstimatedTime || existingTask.taskEstimatedTime || "01:00"
               const [estH, estM] = estTimeStr.split(":").map(Number)
               const estMs = ((estH || 0) * 3600000) + ((estM || 0) * 60000)
 
               if (estMs > 0) {
                 const latencyPercentage = (latencyMs / estMs) * 100
-                // Adherence = 100% minus the latency percentage
-                // e.g., if latency is 10% of estimated time, adherence is 90%
-                const adherence = Math.max(0, 100 - latencyPercentage)
-                updateData.deadlineAdherence = `${adherence.toFixed(1)}%`
+                const calculatedAdherence = Math.max(0, 100 - latencyPercentage)
+                adherence = `${calculatedAdherence.toFixed(1)}%`
               } else {
-                updateData.deadlineAdherence = "0%"
+                adherence = "0%"
               }
             }
-          } else {
-            console.error("Invalid deadline date:", data.deadline)
-            updateData.deadlineAdherence = "Pending"
           }
         } catch (e) {
           console.error("Deadline adherence calculation error:", e)
         }
       }
+      updateData.deadlineAdherence = adherence
 
-      // 5. Calculate Task Time Taken
-      if (data.taskStartingDate) {
+      // Calculate Task Time Taken
+      let timeTaken = "N/A"
+      if (data.taskStartingDate || existingTask.taskStartingDate) {
         try {
-          const start = new Date(data.taskStartingDate)
+          const startDateStr = data.taskStartingDate || existingTask.taskStartingDate
+          const start = new Date(startDateStr)
           if (!isNaN(start.getTime())) {
             const diffMs = now.getTime() - start.getTime()
             const totalMins = Math.floor(diffMs / (1000 * 60))
             const hrs = Math.floor(totalMins / 60)
             const mins = totalMins % 60
-            updateData.taskTimeTaken = `${hrs}h ${mins}m`
-          } else {
-            console.error("Invalid taskStartingDate:", data.taskStartingDate)
+            timeTaken = `${hrs}h ${mins}m`
           }
         } catch (e) {
           console.error("Error calculating time taken:", e)
         }
       }
+      updateData.taskTimeTaken = timeTaken
+
+      // Update Performance History
+      const timestamp = now.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+      const newHistoryEntry = `[${timestamp}] Adherence: ${adherence}, Time: ${timeTaken}`
+      performanceHistory = performanceHistory
+        ? `${performanceHistory} | ${newHistoryEntry}`
+        : newHistoryEntry
+      updateData.performanceHistory = performanceHistory
     } else {
-      // Preserve existing values if not a new submission
+      // Preserve existing values if the link hasn't changed
       updateData.submissionDate = existingTask.submissionDate
       updateData.deadlineAdherence = existingTask.deadlineAdherence
       updateData.taskTimeTaken = existingTask.taskTimeTaken
+      updateData.performanceHistory = existingTask.performanceHistory
     }
 
     // 3. Increment Edits count if Manager adds new feedback

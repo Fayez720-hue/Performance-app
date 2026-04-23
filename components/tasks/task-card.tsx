@@ -182,7 +182,7 @@ export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) 
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-3.5 w-3.5" />
                 <span className={cn(isOverdue && "text-red-400")}>
-                  {safeFormat(task.deadline, "MMM d, yyyy")}
+                  {safeFormat(task.deadline, "MMM d, h:mm a")}
                 </span>
               </div>
             )}
@@ -229,7 +229,7 @@ export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) 
               {task.date && (
                 <div className="rounded-lg border border-border bg-muted/30 p-3">
                   <p className="text-xs text-muted-foreground">Created</p>
-                  <p className="font-medium">{safeFormat(task.date, "PPP")}</p>
+                  <p className="font-medium">{safeFormat(task.date, "PPP p")}</p>
                 </div>
               )}
               {task.deadline && (
@@ -239,20 +239,20 @@ export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) 
                 )}>
                   <p className="text-xs text-muted-foreground">Deadline</p>
                   <p className={cn("font-medium", isOverdue && "text-red-400")}>
-                    {safeFormat(task.deadline, "PPP")}
+                    {safeFormat(task.deadline, "PPP p")}
                   </p>
                 </div>
               )}
               {task.taskStartingDate && (
                 <div className="rounded-lg border border-border bg-muted/30 p-3">
                   <p className="text-xs text-muted-foreground">Started</p>
-                  <p className="font-medium">{safeFormat(task.taskStartingDate, "PPP")}</p>
+                  <p className="font-medium">{safeFormat(task.taskStartingDate, "PPP p")}</p>
                 </div>
               )}
               {task.submissionDate && (
                 <div className="rounded-lg border border-border bg-muted/30 p-3">
                   <p className="text-xs text-muted-foreground">Submitted</p>
-                  <p className="font-medium">{safeFormat(task.submissionDate, "PPP")}</p>
+                  <p className="font-medium">{safeFormat(task.submissionDate, "PPP p")}</p>
                 </div>
               )}
             </div>
@@ -312,7 +312,20 @@ export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) 
                   <MessageSquare className="h-4 w-4" />
                   Revision Feedback ({task.noOfEdits} revision{task.noOfEdits !== 1 ? "s" : ""})
                 </h4>
-                <p className="whitespace-pre-wrap text-sm">{task.edits}</p>
+                <p className="whitespace-pre-wrap text-sm mb-4">{task.edits}</p>
+
+                {task.performanceHistory && (
+                  <div className="mt-4 pt-4 border-t border-amber-500/20">
+                    <h5 className="text-xs font-bold uppercase tracking-wider text-amber-500/70 mb-2">Submission History</h5>
+                    <div className="space-y-1">
+                      {task.performanceHistory.split('|').map((entry, idx) => (
+                        <p key={idx} className="text-[11px] font-mono text-gray-400">
+                          {entry.trim()}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

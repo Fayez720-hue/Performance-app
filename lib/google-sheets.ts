@@ -286,6 +286,7 @@ export async function getTasks(): Promise<Task[]> {
           taskTimeStamp: (row[16] || "").trim(),
           edits: (row[17] || "").trim(),
           noOfEdits: parseInt(row[18]) || 0,
+          performanceHistory: (row[19] || "").trim(),
         }
       })
       .filter((task: any): task is Task => task !== null)
@@ -388,7 +389,7 @@ export async function updateTask(id: number, data: any): Promise<void> {
       data.taskTimeStamp || "",
       data.edits || "",
       data.noOfEdits || 0,
-      `Updated: ${new Date().toLocaleString()}`
+      data.performanceHistory || ""
     ]
   ]
 

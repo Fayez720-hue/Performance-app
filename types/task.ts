@@ -20,6 +20,7 @@ export interface Task {
   taskTimeStamp: string
   edits: string
   noOfEdits: number
+  performanceHistory?: string
 }
 
 export interface TaskFormData {
