@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { getTaskById, updateTask, deleteTask } from "@/lib/google-sheets"
-import { notifyProgressUpdate, notifyRevisionsRequested } from "@/lib/notifications"
+import { notifyProgressUpdate, notifyRevisionsRequested, notifyTaskAssigned } from "@/lib/notifications"
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
@@ -164,6 +164,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     // Fetch updated task for notifications
     const updatedTask = await getTaskById(taskId)
     if (updatedTask) {
+      // 0. Notify if assignee changed
+      if (data.name && data.name !== existingTask.name) {
+        await notifyTaskAssigned(updatedTask, session.user.name || undefined)
+      }
+
       // 1. Notify about progress change
       if (data.progress && data.progress !== existingTask.progress) {
         await notifyProgressUpdate(updatedTask, existingTask.progress)

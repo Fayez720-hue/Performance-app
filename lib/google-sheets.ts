@@ -650,10 +650,11 @@ export async function getNotifications(email: string): Promise<Notification[]> {
     const rows = data.values || []
     return rows
       .filter((row: any[]) => row && row[0] && String(row[0]).toLowerCase() === email.toLowerCase())
-      .map((row: any[]) => ({
+      .map((row: any[], index: number) => ({
+        id: `notification-${index}-${row[5]}`, // Generate a semi-stable ID
         userEmail: row[0],
         type: row[1] as any,
-        taskId: row[2],
+        taskId: parseInt(row[2]) || 0,
         message: row[3],
         read: row[4] === "TRUE",
         timestamp: row[5],

@@ -41,25 +41,40 @@ export function useNotifications() {
     if (!Capacitor.isNativePlatform()) return;
 
     const lastCheck = localStorage.getItem('last_notification_time');
-    const newNotifications = lastCheck
-      ? notifications.filter((n: any) => new Date(n.timestamp).getTime() > parseInt(lastCheck))
-      : [notifications[0]];
+    const now = Date.now();
+
+    // If it's the first time checking, just set the benchmark and return
+    if (!lastCheck) {
+      localStorage.setItem('last_notification_time', now.toString());
+      return;
+    }
+
+    const lastCheckTime = parseInt(lastCheck);
+    const newNotifications = notifications.filter((n: any) => {
+      const notificationTime = new Date(n.timestamp).getTime();
+      return notificationTime > lastCheckTime && !n.read;
+    });
 
     if (newNotifications.length > 0) {
-      newNotifications.forEach(async (n: any, i: number) => {
-        await LocalNotifications.schedule({
-          notifications: [
-            {
-              title: 'Task Update',
-              body: n.message,
-              id: Math.floor(Math.random() * 10000),
-              schedule: { at: new Date(Date.now() + 1000) },
-              sound: 'default',
-            },
-          ],
-        });
+      newNotifications.forEach(async (n: any) => {
+        try {
+          await LocalNotifications.schedule({
+            notifications: [
+              {
+                title: 'Can Shift - Task Update',
+                body: n.message,
+                id: Math.floor(Math.random() * 1000000),
+                schedule: { at: new Date(Date.now() + 500) },
+                sound: 'default',
+                extra: { taskId: n.taskId }
+              },
+            ],
+          });
+        } catch (err) {
+          console.error('Failed to schedule local notification', err);
+        }
       });
-      localStorage.setItem('last_notification_time', Date.now().toString());
+      localStorage.setItem('last_notification_time', now.toString());
     }
   }, [notifications]);
 

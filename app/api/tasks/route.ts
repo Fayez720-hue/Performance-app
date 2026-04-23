@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
-import { getTasks, createTask, getUserByEmail } from "@/lib/google-sheets"
+import { getTasks, createTask, getUserByEmail, getTaskById } from "@/lib/google-sheets"
 import { ROLE_PERMISSIONS } from "@/types/user"
 import type { UserRole } from "@/types/user"
+import { notifyTaskAssigned } from "@/lib/notifications"
 
 export async function GET() {
   try {
@@ -97,6 +98,13 @@ export async function POST(request: Request) {
 
     const data = await request.json()
     const id = await createTask(data)
+
+    // Notify assignee
+    const newTask = await getTaskById(id)
+    if (newTask) {
+      await notifyTaskAssigned(newTask, session.user.name || undefined)
+    }
+
     return NextResponse.json({ id })
   } catch (error) {
     console.error("Create Task Error:", error)
