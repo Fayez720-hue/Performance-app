@@ -32,13 +32,25 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
     // --- AUTO-CALCULATION ENGINE ---
     const now = new Date()
+
+    // Initialize updateData by merging existing and new,
+    // but be careful not to overwrite with empty strings from the form for key calculated fields
     let updateData = {
+      ...existingTask,
       ...data,
-      noOfEdits: existingTask.noOfEdits || 0
+      noOfEdits: Number(existingTask.noOfEdits) || 0,
+      taskTimeTaken: data.taskTimeTaken || existingTask.taskTimeTaken || "",
+      deadlineAdherence: data.deadlineAdherence || existingTask.deadlineAdherence || "",
+      overallScore: data.overallScore || existingTask.overallScore || "",
+      submissionDate: data.submissionDate || existingTask.submissionDate || "",
     }
 
     // 1. Calculate Submission Date and Adherence for every submission update
-    const isSubmissionUpdate = data.submissionLink && data.submissionLink !== existingTask.submissionLink
+    // Also trigger if progress changes to Review or Completed for the first time (even without link change)
+    const isStatusTransitionToFinished = (data.progress === "Review" || data.progress === "Completed") &&
+                                         (existingTask.progress !== "Review" && existingTask.progress !== "Completed")
+    const isSubmissionUpdate = (data.submissionLink && data.submissionLink !== existingTask.submissionLink) || isStatusTransitionToFinished
+
     let performanceHistory = existingTask.performanceHistory || ""
 
     if (isSubmissionUpdate) {
