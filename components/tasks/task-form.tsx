@@ -367,26 +367,6 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Submission Date - READ ONLY */}
-          <FormField
-            control={form.control}
-            name="submissionDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Submission Date</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    disabled
-                    placeholder="Auto-set on submission"
-                    className="bg-muted cursor-not-allowed"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
           {/* Submission Link - Editable for Team Members too */}
           <FormField
             control={form.control}
@@ -401,9 +381,7 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
               </FormItem>
             )}
           />
-        </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
           {/* Submission Date - READ ONLY */}
           <FormField
             control={form.control}
@@ -423,7 +401,9 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
               </FormItem>
             )}
           />
+        </div>
 
+        <div className="grid gap-6 md:grid-cols-2">
           {/* Grading - Editable only if submission link exists and user is Admin/Manager */}
           <FormField
             control={form.control}

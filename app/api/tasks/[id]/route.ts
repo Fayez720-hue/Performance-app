@@ -35,12 +35,19 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
     // 1. Set Submission Date automatically if link is added/changed
     if (data.submissionLink && (!existingTask.submissionLink || data.submissionLink !== existingTask.submissionLink)) {
-      updateData.submissionDate = new Date().toISOString()
+      updateData.submissionDate = new Date().toLocaleString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).replace(',', '')
     }
 
     // 2. Calculate Deadline Adherence as Percentage
     if (updateData.submissionDate && data.deadline) {
-      const subDate = new Date(updateData.submissionDate)
+      // Use the actual Date objects for comparison
+      const subDate = new Date() // Since we just submitted
       const deadDate = new Date(data.deadline)
       updateData.deadlineAdherence = subDate <= deadDate ? "100%" : "0%"
     }
