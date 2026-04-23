@@ -187,8 +187,8 @@ export default function ReportsPageClient() {
               <CardDescription>Best overall scores this period</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {stats?.employees?.slice(0, 5).sort((a: any, b: any) => b.overallScore - a.overallScore).map((emp: any, index: number) => (
+              <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                {stats?.employees?.sort((a: any, b: any) => b.overallScore - a.overallScore).map((emp: any, index: number) => (
                   <div key={emp.name} className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-muted/20">
                     <div className="flex items-center gap-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs">

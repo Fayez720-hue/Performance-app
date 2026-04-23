@@ -312,7 +312,10 @@ export default function DashboardPageClient() {
           <div className="bg-[#13151f] border border-gray-800 rounded-2xl overflow-hidden">
             <div className="p-5 flex justify-between items-center border-b border-gray-800/50">
               <h3 className="text-[11px] uppercase text-gray-400 font-bold tracking-widest">Employee Performance</h3>
-              <button className="text-[10px] uppercase text-teal-400 font-bold flex items-center gap-1 hover:gap-2 transition-all">
+              <button
+                onClick={() => router.push("/reports")}
+                className="text-[10px] uppercase text-teal-400 font-bold flex items-center gap-1 hover:gap-2 transition-all"
+              >
                 View All <ChevronRight className="h-3 w-3" />
               </button>
             </div>
