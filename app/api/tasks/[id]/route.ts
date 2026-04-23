@@ -57,11 +57,20 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
       // 5. Calculate Task Time Taken
       if (data.taskStartingDate) {
-        const start = new Date(data.taskStartingDate)
-        const diffMs = now.getTime() - start.getTime()
-        const diffHrs = Math.floor(diffMs / (1000 * 60 * 60))
-        const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
-        updateData.taskTimeTaken = `${diffHrs}h ${diffMins}m`
+        try {
+          const start = new Date(data.taskStartingDate)
+          if (!isNaN(start.getTime())) {
+            const diffMs = now.getTime() - start.getTime()
+            const totalMins = Math.floor(diffMs / (1000 * 60))
+            const hrs = Math.floor(totalMins / 60)
+            const mins = totalMins % 60
+            updateData.taskTimeTaken = `${hrs}h ${mins}m`
+          } else {
+            console.error("Invalid taskStartingDate:", data.taskStartingDate)
+          }
+        } catch (e) {
+          console.error("Error calculating time taken:", e)
+        }
       }
     } else {
       // Preserve existing values if not a new submission
@@ -75,8 +84,14 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       updateData.noOfEdits = (Number(existingTask.noOfEdits) || 0) + 1
     }
 
-    // Ensure progress is preserved if not explicitly changed (especially for Completed tasks)
-    if (!data.progress) {
+    // Ensure progress is preserved:
+    // 1. If the task is already "Completed", it stays "Completed"
+    // 2. UNLESS the user explicitly sent a different progress (Manager changing it)
+    if (existingTask.progress === "Completed" && !data.progress) {
+      updateData.progress = "Completed"
+    } else if (data.progress) {
+      updateData.progress = data.progress
+    } else {
       updateData.progress = existingTask.progress
     }
 
