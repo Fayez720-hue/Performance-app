@@ -55,6 +55,8 @@ interface DashboardData {
   totalEmployees: number;
   avgScore: number;
   completionRate: number;
+  totalTasks?: number;
+  completedTasks?: number;
   avgShiftAdherence: number;
   totalEdits: number;
   topPerformer: string;
@@ -289,10 +291,13 @@ export default function DashboardPageClient() {
             </h3>
             <div>
               <p className="text-3xl font-serif italic mb-1">
-                {data?.isPersonalView ? `${data.employees[0]?.completed || 0}/${data.employees[0]?.tasks || 0}` : "24/30"}
+                {data?.isPersonalView
+                  ? `${data.employees[0]?.completed || 0}/${data.employees[0]?.tasks || 0}`
+                  : `${data?.completedTasks || 0}/${data?.totalTasks || 0}`
+                }
               </p>
               <p className="text-[10px] text-gray-500 font-bold tracking-widest uppercase italic">
-                {data?.isPersonalView ? "Current Cycle" : "6 Pending Sync"}
+                {data?.isPersonalView ? "Current Cycle" : "Live Task Sync"}
               </p>
             </div>
           </div>

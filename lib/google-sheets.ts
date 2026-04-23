@@ -474,10 +474,15 @@ export async function getDashboardStats(startDate?: string, endDate?: string) {
       { week: "Week 4", adherence: 94 },
     ]
 
+    const totalTasks = employeeStats.reduce((acc, emp) => acc + (emp.tasks || 0), 0)
+    const completedTasks = employeeStats.reduce((acc, emp) => acc + (emp.completed || 0), 0)
+
     return {
       totalEmployees: parseInt(summary[0]) || employeeStats.length,
       avgScore: parseFloat(summary[1]) || 0,
       completionRate: parseFloat(summary[2]) || 0,
+      totalTasks,
+      completedTasks,
       avgShiftAdherence: parseFloat(summary[3]) || 0,
       totalEdits: parseInt(summary[4]) || 0,
       topPerformer: summary[5] || "N/A",
