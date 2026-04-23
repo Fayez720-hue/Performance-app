@@ -441,6 +441,10 @@ export async function getDashboardStats(startDate?: string, endDate?: string, us
       performance: String(row[8] || "Good").trim() as any,
     }))
 
+    // Get real-time task data from Performance sheet to ensure consistency with Tasks page
+    const tasksData = await sheetsRequest("/values/Performance!A2:T")
+    const taskRows = tasksData.values || []
+
     let totalTasks = 0
     let completedTasks = 0
     let currentEmployee: any = null
@@ -450,14 +454,16 @@ export async function getDashboardStats(startDate?: string, endDate?: string, us
     }
 
     if (currentEmployee) {
-      // For Team Members: Show their personal stats from the Employee row
-      totalTasks = currentEmployee.tasks
-      completedTasks = currentEmployee.completed
+      // For Team Members: Filter Performance sheet by their name to match Tasks page
+      const userTasks = taskRows.filter((row: any[]) =>
+        String(row[1] || "").trim().toLowerCase() === currentEmployee.name.toLowerCase()
+      )
+      totalTasks = userTasks.length
+      completedTasks = userTasks.filter((row: any[]) => row[6] === "Completed").length
     } else {
-      // For Admin/Manager: Show global totals from Summary sheet (Indices H and I)
-      // If Summary doesn't have them, fall back to aggregating all employees
-      totalTasks = parseInt(summary[7]) || employeeStats.reduce((acc, emp) => acc + emp.tasks, 0)
-      completedTasks = parseInt(summary[8]) || employeeStats.reduce((acc, emp) => acc + emp.completed, 0)
+      // For Admin/Manager: Show global totals from Performance sheet
+      totalTasks = taskRows.length
+      completedTasks = taskRows.filter((row: any[]) => row[6] === "Completed").length
     }
 
     // Generate Score Distribution
