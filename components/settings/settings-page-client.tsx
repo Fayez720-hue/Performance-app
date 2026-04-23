@@ -1,7 +1,7 @@
 "use client"
 
 import { useSession } from '@/components/providers/session-provider'
-import { signOut } from 'next-auth/react'
+import { signOut } from '@/components/providers/session-provider'
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"

@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { SessionProvider, useSession as useNextAuthSession } from "next-auth/react"
+import { SessionProvider, useSession as useNextAuthSession, signOut as nextAuthSignOut } from "next-auth/react"
 import { ReactNode } from "react"
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -11,5 +11,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 }
 
-// Re-export useSession to maintain compatibility with existing components
+// Re-export hooks to maintain compatibility with existing components
 export const useSession = useNextAuthSession
+export const signOut = nextAuthSignOut
