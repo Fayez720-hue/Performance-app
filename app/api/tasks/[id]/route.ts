@@ -118,20 +118,20 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     // Fetch updated task for notifications
     const updatedTask = await getTaskById(taskId)
     if (updatedTask) {
-      // 1. Notify Manager if Team Member sets to "Review"
-      if (data.userRole === "Team Member" && data.progress === "Review" && existingTask.progress !== "Review") {
+      // 1. Notify about progress change
+      if (data.progress && data.progress !== existingTask.progress) {
         await notifyProgressUpdate(updatedTask, existingTask.progress)
       }
 
-      // 2. Notify Team Member if Manager adds edits or changes status
+      // 2. Notify specifically about "Review" status from Team Members
+      else if (data.userRole === "Team Member" && data.progress === "Review" && existingTask.progress !== "Review") {
+        await notifyProgressUpdate(updatedTask, existingTask.progress)
+      }
+
+      // 3. Notify Team Member if Manager adds edits
       if ((data.userRole === "Admin" || data.userRole === "Manager") && data.userRole !== undefined) {
-        // If edits were added or changed
         if (data.edits && data.edits !== existingTask.edits) {
           await notifyRevisionsRequested(updatedTask)
-        }
-        // Or if status changed (e.g., sent back to "In Progress")
-        else if (data.progress !== existingTask.progress) {
-          await notifyProgressUpdate(updatedTask, existingTask.progress)
         }
       }
     }

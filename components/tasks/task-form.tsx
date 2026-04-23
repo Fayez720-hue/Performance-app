@@ -71,10 +71,11 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
 
   // Watch submission link for automatic progress update
   const submissionLink = form.watch("submissionLink")
-  const currentProgress = form.watch("progress")
+  const [lastLink, setLastLink] = useState(task?.submissionLink || "")
 
   useEffect(() => {
-    if (submissionLink && currentProgress !== "Completed") {
+    // Only auto-switch to "Review" if the link has actually CHANGED and is a Google link
+    if (submissionLink && submissionLink !== lastLink) {
       const isGoogleDriveLink =
         submissionLink.includes("drive.google.com") ||
         submissionLink.includes("docs.google.com") ||
@@ -84,8 +85,9 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
       if (isGoogleDriveLink) {
         form.setValue("progress", "Review")
       }
+      setLastLink(submissionLink)
     }
-  }, [submissionLink, currentProgress, form])
+  }, [submissionLink, lastLink, form])
 
   // Filter progress options for Team Members
   const availableProgressOptions = isTeamMember
