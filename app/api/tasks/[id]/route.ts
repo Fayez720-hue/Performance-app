@@ -31,30 +31,48 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     if (!existingTask) return NextResponse.json({ error: "Task not found" }, { status: 404 })
 
     // --- AUTO-CALCULATION ENGINE ---
-    let updateData = { ...data }
+    const now = new Date()
+    let updateData = {
+      ...data,
+      noOfEdits: existingTask.noOfEdits || 0
+    }
 
     // 1. Set Submission Date automatically if link is added/changed
-    if (data.submissionLink && (!existingTask.submissionLink || data.submissionLink !== existingTask.submissionLink)) {
-      updateData.submissionDate = new Date().toLocaleString('en-GB', {
+    const isNewSubmission = data.submissionLink && (!existingTask.submissionLink || data.submissionLink !== existingTask.submissionLink)
+
+    if (isNewSubmission) {
+      updateData.submissionDate = now.toLocaleString('en-GB', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
       }).replace(',', '')
-    }
 
-    // 2. Calculate Deadline Adherence as Percentage
-    if (updateData.submissionDate && data.deadline) {
-      // Use the actual Date objects for comparison
-      const subDate = new Date() // Since we just submitted
-      const deadDate = new Date(data.deadline)
-      updateData.deadlineAdherence = subDate <= deadDate ? "100%" : "0%"
+      // 2. Calculate Deadline Adherence as Percentage
+      if (data.deadline) {
+        const deadDate = new Date(data.deadline)
+        updateData.deadlineAdherence = now <= deadDate ? "100%" : "0%"
+      }
+
+      // 5. Calculate Task Time Taken
+      if (data.taskStartingDate) {
+        const start = new Date(data.taskStartingDate)
+        const diffMs = now.getTime() - start.getTime()
+        const diffHrs = Math.floor(diffMs / (1000 * 60 * 60))
+        const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+        updateData.taskTimeTaken = `${diffHrs}h ${diffMins}m`
+      }
+    } else {
+      // Preserve existing values if not a new submission
+      updateData.submissionDate = existingTask.submissionDate
+      updateData.deadlineAdherence = existingTask.deadlineAdherence
+      updateData.taskTimeTaken = existingTask.taskTimeTaken
     }
 
     // 3. Increment Edits count if Manager adds new feedback
     if ((data.userRole === "Admin" || data.userRole === "Manager") && data.edits && data.edits !== existingTask.edits) {
-      updateData.noOfEdits = (existingTask.noOfEdits || 0) + 1
+      updateData.noOfEdits = (Number(existingTask.noOfEdits) || 0) + 1
     }
 
     // Ensure progress is preserved if not explicitly changed (especially for Completed tasks)
@@ -71,20 +89,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       updateData.grading = `${rawGrade}%`
 
       let score = rawGrade
-      if (updateData.deadlineAdherence === "Late") {
-        score = score * 0.9 // 10% penalty
+      if (updateData.deadlineAdherence === "0%") {
+        score = score * 0.9 // 10% penalty for late
       }
       updateData.overallScore = `${score.toFixed(1)}%`
-    }
-
-    // 5. Calculate Task Time Taken
-    if (updateData.submissionDate && data.taskStartingDate) {
-      const start = new Date(data.taskStartingDate)
-      const end = new Date(updateData.submissionDate)
-      const diffMs = end.getTime() - start.getTime()
-      const diffHrs = Math.floor(diffMs / (1000 * 60 * 60))
-      const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
-      updateData.taskTimeTaken = `${diffHrs}h ${diffMins}m`
+    } else {
+      updateData.overallScore = existingTask.overallScore
     }
 
     // Update the task with calculated values
