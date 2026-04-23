@@ -527,9 +527,9 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
                     <MediaUpload
                       onUpload={(attachment) => field.onChange(`${field.value}${field.value ? '\n' : ''}${attachment}`)}
                     />
-                  </div>
-                  <div className="mt-2">
-                    <MediaRenderer text={field.value} />
+                    <div className="mt-2">
+                      <MediaRenderer text={field.value} />
+                    </div>
                   </div>
                 </FormControl>
                 <FormMessage />
