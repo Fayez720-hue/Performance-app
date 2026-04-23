@@ -30,8 +30,47 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const existingTask = await getTaskById(taskId)
     if (!existingTask) return NextResponse.json({ error: "Task not found" }, { status: 404 })
 
-    // Update the task
-    await updateTask(taskId, data)
+    // --- AUTO-CALCULATION ENGINE ---
+    let updateData = { ...data }
+
+    // 1. Set Submission Date automatically if link is added/changed
+    if (data.submissionLink && (!existingTask.submissionLink || data.submissionLink !== existingTask.submissionLink)) {
+      updateData.submissionDate = new Date().toISOString()
+    }
+
+    // 2. Calculate Deadline Adherence
+    if (updateData.submissionDate && data.deadline) {
+      const subDate = new Date(updateData.submissionDate)
+      const deadDate = new Date(data.deadline)
+      updateData.deadlineAdherence = subDate <= deadDate ? "On Time" : "Late"
+    }
+
+    // 3. Increment Edits count if Manager adds new feedback
+    if ((data.userRole === "Admin" || data.userRole === "Manager") && data.edits && data.edits !== existingTask.edits) {
+      updateData.noOfEdits = (existingTask.noOfEdits || 0) + 1
+    }
+
+    // 4. Calculate Overall Score (Grade - Penalty if Late)
+    if (data.grading) {
+      let score = parseFloat(data.grading) || 0
+      if (updateData.deadlineAdherence === "Late") {
+        score = score * 0.9 // 10% penalty
+      }
+      updateData.overallScore = score.toFixed(1)
+    }
+
+    // 5. Calculate Task Time Taken
+    if (updateData.submissionDate && data.taskStartingDate) {
+      const start = new Date(data.taskStartingDate)
+      const end = new Date(updateData.submissionDate)
+      const diffMs = end.getTime() - start.getTime()
+      const diffHrs = Math.floor(diffMs / (1000 * 60 * 60))
+      const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+      updateData.taskTimeTaken = `${diffHrs}h ${diffMins}m`
+    }
+
+    // Update the task with calculated values
+    await updateTask(taskId, updateData)
 
     // Fetch updated task for notifications
     const updatedTask = await getTaskById(taskId)
