@@ -81,10 +81,12 @@ export function MediaUpload({ onUpload, label }: MediaUploadProps) {
     }
   };
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (Capacitor.isNativePlatform()) {
       handleNativePick();
     } else {
+      // For web, show a simple choice or just default to file pick
+      // For now, let's trigger the file input but we could add a web-recorder later
       fileInputRef.current?.click();
     }
   };
