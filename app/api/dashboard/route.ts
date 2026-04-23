@@ -2,9 +2,11 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { getDashboardStats } from "@/lib/google-sheets"
 
+import { authOptions } from "@/lib/auth"
+
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
