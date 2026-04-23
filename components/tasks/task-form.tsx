@@ -47,6 +47,7 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const canEditAllFields = userRole === "Admin" || userRole === "Manager"
+  const isTeamMember = userRole === "Team Member"
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
@@ -68,16 +69,29 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
     },
   })
 
+  // Filter progress options for Team Members
+  const availableProgressOptions = isTeamMember
+    ? PROGRESS_OPTIONS.filter(opt => opt !== "Completed")
+    : PROGRESS_OPTIONS
+
   async function onSubmit(values: TaskFormValues) {
     setIsSubmitting(true)
     try {
       const url = mode === "create" ? getApiUrl("/api/tasks") : getApiUrl(`/api/tasks/${task?.id}`)
       const method = mode === "create" ? "POST" : "PUT"
 
+      // Include change detection for notifications
+      const payload = {
+        ...values,
+        previousProgress: task?.progress,
+        updatedBy: userName,
+        userRole: userRole
+      }
+
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify(payload),
       })
 
       let responseData;
@@ -118,7 +132,7 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
-                  disabled={!canEditAllFields && mode === "edit"}
+                  disabled={!canEditAllFields}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -179,9 +193,9 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
               <FormControl>
                 <Textarea
                   placeholder="Describe the task..."
-                  className="min-h-[100px] resize-none"
+                  className="min-h-[100px] resize-none disabled:bg-muted"
                   {...field}
-                  disabled={!canEditAllFields && mode === "edit"}
+                  disabled={!canEditAllFields}
                 />
               </FormControl>
               <FormMessage />
@@ -199,8 +213,9 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
               <FormControl>
                 <Textarea
                   placeholder="Add any references or links..."
-                  className="min-h-[80px] resize-none"
+                  className="min-h-[80px] resize-none disabled:bg-muted"
                   {...field}
+                  disabled={!canEditAllFields}
                 />
               </FormControl>
               <FormMessage />
@@ -223,7 +238,7 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {PROGRESS_OPTIONS.map((option) => (
+                    {availableProgressOptions.map((option) => (
                       <SelectItem key={option} value={option}>
                         {option}
                       </SelectItem>
@@ -246,7 +261,8 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
                   <Input
                     type="datetime-local"
                     {...field}
-                    className="w-full text-left font-normal"
+                    disabled={!canEditAllFields}
+                    className="w-full text-left font-normal disabled:bg-muted"
                   />
                 </FormControl>
                 <FormMessage />
@@ -267,7 +283,8 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
                   <Input
                     type="datetime-local"
                     {...field}
-                    className="w-full text-left font-normal"
+                    disabled={!canEditAllFields}
+                    className="w-full text-left font-normal disabled:bg-muted"
                   />
                 </FormControl>
                 <FormMessage />
@@ -301,8 +318,9 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
                           type="number"
                           min="0"
                           value={hours}
+                          disabled={!canEditAllFields}
                           onChange={(e) => updateDuration(parseInt(e.target.value) || 0, minutes)}
-                          className="w-20 text-center"
+                          className="w-20 text-center disabled:bg-muted"
                         />
                         <span className="text-sm text-muted-foreground font-medium">hrs</span>
                       </div>
@@ -312,12 +330,13 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
                           min="0"
                           max="59"
                           value={minutes}
+                          disabled={!canEditAllFields}
                           onChange={(e) => {
                             let val = parseInt(e.target.value) || 0
                             if (val > 59) val = 59
                             updateDuration(hours, val)
                           }}
-                          className="w-20 text-center"
+                          className="w-20 text-center disabled:bg-muted"
                         />
                         <span className="text-sm text-muted-foreground font-medium">mins</span>
                       </div>
@@ -331,18 +350,18 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Time Taken - READ ONLY */}
+          {/* Submission Date - READ ONLY */}
           <FormField
             control={form.control}
-            name="taskTimeTaken"
+            name="submissionDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Time Taken</FormLabel>
+                <FormLabel>Submission Date</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="Auto-calculated"
                     {...field}
                     disabled
+                    placeholder="Auto-set on submission"
                     className="bg-muted cursor-not-allowed"
                   />
                 </FormControl>
@@ -351,7 +370,7 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
             )}
           />
 
-          {/* Submission Link */}
+          {/* Submission Link - Editable for Team Members too */}
           <FormField
             control={form.control}
             name="submissionLink"
@@ -426,8 +445,9 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
               <FormControl>
                 <Textarea
                   placeholder="Add any comments..."
-                  className="min-h-[80px] resize-none"
+                  className="min-h-[80px] resize-none disabled:bg-muted"
                   {...field}
+                  disabled={!canEditAllFields}
                 />
               </FormControl>
               <FormMessage />
