@@ -50,8 +50,19 @@ function isValidDate(date: any): date is Date {
 
 function safeFormat(dateStr: string | undefined, formatStr: string) {
   if (!dateStr) return "N/A"
+
+  // Try parsing DD/MM/YYYY HH:mm format
+  const ddmmyyyyMatch = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/)
+  if (ddmmyyyyMatch) {
+    const [_, d, m, y] = ddmmyyyyMatch
+    const [time] = dateStr.split(' ').reverse()
+    const [h = "00", min = "00"] = time.includes(':') ? time.split(':') : []
+    const date = new Date(Number(y), Number(m) - 1, Number(d), Number(h), Number(min))
+    if (isValidDate(date)) return format(date, formatStr)
+  }
+
   const date = new Date(dateStr)
-  if (!isValidDate(date)) return dateStr // Return original string if not a valid date
+  if (!isValidDate(date)) return dateStr
   return format(date, formatStr)
 }
 
@@ -313,8 +324,8 @@ export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) 
                     <p className="text-xs text-muted-foreground">Deadline Adherence</p>
                     <p className={cn(
                       "font-medium",
-                      task.deadlineAdherence === "On Time" ? "text-emerald-400" :
-                      task.deadlineAdherence === "Late" ? "text-red-400" : ""
+                      task.deadlineAdherence === "100%" ? "text-emerald-400" :
+                      task.deadlineAdherence === "0%" ? "text-red-400" : "text-amber-400"
                     )}>
                       {task.deadlineAdherence}
                     </p>

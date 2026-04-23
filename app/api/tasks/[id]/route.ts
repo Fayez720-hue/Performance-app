@@ -49,10 +49,42 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         minute: '2-digit'
       }).replace(',', '')
 
-      // 2. Calculate Deadline Adherence as Percentage
+      // 2. Calculate Deadline Adherence as Latency Percentage
       if (data.deadline) {
-        const deadDate = new Date(data.deadline)
-        updateData.deadlineAdherence = now <= deadDate ? "100%" : "0%"
+        try {
+          const deadDate = new Date(data.deadline)
+          if (!isNaN(deadDate.getTime())) {
+            const submissionTime = now.getTime()
+            const deadlineTime = deadDate.getTime()
+
+            if (submissionTime <= deadlineTime) {
+              updateData.deadlineAdherence = "100%"
+            } else {
+              // Calculate latency percentage relative to estimated time
+              const latencyMs = submissionTime - deadlineTime
+
+              // Get estimated time in ms
+              const estTimeStr = data.taskEstimatedTime || existingTask.taskEstimatedTime || "01:00"
+              const [estH, estM] = estTimeStr.split(":").map(Number)
+              const estMs = ((estH || 0) * 3600000) + ((estM || 0) * 60000)
+
+              if (estMs > 0) {
+                const latencyPercentage = (latencyMs / estMs) * 100
+                // Adherence = 100% minus the latency percentage
+                // e.g., if latency is 10% of estimated time, adherence is 90%
+                const adherence = Math.max(0, 100 - latencyPercentage)
+                updateData.deadlineAdherence = `${adherence.toFixed(1)}%`
+              } else {
+                updateData.deadlineAdherence = "0%"
+              }
+            }
+          } else {
+            console.error("Invalid deadline date:", data.deadline)
+            updateData.deadlineAdherence = "Pending"
+          }
+        } catch (e) {
+          console.error("Deadline adherence calculation error:", e)
+        }
       }
 
       // 5. Calculate Task Time Taken

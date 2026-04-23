@@ -42,6 +42,28 @@ interface TaskFormProps {
   employees?: any[] // Changed from string[] to any[] to handle user objects
 }
 
+// Helper to convert sheet dates to datetime-local format (YYYY-MM-DDTHH:mm)
+function formatToDatetimeLocal(dateStr: string | undefined): string {
+  if (!dateStr) return format(new Date(), "yyyy-MM-dd'T'HH:mm")
+
+  try {
+    // Try parsing as ISO
+    const date = new Date(dateStr)
+    if (!isNaN(date.getTime())) {
+      return format(date, "yyyy-MM-dd'T'HH:mm")
+    }
+  } catch (e) {}
+
+  // Try parsing DD/MM/YYYY HH:mm
+  const ddmmyyyyMatch = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s*(\d{1,2})?:?(\d{1,2})?/)
+  if (ddmmyyyyMatch) {
+    const [_, d, m, y, h = "00", min = "00"] = ddmmyyyyMatch
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T${h.padStart(2, '0')}:${min.padStart(2, '0')}`
+  }
+
+  return dateStr // Fallback to raw string if it already matches or fails
+}
+
 export function TaskForm({ task, mode, userRole, userName, employees }: TaskFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -58,8 +80,8 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
       references: task?.references || "",
       comments: task?.comments || "",
       progress: (task?.progress as any) || "To-do",
-      taskStartingDate: task?.taskStartingDate || format(new Date(), "yyyy-MM-dd'T'HH:mm"),
-      deadline: task?.deadline || format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+      taskStartingDate: formatToDatetimeLocal(task?.taskStartingDate),
+      deadline: formatToDatetimeLocal(task?.deadline),
       taskEstimatedTime: task?.taskEstimatedTime || "01:00",
       taskTimeTaken: task?.taskTimeTaken || "",
       submissionLink: task?.submissionLink || "",
@@ -103,6 +125,9 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
       // Include change detection for notifications
       const payload = {
         ...values,
+        // Convert to ISO for reliable server-side comparison
+        deadline: values.deadline ? new Date(values.deadline).toISOString() : values.deadline,
+        taskStartingDate: values.taskStartingDate ? new Date(values.taskStartingDate).toISOString() : values.taskStartingDate,
         previousProgress: task?.progress,
         updatedBy: userName,
         userRole: userRole
@@ -492,8 +517,8 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
                 <span className="text-muted-foreground">Deadline Adherence:</span>
                 <span className={cn(
                   "ml-2 font-medium",
-                  task.deadlineAdherence === "On Time" ? "text-emerald-500" :
-                  task.deadlineAdherence === "Late" ? "text-red-500" : "text-muted-foreground"
+                  task.deadlineAdherence === "100%" ? "text-emerald-500" :
+                  task.deadlineAdherence === "0%" ? "text-red-500" : "text-muted-foreground"
                 )}>
                   {task.deadlineAdherence || "Pending"}
                 </span>
