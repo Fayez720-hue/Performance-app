@@ -151,7 +151,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     // Ensure progress is preserved:
     // 1. If the task is already "Completed", it stays "Completed"
     // 2. UNLESS the user explicitly sent a different progress (Manager changing it)
-    if (existingTask.progress === "Completed" && !data.progress) {
+    if (updateData.progress !== existingTask.progress) {
+      // If progress was already changed by auto-logic (like switching to To-do), keep it
+    } else if (existingTask.progress === "Completed" && !data.progress) {
       updateData.progress = "Completed"
     } else if (data.progress) {
       updateData.progress = data.progress
