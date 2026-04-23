@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { format } from "date-fns"
@@ -68,6 +68,23 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
       edits: task?.edits || "",
     },
   })
+
+  // Watch submission link for automatic progress update
+  const submissionLink = form.watch("submissionLink")
+
+  useEffect(() => {
+    if (submissionLink) {
+      const isGoogleDriveLink =
+        submissionLink.includes("drive.google.com") ||
+        submissionLink.includes("docs.google.com") ||
+        submissionLink.includes("sheets.google.com") ||
+        submissionLink.includes("slides.google.com")
+
+      if (isGoogleDriveLink) {
+        form.setValue("progress", "Review")
+      }
+    }
+  }, [submissionLink, form])
 
   // Filter progress options for Team Members
   const availableProgressOptions = isTeamMember
