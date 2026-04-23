@@ -38,11 +38,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       updateData.submissionDate = new Date().toISOString()
     }
 
-    // 2. Calculate Deadline Adherence
+    // 2. Calculate Deadline Adherence as Percentage
     if (updateData.submissionDate && data.deadline) {
       const subDate = new Date(updateData.submissionDate)
       const deadDate = new Date(data.deadline)
-      updateData.deadlineAdherence = subDate <= deadDate ? "On Time" : "Late"
+      updateData.deadlineAdherence = subDate <= deadDate ? "100%" : "0%"
     }
 
     // 3. Increment Edits count if Manager adds new feedback
@@ -50,13 +50,24 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       updateData.noOfEdits = (existingTask.noOfEdits || 0) + 1
     }
 
+    // Ensure progress is preserved if not explicitly changed (especially for Completed tasks)
+    if (!data.progress) {
+      updateData.progress = existingTask.progress
+    }
+
     // 4. Calculate Overall Score (Grade - Penalty if Late)
     if (data.grading) {
-      let score = parseFloat(data.grading) || 0
+      // Extract numeric value from grading (handles "90" or "90%")
+      let rawGrade = parseFloat(String(data.grading).replace(/%/g, "")) || 0
+
+      // Update the grading field itself to have % suffix
+      updateData.grading = `${rawGrade}%`
+
+      let score = rawGrade
       if (updateData.deadlineAdherence === "Late") {
         score = score * 0.9 // 10% penalty
       }
-      updateData.overallScore = score.toFixed(1)
+      updateData.overallScore = `${score.toFixed(1)}%`
     }
 
     // 5. Calculate Task Time Taken
