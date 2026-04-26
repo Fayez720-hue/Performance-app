@@ -5,6 +5,7 @@ import { useSession } from '@/components/providers/session-provider'
 import { ClipboardList, Users, BarChart3, Settings } from "lucide-react"
 import { UserNav } from "@/components/auth/user-nav"
 import { NotificationBell } from "@/components/notifications/notification-bell"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ROLE_PERMISSIONS } from "@/types/user"
 import type { UserRole } from "@/types/user"
 
@@ -17,8 +18,9 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger className="-ml-1" />
+          <Link href="/dashboard" className="flex items-center gap-2 md:hidden">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-500/10">
               <ClipboardList className="h-5 w-5 text-teal-400" suppressHydrationWarning />
             </div>

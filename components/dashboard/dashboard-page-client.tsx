@@ -39,6 +39,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 interface Employee {
   name: string;
@@ -138,9 +139,12 @@ export default function DashboardPageClient() {
     <div className="min-h-screen bg-[#090a11] text-white pb-24 font-sans selection:bg-teal-500/30">
       {/* Header */}
       <header className="px-6 py-4 flex justify-between items-center border-b border-gray-800/50 sticky top-0 bg-[#090a11]/80 backdrop-blur-md z-40">
-        <div className="flex items-center gap-2">
-          <LayoutGrid className="text-teal-400 h-6 w-6" />
-          <h1 className="text-sm font-bold tracking-widest text-teal-400 uppercase">Dashboard</h1>
+        <div className="flex items-center gap-4">
+          <SidebarTrigger className="-ml-2 text-teal-400" />
+          <div className="flex items-center gap-2 md:hidden">
+            <LayoutGrid className="text-teal-400 h-6 w-6" />
+            <h1 className="text-sm font-bold tracking-widest text-teal-400 uppercase">Dashboard</h1>
+          </div>
         </div>
         <Avatar className="h-9 w-9 border border-teal-500/30 cursor-pointer" onClick={() => router.push("/settings")}>
           <AvatarImage src={session?.user?.image || ""} />

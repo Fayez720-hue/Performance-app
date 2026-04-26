@@ -8,6 +8,8 @@ import './globals.css'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { ReturnToAppHandler } from '@/components/auth/return-to-app-handler'
 import { NotificationManager } from '@/components/notifications/notification-manager'
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
+import { AppSidebar } from '@/components/layout/app-sidebar'
 
 export const dynamic = "force-dynamic"
 
@@ -31,7 +33,12 @@ export default function RootLayout({
           <AuthProvider>
             <ReturnToAppHandler />
             <NotificationManager />
-            {children}
+            <SidebarProvider defaultOpen={false}>
+              <AppSidebar />
+              <SidebarInset className="bg-[#090a11]">
+                {children}
+              </SidebarInset>
+            </SidebarProvider>
             <Toaster position="top-right" richColors />
           </AuthProvider>
         </ThemeProvider>
