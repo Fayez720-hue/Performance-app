@@ -33,7 +33,7 @@ export default function RootLayout({
           <AuthProvider>
             <ReturnToAppHandler />
             <NotificationManager />
-            <SidebarProvider defaultOpen={false}>
+            <SidebarProvider defaultOpen={true}>
               <AppSidebar />
               <SidebarInset className="bg-[#090a11]">
                 {children}
