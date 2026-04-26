@@ -11,7 +11,6 @@ export const authOptions: NextAuthOptions = {
         params: {
           prompt: "select_account",
           access_type: "offline",
-          response_type: "code"
         }
       }
     }),
