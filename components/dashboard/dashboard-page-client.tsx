@@ -18,7 +18,8 @@ import {
   TrendingUp,
   ChevronRight,
   CalendarDays,
-  Clock
+  Clock,
+  Settings as SettingsIcon
 } from "lucide-react";
 import {
   BarChart,
@@ -263,7 +264,7 @@ export default function DashboardPageClient() {
                   contentStyle={{backgroundColor: '#13151f', border: '1px solid #1f2937', color: '#fff'}}
                 />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                  {data?.scoreDistribution.map((entry, index) => (
+                  {data?.scoreDistribution?.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={index === 3 || data?.isPersonalView ? '#4fd1c5' : '#2d4a48'}
@@ -343,7 +344,7 @@ export default function DashboardPageClient() {
                   {i === 1 && <div className="absolute left-0 top-0 bottom-0 w-1 bg-teal-500" />}
                   <div className="flex items-center gap-4">
                     <div className="h-10 w-10 rounded-lg bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400">
-                      {emp.name.split(' ').map(n => n[0]).join('')}
+                      {emp.name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase()}
                     </div>
                     <div>
                       <h4 className="text-sm font-bold">{emp.name}</h4>
