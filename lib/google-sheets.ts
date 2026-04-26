@@ -594,10 +594,11 @@ export async function clockIn(email: string, name: string): Promise<void> {
   const date = format(new Date(), "yyyy-MM-dd")
   const time = format(new Date(), "HH:mm:ss")
 
-  // [Member(A), Date(B), TrackedTime(C), ShiftTime(D), Adherence(E), ClockIn(F)]
-  const values = [[name, date, "Working...", "", "", time]]
+  // [Member(A), Date(B), TrackedTime(C), ShiftTime(D), Adherence(E), ClockIn(F), ClockOut(G), UserEmail(H)]
+  // Column H (UserEmail) is a hidden helper to identify user uniquely
+  const values = [[name, date, "Working...", "", "", time, "", email]]
 
-  await sheetsRequest("/values/Attendance!A:F:append?valueInputOption=USER_ENTERED", {
+  await sheetsRequest("/values/Attendance!A:H:append?valueInputOption=USER_ENTERED", {
     method: "POST",
     body: JSON.stringify({ values })
   })
@@ -607,13 +608,14 @@ export async function clockOut(email: string): Promise<void> {
   const date = format(new Date(), "yyyy-MM-dd")
   const time = format(new Date(), "HH:mm:ss")
 
-  const res = await sheetsRequest("/values/Attendance!A1:G2000")
+  const res = await sheetsRequest("/values/Attendance!A1:H2000")
   const rows = res.values || []
 
-  // Find today's clock-in for this member (matching by name/Member column)
-  // We'll look for the last row where Member matches and ClockOut (Col G/Index 6) is empty
+  // Find today's clock-in for this member (matching by email helper in Col H/Index 7)
   const rowIndex = rows.findLastIndex((row: any[]) =>
-    row[1] === date && (!row[6] || row[6] === "")
+    String(row[7] || "").toLowerCase() === email.toLowerCase() &&
+    row[1] === date &&
+    (!row[6] || row[6] === "")
   )
 
   if (rowIndex === -1) throw new Error("No active clock-in found for today")
@@ -626,13 +628,17 @@ export async function clockOut(email: string): Promise<void> {
 
   // Calculate Tracked Time (Duration)
   if (row[5]) { // If we have ClockIn time in Col F
-    const start = new Date(`${date}T${row[5]}`)
-    const end = new Date(`${date}T${time}`)
-    const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-    row[2] = `${hours.toFixed(2)} hours` // Set Tracked Time in Col C
+    try {
+      const start = new Date(`${date}T${row[5]}`)
+      const end = new Date(`${date}T${time}`)
+      const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+      row[2] = `${hours.toFixed(2)} hours` // Set Tracked Time in Col C
+    } catch (e) {
+      row[2] = "Error calc"
+    }
   }
 
-  await sheetsRequest(`/values/Attendance!A${realRowNumber}:G${realRowNumber}?valueInputOption=USER_ENTERED`, {
+  await sheetsRequest(`/values/Attendance!A${realRowNumber}:H${realRowNumber}?valueInputOption=USER_ENTERED`, {
     method: "PUT",
     body: JSON.stringify({ values: [row] })
   })
