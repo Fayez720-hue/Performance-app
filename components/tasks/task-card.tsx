@@ -222,7 +222,7 @@ export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) 
 
       {/* Expanded Task Dialog */}
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl bg-background text-foreground border-border">
           <DialogHeader>
             <div className="flex items-center gap-2">
               <Badge className={cn("text-sm font-medium", config.color, config.bgColor)}>
@@ -232,8 +232,8 @@ export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) 
                 <Badge variant="destructive">Overdue</Badge>
               )}
             </div>
-            <DialogTitle className="text-xl">{task.task}</DialogTitle>
-            <DialogDescription className="flex items-center gap-2">
+            <DialogTitle className="text-xl text-foreground">{task.task}</DialogTitle>
+            <DialogDescription className="flex items-center gap-2 text-muted-foreground">
               <User className="h-4 w-4" />
               Assigned to {task.name}
             </DialogDescription>
@@ -245,16 +245,16 @@ export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) 
               {task.date && (
                 <div className="rounded-lg border border-border bg-muted/30 p-3">
                   <p className="text-xs text-muted-foreground">Created</p>
-                  <p className="font-medium">{safeFormat(task.date, "PPP p")}</p>
+                  <p className="font-medium text-foreground">{safeFormat(task.date, "PPP p")}</p>
                 </div>
               )}
               {task.deadline && (
                 <div className={cn(
                   "rounded-lg border p-3",
-                  isOverdue ? "border-red-500/30 bg-red-500/5" : "border-border bg-muted/30"
+                  isOverdue ? "border-destructive/30 bg-destructive/5" : "border-border bg-muted/30"
                 )}>
                   <p className="text-xs text-muted-foreground">Deadline</p>
-                  <p className={cn("font-medium", isOverdue && "text-red-400")}>
+                  <p className={cn("font-medium", isOverdue ? "text-destructive" : "text-foreground")}>
                     {safeFormat(task.deadline, "PPP p")}
                   </p>
                 </div>
@@ -262,13 +262,13 @@ export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) 
               {task.taskStartingDate && (
                 <div className="rounded-lg border border-border bg-muted/30 p-3">
                   <p className="text-xs text-muted-foreground">Started</p>
-                  <p className="font-medium">{safeFormat(task.taskStartingDate, "PPP p")}</p>
+                  <p className="font-medium text-foreground">{safeFormat(task.taskStartingDate, "PPP p")}</p>
                 </div>
               )}
               {task.submissionDate && (
                 <div className="rounded-lg border border-border bg-muted/30 p-3">
                   <p className="text-xs text-muted-foreground">Submitted</p>
-                  <p className="font-medium">{safeFormat(task.submissionDate, "PPP p")}</p>
+                  <p className="font-medium text-foreground">{safeFormat(task.submissionDate, "PPP p")}</p>
                 </div>
               )}
             </div>
@@ -335,11 +335,11 @@ export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) 
                 <MediaRenderer text={task.edits} />
 
                 {task.performanceHistory && (
-                  <div className="mt-4 pt-4 border-t border-amber-500/20">
-                    <h5 className="text-xs font-bold uppercase tracking-wider text-amber-500/70 mb-2">Submission History</h5>
+                  <div className="mt-4 pt-4 border-t border-primary/20">
+                    <h5 className="text-xs font-bold uppercase tracking-wider text-primary/70 mb-2">Submission History</h5>
                     <div className="space-y-1">
                       {task.performanceHistory.split('|').map((entry, idx) => (
-                        <p key={idx} className="text-[11px] font-mono text-gray-400">
+                        <p key={idx} className="text-[11px] font-mono text-muted-foreground">
                           {entry.trim()}
                         </p>
                       ))}
@@ -357,8 +357,8 @@ export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) 
                     <p className="text-xs text-muted-foreground">Deadline Adherence</p>
                     <p className={cn(
                       "font-medium",
-                      task.deadlineAdherence === "100%" ? "text-emerald-400" :
-                      task.deadlineAdherence === "0%" ? "text-red-400" : "text-amber-400"
+                      task.deadlineAdherence === "100%" ? "text-emerald-500" :
+                      task.deadlineAdherence === "0%" ? "text-destructive" : "text-amber-500"
                     )}>
                       {task.deadlineAdherence}
                     </p>

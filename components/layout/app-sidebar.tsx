@@ -79,13 +79,13 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-gray-800 bg-[#090a11]">
-      <SidebarHeader className="h-16 flex items-center px-4 border-b border-gray-800/50">
+    <Sidebar collapsible="icon" className="border-r border-border bg-sidebar">
+      <SidebarHeader className="h-16 flex items-center px-4 border-b border-border">
         <div className="flex items-center gap-2 overflow-hidden">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-500/10">
-            <CheckSquare className="h-5 w-5 text-teal-400" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+            <CheckSquare className="h-5 w-5 text-primary" />
           </div>
-          <span className="font-bold text-teal-400 truncate group-data-[collapsible=icon]:hidden">
+          <span className="font-bold text-primary truncate group-data-[collapsible=icon]:hidden">
             Can shift
           </span>
         </div>
@@ -93,7 +93,7 @@ export function AppSidebar() {
 
       <SidebarContent className="py-4">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-500 group-data-[collapsible=icon]:hidden">Main Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-muted-foreground group-data-[collapsible=icon]:hidden">Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -103,8 +103,8 @@ export function AppSidebar() {
                     onClick={() => router.push(item.url)}
                     tooltip={item.title}
                     className={cn(
-                      "hover:bg-teal-500/10 hover:text-teal-400 transition-colors",
-                      pathname === item.url && "bg-teal-500/10 text-teal-400"
+                      "hover:bg-primary/10 hover:text-primary transition-colors",
+                      pathname === item.url && "bg-primary/10 text-primary"
                     )}
                   >
                     <item.icon className="h-4 w-4" />
@@ -118,7 +118,7 @@ export function AppSidebar() {
 
         {isAdminOrManager && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-gray-500 group-data-[collapsible=icon]:hidden">Administration</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-muted-foreground group-data-[collapsible=icon]:hidden">Administration</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminItems.map((item) => (
@@ -128,8 +128,8 @@ export function AppSidebar() {
                       onClick={() => router.push(item.url)}
                       tooltip={item.title}
                       className={cn(
-                        "hover:bg-teal-500/10 hover:text-teal-400 transition-colors",
-                        pathname === item.url && "bg-teal-500/10 text-teal-400"
+                        "hover:bg-primary/10 hover:text-primary transition-colors",
+                        pathname === item.url && "bg-primary/10 text-primary"
                       )}
                     >
                       <item.icon className="h-4 w-4" />
@@ -143,7 +143,7 @@ export function AppSidebar() {
         )}
 
         <SidebarGroup className="mt-auto">
-          <SidebarGroupLabel className="text-gray-500 group-data-[collapsible=icon]:hidden">Preferences</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-muted-foreground group-data-[collapsible=icon]:hidden">Preferences</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {settingsItems.map((item) => (
@@ -153,8 +153,8 @@ export function AppSidebar() {
                     onClick={() => router.push(item.url)}
                     tooltip={item.title}
                     className={cn(
-                      "hover:bg-teal-500/10 hover:text-teal-400 transition-colors",
-                      pathname === item.url && "bg-teal-500/10 text-teal-400"
+                      "hover:bg-primary/10 hover:text-primary transition-colors",
+                      pathname === item.url && "bg-primary/10 text-primary"
                     )}
                   >
                     <item.icon className="h-4 w-4" />
@@ -167,7 +167,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-gray-800/50 p-4">
+      <SidebarFooter className="border-t border-border p-4">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
@@ -176,22 +176,22 @@ export function AppSidebar() {
               onClick={() => router.push('/settings')}
             >
               <div className="flex items-center gap-3">
-                <Avatar className="h-8 w-8 border border-teal-500/30">
+                <Avatar className="h-8 w-8 border border-primary/30">
                   <AvatarImage src={session?.user?.image || ''} />
-                  <AvatarFallback className="bg-teal-900/50 text-teal-400 text-xs">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
                     {session?.user?.name?.charAt(0) || session?.user?.email?.charAt(0)?.toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col text-left group-data-[collapsible=icon]:hidden overflow-hidden">
-                  <span className="text-xs font-bold text-white truncate max-w-[100px]">
+                  <span className="text-xs font-bold text-foreground truncate max-w-[100px]">
                     {session?.user?.name || session?.user?.email?.split('@')[0] || 'User'}
                   </span>
-                  <span className="text-[10px] text-gray-500 truncate max-w-[100px]">
+                  <span className="text-[10px] text-muted-foreground truncate max-w-[100px]">
                     {userRole}
                   </span>
                 </div>
               </div>
-              <ChevronRight className="h-3 w-3 text-gray-500 group-data-[collapsible=icon]:hidden" />
+              <ChevronRight className="h-3 w-3 text-muted-foreground group-data-[collapsible=icon]:hidden" />
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>

@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: ["class"],
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -7,32 +8,46 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: "oklch(0.13 0.01 260)",
-        foreground: "oklch(0.95 0 0)",
-        card: "oklch(0.17 0.01 260)",
-        "card-foreground": "oklch(0.95 0 0)",
-        popover: "oklch(0.15 0.01 260)",
-        "popover-foreground": "oklch(0.95 0 0)",
-        primary: "oklch(0.75 0.15 175)",
-        "primary-foreground": "oklch(0.13 0.01 260)",
-        secondary: "oklch(0.22 0.01 260)",
-        "secondary-foreground": "oklch(0.95 0 0)",
-        muted: "oklch(0.22 0.01 260)",
-        "muted-foreground": "oklch(0.65 0 0)",
-        accent: "oklch(0.75 0.15 175)",
-        "accent-foreground": "oklch(0.13 0.01 260)",
-        destructive: "oklch(0.55 0.2 25)",
-        "destructive-foreground": "oklch(0.95 0 0)",
-        border: "oklch(0.28 0.01 260)",
-        input: "oklch(0.22 0.01 260)",
-        ring: "oklch(0.75 0.15 175)",
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
       },
       borderRadius: {
-        lg: "0.625rem",
-        md: "calc(0.625rem - 2px)",
-        sm: "calc(0.625rem - 4px)",
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
     },
   },
-  plugins: [],
+  plugins: [require("tailwindcss-animate")],
 };

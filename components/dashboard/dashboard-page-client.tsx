@@ -144,26 +144,26 @@ export default function DashboardPageClient() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#090a11]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#090a11] text-white pb-24 font-sans selection:bg-teal-500/30">
+    <div className="min-h-screen bg-background text-foreground pb-24 font-sans selection:bg-primary/30">
       {/* Header */}
-      <header className="px-6 py-4 flex justify-between items-center border-b border-gray-800/50 sticky top-0 bg-[#090a11]/80 backdrop-blur-md z-40">
+      <header className="px-6 py-4 flex justify-between items-center border-b border-border sticky top-0 bg-background/80 backdrop-blur-md z-40">
         <div className="flex items-center gap-4">
-          <SidebarTrigger className="-ml-2 text-teal-400" />
+          <SidebarTrigger className="-ml-2 text-primary" />
           <div className="flex items-center gap-2 md:hidden">
-            <LayoutGrid className="text-teal-400 h-6 w-6" />
-            <h1 className="text-sm font-bold tracking-widest text-teal-400 uppercase">Dashboard</h1>
+            <LayoutGrid className="text-primary h-6 w-6" />
+            <h1 className="text-sm font-bold tracking-widest text-primary uppercase">Dashboard</h1>
           </div>
         </div>
-        <Avatar className="h-9 w-9 border border-teal-500/30 cursor-pointer" onClick={() => router.push("/settings")}>
+        <Avatar className="h-9 w-9 border border-primary/30 cursor-pointer" onClick={() => router.push("/settings")}>
           <AvatarImage src={session?.user?.image || ""} />
-          <AvatarFallback className="bg-teal-900/50 text-teal-400 text-xs uppercase">
+          <AvatarFallback className="bg-primary/10 text-primary text-xs uppercase">
             {session?.user?.name?.charAt(0) || "U"}
           </AvatarFallback>
         </Avatar>
@@ -176,8 +176,8 @@ export default function DashboardPageClient() {
             {data?.isPersonalView ? "My Performance" : "Can shift"}
           </h2>
           {canManage && (
-            <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
-              <SlidersHorizontal className="h-5 w-5 text-gray-400" />
+            <button className="p-2 hover:bg-muted rounded-lg transition-colors">
+              <SlidersHorizontal className="h-5 w-5 text-muted-foreground" />
             </button>
           )}
         </div>
@@ -185,11 +185,11 @@ export default function DashboardPageClient() {
         {/* Search - Hidden for Team Members */}
         {canManage && (
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 group-focus-within:text-teal-400 transition-colors" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <input
               type="text"
               placeholder="Search employee name..."
-              className="w-full bg-[#13151f] border border-gray-800 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-teal-500/50 transition-all"
+              className="w-full bg-card border border-border rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-primary/50 transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -200,17 +200,17 @@ export default function DashboardPageClient() {
         <div className="grid grid-cols-2 gap-4">
           <Popover>
             <PopoverTrigger asChild>
-              <button className="bg-[#13151f] border border-gray-800 p-3 rounded-xl flex items-center gap-3 text-left hover:border-teal-500/50 transition-all">
-                <CalendarDays className="h-4 w-4 text-teal-400" />
+              <button className="bg-card border border-border p-3 rounded-xl flex items-center gap-3 text-left hover:border-primary/50 transition-all">
+                <CalendarDays className="h-4 w-4 text-primary" />
                 <div>
-                  <p className="text-[10px] uppercase text-gray-500 font-bold tracking-wider">Date Range</p>
+                  <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Date Range</p>
                   <p className="text-[11px] font-semibold">
                     {format(dateRange.from, "MMM dd")} - {format(dateRange.to, "MMM dd")}
                   </p>
                 </div>
               </button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 bg-[#090a11] border-gray-800" align="start">
+            <PopoverContent className="w-auto p-0 bg-background border-border" align="start">
               <Calendar
                 initialFocus
                 mode="range"
@@ -225,28 +225,28 @@ export default function DashboardPageClient() {
                   }
                 }}
                 numberOfMonths={1}
-                className="bg-[#090a11] text-white"
+                className="bg-background text-foreground"
               />
             </PopoverContent>
           </Popover>
           <div className={cn(
-            "bg-[#13151f] border border-gray-800 p-3 rounded-xl flex items-center justify-between",
+            "bg-card border border-border p-3 rounded-xl flex items-center justify-between",
             !canManage && "opacity-50 pointer-events-none"
           )}>
             <div className="flex items-center gap-3">
-              <Users className="h-4 w-4 text-teal-400" />
+              <Users className="h-4 w-4 text-primary" />
               <div>
-                <p className="text-[10px] uppercase text-gray-500 font-bold tracking-wider">Role Selection</p>
+                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Role Selection</p>
                 <p className="text-xs font-semibold">Active Only</p>
               </div>
             </div>
-            {canManage && <Plus className="h-3 w-3 text-gray-500" />}
+            {canManage && <Plus className="h-3 w-3 text-muted-foreground" />}
           </div>
         </div>
 
         {/* Performance Chart */}
-        <div className="bg-[#13151f] border border-gray-800 rounded-2xl p-6">
-          <h3 className="text-[11px] uppercase text-gray-400 font-bold tracking-[0.2em] mb-6">
+        <div className="bg-card border border-border rounded-2xl p-6">
+          <h3 className="text-[11px] uppercase text-muted-foreground font-bold tracking-[0.2em] mb-6">
             {data?.isPersonalView ? "My Score Over Time" : "Performance Score Distribution"}
           </h3>
           <div className="h-48 w-full">
@@ -256,18 +256,18 @@ export default function DashboardPageClient() {
                   dataKey="range"
                   axisLine={false}
                   tickLine={false}
-                  tick={{fill: '#4b5563', fontSize: 10}}
+                  tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 10}}
                   hide
                 />
                 <Tooltip
-                  cursor={{fill: 'rgba(255,255,255,0.05)'}}
-                  contentStyle={{backgroundColor: '#13151f', border: '1px solid #1f2937', color: '#fff'}}
+                  cursor={{fill: 'rgba(0,0,0,0.05)'}}
+                  contentStyle={{backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', color: 'hsl(var(--foreground))'}}
                 />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                   {data?.scoreDistribution?.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={index === 3 || data?.isPersonalView ? '#4fd1c5' : '#2d4a48'}
+                      fill={index === 3 || data?.isPersonalView ? 'hsl(var(--primary))' : 'hsl(var(--muted))'}
                       fillOpacity={0.8}
                     />
                   ))}
@@ -276,40 +276,40 @@ export default function DashboardPageClient() {
             </ResponsiveContainer>
           </div>
           <div className="flex justify-between mt-2 px-1">
-            <span className="text-[9px] uppercase font-bold text-gray-500 tracking-widest italic">Low</span>
-            <span className="text-[9px] uppercase font-bold text-gray-400 tracking-widest italic">Median</span>
-            <span className="text-[9px] uppercase font-bold text-gray-500 tracking-widest italic">Elite</span>
+            <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest italic">Low</span>
+            <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest italic">Median</span>
+            <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest italic">Elite</span>
           </div>
         </div>
 
         {/* Small Stats Row */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-[#13151f] border border-gray-800 rounded-2xl p-4 flex flex-col justify-between">
-            <h3 className="text-[10px] uppercase text-gray-400 font-bold tracking-widest mb-4">Deadline Adherence</h3>
+          <div className="bg-card border border-border rounded-2xl p-4 flex flex-col justify-between">
+            <h3 className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-4">Deadline Adherence</h3>
             <div className="h-20 w-full mb-2">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data?.shiftTrend || []}>
-                  <Area type="monotone" dataKey="adherence" stroke="#4fd1c5" strokeWidth={2} fill="url(#colorAdherence)" />
+                  <Area type="monotone" dataKey="adherence" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#colorAdherence)" />
                   <defs>
                     <linearGradient id="colorAdherence" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4fd1c5" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="#4fd1c5" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                 </AreaChart>
               </ResponsiveContainer>
             </div>
             <div className="flex items-end justify-between">
-              <p className="text-xl font-bold text-teal-400">
+              <p className="text-xl font-bold text-primary">
                 {typeof data?.avgShiftAdherence === 'number'
                   ? data.avgShiftAdherence.toFixed(1).replace(/\.0$/, '')
                   : 0}%
               </p>
-              <div className="bg-teal-500/10 px-1.5 py-0.5 rounded text-[10px] text-teal-400 font-bold">+2.1%</div>
+              <div className="bg-primary/10 px-1.5 py-0.5 rounded text-[10px] text-primary font-bold">+2.1%</div>
             </div>
           </div>
-          <div className="bg-[#13151f] border border-gray-800 rounded-2xl p-4 flex flex-col justify-between">
-            <h3 className="text-[10px] uppercase text-gray-400 font-bold tracking-widest mb-4">
+          <div className="bg-card border border-border rounded-2xl p-4 flex flex-col justify-between">
+            <h3 className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-4">
               {data?.isPersonalView ? "My Tasks" : "Tasks"}
             </h3>
             <div>
@@ -319,7 +319,7 @@ export default function DashboardPageClient() {
                   : `${data?.completedTasks ?? 0}/${data?.totalTasks ?? 0}`
                 }
               </p>
-              <p className="text-[10px] text-gray-500 font-bold tracking-widest uppercase italic">
+              <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase italic">
                 {data?.isPersonalView ? "Current Cycle" : "Live Task Sync"}
               </p>
             </div>
@@ -328,34 +328,34 @@ export default function DashboardPageClient() {
 
         {/* Employee Performance - Shown only for Managers/Admins */}
         {canManage && (
-          <div className="bg-[#13151f] border border-gray-800 rounded-2xl overflow-hidden">
-            <div className="p-5 flex justify-between items-center border-b border-gray-800/50">
-              <h3 className="text-[11px] uppercase text-gray-400 font-bold tracking-widest">Employee Performance</h3>
+          <div className="bg-card border border-border rounded-2xl overflow-hidden">
+            <div className="p-5 flex justify-between items-center border-b border-border">
+              <h3 className="text-[11px] uppercase text-muted-foreground font-bold tracking-widest">Employee Performance</h3>
               <button
                 onClick={() => router.push("/reports")}
-                className="text-[10px] uppercase text-teal-400 font-bold flex items-center gap-1 hover:gap-2 transition-all"
+                className="text-[10px] uppercase text-primary font-bold flex items-center gap-1 hover:gap-2 transition-all"
               >
                 View All <ChevronRight className="h-3 w-3" />
               </button>
             </div>
-            <div className="divide-y divide-gray-800/50">
+            <div className="divide-y divide-border">
               {filteredEmployees.map((emp, i) => (
-                <div key={i} className="p-4 flex items-center justify-between group hover:bg-white/[0.02] transition-colors relative">
-                  {i === 1 && <div className="absolute left-0 top-0 bottom-0 w-1 bg-teal-500" />}
+                <div key={i} className="p-4 flex items-center justify-between group hover:bg-muted/50 transition-colors relative">
+                  {i === 1 && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />}
                   <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-lg bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400">
+                    <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
                       {emp.name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase()}
                     </div>
                     <div>
                       <h4 className="text-sm font-bold">{emp.name}</h4>
-                      <p className="text-[10px] text-gray-500 font-medium">{emp.title}</p>
+                      <p className="text-[10px] text-muted-foreground font-medium">{emp.title}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-8">
-                    <span className="text-sm font-bold text-teal-400">{emp.overallScore}</span>
+                    <span className="text-sm font-bold text-primary">{emp.overallScore}</span>
                     <div className={cn(
                       "px-2 py-1 rounded text-[9px] font-bold tracking-widest uppercase",
-                      emp.overallScore > 90 ? "bg-teal-500/10 text-teal-400" : "bg-gray-800 text-gray-500"
+                      emp.overallScore > 90 ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
                     )}>
                       {emp.overallScore > 90 ? "Elite" : "Active"}
                     </div>
@@ -371,19 +371,19 @@ export default function DashboardPageClient() {
       {canManage && (
         <button
           onClick={() => router.push("/tasks/new")}
-          className="fixed bottom-24 right-6 h-14 w-14 bg-teal-400 rounded-2xl shadow-lg shadow-teal-500/20 flex items-center justify-center group active:scale-95 transition-all z-40"
+          className="fixed bottom-24 right-6 h-14 w-14 bg-primary rounded-2xl shadow-lg shadow-primary/20 flex items-center justify-center group active:scale-95 transition-all z-40"
         >
-          <Plus className="text-black h-8 w-8 group-hover:rotate-90 transition-transform" />
+          <Plus className="text-primary-foreground h-8 w-8 group-hover:rotate-90 transition-transform" />
         </button>
       )}
 
       {/* Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#090a11] border-t border-gray-800 px-6 py-4 flex justify-between items-center z-50">
+      <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border px-6 py-4 flex justify-between items-center z-50">
         <button
           onClick={() => router.push("/dashboard")}
-          className="flex flex-col items-center gap-1 text-teal-400"
+          className="flex flex-col items-center gap-1 text-primary"
         >
-          <div className="p-1.5 bg-teal-500/10 rounded-lg">
+          <div className="p-1.5 bg-primary/10 rounded-lg">
             <LayoutGrid className="h-5 w-5" />
           </div>
           <span className="text-[9px] font-bold uppercase tracking-widest">Dashboard</span>
@@ -391,7 +391,7 @@ export default function DashboardPageClient() {
 
         <button
           onClick={() => router.push("/reports")}
-          className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300"
+          className="flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground"
         >
           <TrendingUp className="h-5 w-5" />
           <span className="text-[9px] font-bold uppercase tracking-widest">
@@ -401,7 +401,7 @@ export default function DashboardPageClient() {
 
         <button
           onClick={() => router.push("/clock-in")}
-          className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300"
+          className="flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground"
         >
           <Clock className="h-5 w-5" />
           <span className="text-[9px] font-bold uppercase tracking-widest">Attendance</span>
@@ -409,7 +409,7 @@ export default function DashboardPageClient() {
 
         <button
           onClick={() => router.push(canManage ? "/admin/users" : "/settings")}
-          className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300"
+          className="flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground"
         >
           {canManage ? <Users className="h-5 w-5" /> : <SettingsIcon className="h-5 w-5" />}
           <span className="text-[9px] font-bold uppercase tracking-widest">
@@ -419,7 +419,7 @@ export default function DashboardPageClient() {
 
         <button
           onClick={() => router.push("/tasks")}
-          className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300"
+          className="flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground"
         >
           <CheckSquare className="h-5 w-5" />
           <span className="text-[9px] font-bold uppercase tracking-widest">Tasks</span>

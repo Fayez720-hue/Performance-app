@@ -57,32 +57,32 @@ export default function ReportsPageClient() {
       value: `${Math.round(stats?.avgScore || 0)}%`,
       description: "Across all active tasks",
       icon: Target,
-      color: "text-blue-500",
-      bg: "bg-blue-500/10"
+      color: "text-primary",
+      bg: "bg-primary/10"
     },
     {
       title: "Shift Adherence",
       value: `${Math.round(stats?.avgShiftAdherence || 0)}%`,
       description: "Punctuality & availability",
       icon: Clock,
-      color: "text-emerald-500",
-      bg: "bg-emerald-500/10"
+      color: "text-primary",
+      bg: "bg-primary/10"
     },
     {
       title: "Completion Rate",
       value: `${Math.round(stats?.completionRate || 0)}%`,
       description: "Tasks finished on time",
       icon: CheckSquare,
-      color: "text-orange-500",
-      bg: "bg-orange-500/10"
+      color: "text-primary",
+      bg: "bg-primary/10"
     },
     {
       title: "Total Employees",
       value: stats?.totalEmployees || 0,
       description: "Managed users",
       icon: Users,
-      color: "text-purple-500",
-      bg: "bg-purple-500/10"
+      color: "text-primary",
+      bg: "bg-primary/10"
     },
   ]
 
@@ -122,17 +122,17 @@ export default function ReportsPageClient() {
       <main className="container mx-auto px-4 py-8 max-w-6xl pb-24">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-500/10">
-              <BarChart3 className="h-6 w-6 text-teal-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <BarChart3 className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Performance Reports</h1>
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">Performance Reports</h1>
               <p className="text-muted-foreground text-sm">
                 Real-time metrics synced from Google Sheets.
               </p>
             </div>
           </div>
-          <Button variant="outline" className="w-full md:w-auto border-teal-500/20 hover:bg-teal-500/10 text-teal-400" onClick={handleExport}>
+          <Button variant="outline" className="w-full md:w-auto border-primary/20 hover:bg-primary/10 text-primary" onClick={handleExport}>
             <Download className="mr-2 h-4 w-4" /> Export CSV
           </Button>
         </div>

@@ -62,14 +62,14 @@ export function NotificationBell() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
+      <PopoverContent className="w-80 p-0 bg-popover text-popover-foreground border-border" align="end">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <h4 className="font-semibold">Notifications</h4>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
               size="sm"
-              className="h-auto px-2 py-1 text-xs text-muted-foreground"
+              className="h-auto px-2 py-1 text-xs text-muted-foreground hover:text-primary transition-colors"
               onClick={handleMarkAsRead}
             >
               Mark all read

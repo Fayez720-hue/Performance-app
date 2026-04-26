@@ -58,8 +58,8 @@ export default function ClockPageClient() {
       <Header />
       <main className="container mx-auto px-4 py-8 max-w-2xl">
         <div className="text-center mb-10">
-          <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-teal-500/10 mb-4">
-            <Clock className="h-10 w-10 text-teal-400" />
+          <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 mb-4">
+            <Clock className="h-10 w-10 text-primary" />
           </div>
           <h1 className="text-4xl font-bold tracking-tight">Attendance</h1>
           <p className="text-muted-foreground mt-2">{dateString}</p>
@@ -69,7 +69,7 @@ export default function ClockPageClient() {
         </div>
 
         <Card className="border-border bg-card shadow-xl overflow-hidden relative">
-          <div className="absolute top-0 left-0 w-1 bg-teal-400 h-full" />
+          <div className="absolute top-0 left-0 w-1 bg-primary h-full" />
           <CardHeader>
             <CardTitle>Daily Status</CardTitle>
             <CardDescription>Click the button below to record your shift.</CardDescription>
@@ -81,8 +81,8 @@ export default function ClockPageClient() {
               onClick={handleClockAction}
               className={`h-32 w-32 rounded-full text-lg font-bold shadow-lg transition-all active:scale-95 ${
                 isClockedIn
-                ? "bg-red-500 hover:bg-red-600 shadow-red-500/20"
-                : "bg-teal-500 hover:bg-teal-600 shadow-teal-500/20"
+                ? "bg-destructive hover:bg-destructive/90 shadow-destructive/20 text-destructive-foreground"
+                : "bg-primary hover:bg-primary/90 shadow-primary/20 text-primary-foreground"
               }`}
             >
               {isProcessing ? (
@@ -101,8 +101,8 @@ export default function ClockPageClient() {
             </Button>
 
             {isClockedIn && lastEntry && (
-              <div className="mt-6 p-4 bg-teal-500/5 rounded-xl border border-teal-500/10 w-full text-center">
-                <p className="text-sm text-teal-400 font-medium">Shift started at</p>
+              <div className="mt-6 p-4 bg-primary/5 rounded-xl border border-primary/10 w-full text-center">
+                <p className="text-sm text-primary font-medium">Shift started at</p>
                 <p className="text-2xl font-bold">{lastEntry.clockIn}</p>
               </div>
             )}
@@ -111,8 +111,8 @@ export default function ClockPageClient() {
 
         <div className="mt-10">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <History className="h-5 w-5 text-teal-400" />
+            <h2 className="text-xl font-bold flex items-center gap-2 text-foreground">
+              <History className="h-5 w-5 text-primary" />
               Recent History
             </h2>
           </div>
@@ -133,15 +133,15 @@ export default function ClockPageClient() {
                       <Calendar className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold">{entry.date}</p>
+                      <p className="text-sm font-semibold text-foreground">{entry.date}</p>
                       <p className="text-xs text-muted-foreground">
                         {entry.clockIn} - {entry.clockOut || "..."}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold text-teal-400">
-                      {entry.totalHours ? `${entry.totalHours} hrs` : "Active"}
+                    <p className="text-sm font-bold text-primary">
+                      {entry.trackedTime ? entry.trackedTime : "Active"}
                     </p>
                   </div>
                 </div>
