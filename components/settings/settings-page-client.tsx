@@ -126,7 +126,13 @@ export default function SettingsPageClient() {
               <Button
                 variant="destructive"
                 className="w-full md:w-auto"
-                onClick={() => signOut()}
+                onClick={async () => {
+                  if (typeof window !== 'undefined') {
+                    localStorage.removeItem('last_notification_time');
+                    sessionStorage.clear();
+                  }
+                  await signOut({ callbackUrl: '/login' });
+                }}
               >
                 <LogOut className="mr-2 h-4 w-4" /> Sign Out
               </Button>

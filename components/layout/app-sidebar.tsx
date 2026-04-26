@@ -179,12 +179,12 @@ export function AppSidebar() {
                 <Avatar className="h-8 w-8 border border-teal-500/30">
                   <AvatarImage src={session?.user?.image || ''} />
                   <AvatarFallback className="bg-teal-900/50 text-teal-400 text-xs">
-                    {session?.user?.name?.charAt(0) || 'U'}
+                    {session?.user?.name?.charAt(0) || session?.user?.email?.charAt(0)?.toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex flex-col text-left group-data-[collapsible=icon]:hidden">
+                <div className="flex flex-col text-left group-data-[collapsible=icon]:hidden overflow-hidden">
                   <span className="text-xs font-bold text-white truncate max-w-[100px]">
-                    {session?.user?.name}
+                    {session?.user?.name || session?.user?.email?.split('@')[0] || 'User'}
                   </span>
                   <span className="text-[10px] text-gray-500 truncate max-w-[100px]">
                     {userRole}
@@ -196,7 +196,14 @@ export function AppSidebar() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
-              onClick={() => signOut({ callbackUrl: '/login' })}
+              onClick={async () => {
+                // Clear any potential local state before signing out
+                if (typeof window !== 'undefined') {
+                  localStorage.removeItem('last_notification_time');
+                  sessionStorage.clear();
+                }
+                await signOut({ callbackUrl: '/login' });
+              }}
               className="text-red-400 hover:bg-red-400/10 hover:text-red-300"
               tooltip="Sign Out"
             >

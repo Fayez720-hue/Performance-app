@@ -488,6 +488,13 @@ export async function getDashboardStats(startDate?: string, endDate?: string, us
 
       totalTasks = relevantTasks.length
       completedTasks = relevantTasks.filter((row: any[]) => String(row[6] || "").trim().toLowerCase() === "completed").length
+
+      // Also filter the employees list returned to only include the current user
+      if (currentEmployee) {
+        employeeStats = [currentEmployee]
+      } else {
+        employeeStats = []
+      }
     } else {
       // Admin/Manager View: Show Global Stats
       relevantTasks = taskRows

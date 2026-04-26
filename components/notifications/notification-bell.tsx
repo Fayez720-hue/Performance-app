@@ -109,7 +109,16 @@ export function NotificationBell() {
                         {notification.message}
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
+                        {(() => {
+                          try {
+                            const date = new Date(notification.timestamp);
+                            return !isNaN(date.getTime())
+                              ? formatDistanceToNow(date, { addSuffix: true })
+                              : 'just now';
+                          } catch {
+                            return 'just now';
+                          }
+                        })()}
                       </p>
                     </div>
                     {!notification.read && (

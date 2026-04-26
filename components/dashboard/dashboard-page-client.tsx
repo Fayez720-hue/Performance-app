@@ -114,20 +114,32 @@ export default function DashboardPageClient() {
     }
   };
 
+  const currentUserStats = useMemo(() => {
+    if (!data?.employees) return null;
+
+    // If it's a personal view, the backend already filtered the list to 1 employee
+    if (data.isPersonalView && data.employees.length > 0) {
+      return data.employees[0];
+    }
+
+    // Otherwise try to find the match by name
+    if (session?.user?.name) {
+      const name = session.user.name.toLowerCase();
+      return data.employees.find(emp => emp.name.toLowerCase().includes(name)) || null;
+    }
+
+    return null;
+  }, [data?.employees, data?.isPersonalView, session?.user?.name]);
+
   const filteredEmployees = useMemo(() => {
     if (!data?.employees) return [];
-    // For personal view, we only show the current user in the list if they exist there
     if (data.isPersonalView) {
-      return data.employees.filter(emp =>
-        emp.name.toLowerCase().includes(session?.user?.name?.toLowerCase() || "")
-      );
+      return currentUserStats ? [currentUserStats] : [];
     }
     return data.employees.filter(emp =>
       emp.name.toLowerCase().includes(searchTerm.toLowerCase())
     ).slice(0, 3);
-  }, [data?.employees, searchTerm, data?.isPersonalView, session?.user?.name]);
-
-  if (status === "loading" || loading) {
+  }, [data?.employees, searchTerm, data?.isPersonalView, currentUserStats]);
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#090a11]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
@@ -300,8 +312,8 @@ export default function DashboardPageClient() {
             <div>
               <p className="text-3xl font-serif italic mb-1">
                 {data?.isPersonalView
-                  ? `${data.employees[0]?.completed || 0}/${data.employees[0]?.tasks || 0}`
-                  : `${data?.completedTasks || 0}/${data?.totalTasks || 0}`
+                  ? `${currentUserStats?.completed ?? 0}/${currentUserStats?.tasks ?? 0}`
+                  : `${data?.completedTasks ?? 0}/${data?.totalTasks ?? 0}`
                 }
               </p>
               <p className="text-[10px] text-gray-500 font-bold tracking-widest uppercase italic">
