@@ -99,10 +99,10 @@ export async function POST(request: Request) {
     const data = await request.json()
     const id = await createTask(data)
 
-    // Notify assignee
+    // Notify assignee, managers, and assigner
     const newTask = await getTaskById(id)
     if (newTask) {
-      await notifyTaskAssigned(newTask, session.user.name || undefined)
+      await notifyTaskAssigned(newTask, session.user.email, session.user.name || undefined)
     }
 
     return NextResponse.json({ id })

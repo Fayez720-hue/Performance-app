@@ -181,28 +181,27 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     // Update the task with calculated values
     await updateTask(taskId, updateData)
 
-    // Fetch updated task for notifications
     const updatedTask = await getTaskById(taskId)
-    if (updatedTask) {
+    if (updatedTask && session.user?.email) {
       // 0. Notify if assignee changed
       if (data.name && data.name !== existingTask.name) {
-        await notifyTaskAssigned(updatedTask, session.user.name || undefined)
+        await notifyTaskAssigned(updatedTask, session.user.email, session.user.name || undefined)
       }
 
       // 1. Notify about progress change
       if (data.progress && data.progress !== existingTask.progress) {
-        await notifyProgressUpdate(updatedTask, existingTask.progress)
+        await notifyProgressUpdate(updatedTask, existingTask.progress, session.user.email)
       }
 
       // 2. Notify specifically about "Review" status from Team Members
       else if (data.userRole === "Team Member" && data.progress === "Review" && existingTask.progress !== "Review") {
-        await notifyProgressUpdate(updatedTask, existingTask.progress)
+        await notifyProgressUpdate(updatedTask, existingTask.progress, session.user.email)
       }
 
       // 3. Notify Team Member if Manager adds edits
       if ((data.userRole === "Admin" || data.userRole === "Manager") && data.userRole !== undefined) {
         if (data.edits && data.edits !== existingTask.edits) {
-          await notifyRevisionsRequested(updatedTask)
+          await notifyRevisionsRequested(updatedTask, session.user.email)
         }
       }
     }

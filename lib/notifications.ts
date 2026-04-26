@@ -76,73 +76,80 @@ export async function sendNotification(data: NotificationData): Promise<void> {
   }
 }
 
-export async function notifyTaskAssigned(task: Task, assignedByName?: string): Promise<void> {
-  // Notify the assignee
-  const assignee = await getUserByEmail(task.name)
-  if (assignee) {
+export async function notifyTaskAssigned(task: Task, assignedByEmail?: string, assignedByName?: string): Promise<void> {
+  const users = await getUsers()
+  const recipients = new Set<string>()
+
+  // 1. Add Assignee
+  const assignee = users.find(u => u.name === task.name)
+  if (assignee) recipients.add(assignee.email)
+
+  // 2. Add Assigner (the person who just created/updated it)
+  if (assignedByEmail) recipients.add(assignedByEmail)
+
+  // 3. Add all Managers and Admins
+  const managers = users.filter((u) => u.role === "Manager" || u.role === "Admin")
+  managers.forEach(m => recipients.add(m.email))
+
+  for (const email of recipients) {
     await sendNotification({
       type: "task_assigned",
       task,
-      recipientEmail: assignee.email,
+      recipientEmail: email,
       senderName: assignedByName,
     })
   }
-
-  // Notify managers
-  const users = await getUsers()
-  const managers = users.filter((u) => u.role === "Manager" || u.role === "Admin")
-  
-  for (const manager of managers) {
-    if (manager.email !== assignee?.email) {
-      await sendNotification({
-        type: "task_assigned",
-        task,
-        recipientEmail: manager.email,
-        senderName: assignedByName,
-      })
-    }
-  }
 }
 
-export async function notifyProgressUpdate(task: Task, previousProgress: string): Promise<void> {
-  // Don't notify if progress hasn't changed
+export async function notifyProgressUpdate(task: Task, previousProgress: string, updatedByEmail?: string): Promise<void> {
   if (task.progress === previousProgress) return
 
-  // Notify managers about progress updates
   const users = await getUsers()
+  const recipients = new Set<string>()
+
+  // 1. Add Assignee
+  const assignee = users.find(u => u.name === task.name)
+  if (assignee) recipients.add(assignee.email)
+
+  // 2. Add the person who made the update
+  if (updatedByEmail) recipients.add(updatedByEmail)
+
+  // 3. Add all Managers and Admins
   const managers = users.filter((u) => u.role === "Manager" || u.role === "Admin")
+  managers.forEach(m => recipients.add(m.email))
 
-  for (const manager of managers) {
+  const type = task.progress === "Review" ? "submitted_for_review" :
+               task.progress === "Completed" ? "task_completed" : "progress_updated"
+
+  for (const email of recipients) {
     await sendNotification({
-      type: task.progress === "Review" ? "submitted_for_review" : "progress_updated",
+      type,
       task,
-      recipientEmail: manager.email,
+      recipientEmail: email,
     })
-  }
-
-  // If completed, also notify the assignee
-  if (task.progress === "Completed") {
-    const assignee = await getUserByEmail(task.name)
-    if (assignee) {
-      await sendNotification({
-        type: "task_completed",
-        task,
-        recipientEmail: assignee.email,
-      })
-    }
   }
 }
 
-export async function notifyRevisionsRequested(task: Task): Promise<void> {
-  // Find the assignee by name and notify them
+export async function notifyRevisionsRequested(task: Task, managerEmail?: string): Promise<void> {
   const users = await getUsers()
-  const assignee = users.find((u) => u.name === task.name)
+  const recipients = new Set<string>()
+
+  // 1. Add Assignee
+  const assignee = users.find(u => u.name === task.name)
+  if (assignee) recipients.add(assignee.email)
+
+  // 2. Add the manager who requested revisions
+  if (managerEmail) recipients.add(managerEmail)
+
+  // 3. Add all Managers and Admins
+  const managers = users.filter((u) => u.role === "Manager" || u.role === "Admin")
+  managers.forEach(m => recipients.add(m.email))
   
-  if (assignee) {
+  for (const email of recipients) {
     await sendNotification({
       type: "revisions_requested",
       task,
-      recipientEmail: assignee.email,
+      recipientEmail: email,
     })
   }
 }
