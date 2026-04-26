@@ -225,6 +225,10 @@ export default function ReportsPageClient() {
             <BarChart3 className="h-5 w-5" />
             <span className="text-[10px] mt-1">Reports</span>
           </button>
+          <button onClick={() => router.push("/clock-in")} className="flex flex-col items-center px-4 text-muted-foreground hover:text-primary transition-colors">
+            <Clock className="h-5 w-5" />
+            <span className="text-[10px] mt-1">Attendance</span>
+          </button>
           <button onClick={() => router.push("/settings")} className="flex flex-col items-center px-4 text-muted-foreground hover:text-primary transition-colors">
             <SettingsIcon className="h-5 w-5" />
             <span className="text-[10px] mt-1">Settings</span>
