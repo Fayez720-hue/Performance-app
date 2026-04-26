@@ -3,7 +3,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  trailingSlash: true,
+  trailingSlash: false,
   typescript: {
     ignoreBuildErrors: true,
   },

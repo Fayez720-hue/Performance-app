@@ -5,17 +5,23 @@ import { getUserByEmail } from "@/lib/google-sheets";
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_SECRET || "",
+      clientId: (process.env.GOOGLE_CLIENT_ID || "").trim(),
+      clientSecret: (process.env.GOOGLE_CLIENT_SECRET || "").trim(),
     }),
   ],
+  debug: process.env.NODE_ENV === "development",
+  secret: process.env.NEXTAUTH_SECRET,
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
   pages: {
     signIn: '/login',
     error: '/login',
   },
   callbacks: {
     async session({ session, token }) {
-      if (session.user) {
+      if (session.user && token) {
         (session.user as any).id = token.sub;
         (session.user as any).role = token.role || "Team Member";
         (session.user as any).name = token.name || session.user.name;
@@ -23,12 +29,11 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.email = user.email;
 
-        // Fetch user data from DB ONLY ONCE during sign-in
         try {
           if (user.email) {
             const dbUser = await getUserByEmail(user.email);
@@ -36,7 +41,7 @@ export const authOptions: NextAuthOptions = {
               token.role = dbUser.role;
               token.name = dbUser.name;
             } else {
-              const adminEmails = (process.env.ADMIN_EMAILS || "").toLowerCase().split(",").map(e => e.trim());
+              const adminEmails = (process.env.ADMIN_EMAILS || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean);
               if (adminEmails.includes(user.email.toLowerCase())) {
                 token.role = "Admin";
               } else {
@@ -52,5 +57,4 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
 };
