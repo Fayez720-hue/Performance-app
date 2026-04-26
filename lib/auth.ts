@@ -7,12 +7,6 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_SECRET || "",
-      authorization: {
-        params: {
-          prompt: "select_account",
-          access_type: "offline",
-        }
-      }
     }),
   ],
   pages: {
