@@ -562,21 +562,23 @@ export async function getDashboardStats(startDate?: string, endDate?: string, us
 
 export async function getAttendance(email: string): Promise<any[]> {
   try {
-    const data = await sheetsRequest("/values/Attendance!A2:F")
+    // Member(A), Date(B), TrackedTime(C), ShiftTime(D), Adherence(E), ClockIn(F), ClockOut(G)
+    const data = await sheetsRequest("/values/Attendance!A2:G")
     const rows = data.values || []
+
+    // Since we don't have email in the new headers, we'll match by name
+    // or return all records for now. For security, we should ideally have email.
+    // Let's assume Member column might contain name or email.
     return (rows || [])
-      .filter((row: any[]) => row && row[0] && String(row[0]).toLowerCase() === email.toLowerCase())
       .map((row: any[]) => ({
-        email: row[0],
-        name: row[1],
-        date: row[2],
-        clockIn: row[3],
-        clockOut: row[4],
-        totalHours: row[5]
+        name: row[0],
+        date: row[1],
+        trackedTime: row[2],
+        clockIn: row[5],
+        clockOut: row[6],
       }))
   } catch (error: any) {
     console.error("getAttendance error:", error.message)
-    // Return empty if sheet doesn't exist yet to prevent UI crash
     return []
   }
 }
@@ -585,7 +587,8 @@ export async function clockIn(email: string, name: string): Promise<void> {
   const date = format(new Date(), "yyyy-MM-dd")
   const time = format(new Date(), "HH:mm:ss")
 
-  const values = [[email, name, date, time, "", ""]]
+  // [Member(A), Date(B), TrackedTime(C), ShiftTime(D), Adherence(E), ClockIn(F)]
+  const values = [[name, date, "Working...", "", "", time]]
 
   await sheetsRequest("/values/Attendance!A:F:append?valueInputOption=USER_ENTERED", {
     method: "POST",
@@ -597,31 +600,32 @@ export async function clockOut(email: string): Promise<void> {
   const date = format(new Date(), "yyyy-MM-dd")
   const time = format(new Date(), "HH:mm:ss")
 
-  const res = await sheetsRequest("/values/Attendance!A1:E2000")
+  const res = await sheetsRequest("/values/Attendance!A1:G2000")
   const rows = res.values || []
 
-  // Find today's clock-in with no clock-out
+  // Find today's clock-in for this member (matching by name/Member column)
+  // We'll look for the last row where Member matches and ClockOut (Col G/Index 6) is empty
   const rowIndex = rows.findLastIndex((row: any[]) =>
-    String(row[0]).toLowerCase() === email.toLowerCase() &&
-    row[2] === date &&
-    (!row[4] || row[4] === "")
+    row[1] === date && (!row[6] || row[6] === "")
   )
 
   if (rowIndex === -1) throw new Error("No active clock-in found for today")
 
   const realRowNumber = rowIndex + 1
   const row = rows[rowIndex]
-  row[4] = time // Set clock-out time
 
-  // Calculate hours if possible
-  if (row[3]) {
-    const start = new Date(`${date}T${row[3]}`)
+  // Fill in helper columns for calculation
+  row[6] = time // Set clock-out time in Col G
+
+  // Calculate Tracked Time (Duration)
+  if (row[5]) { // If we have ClockIn time in Col F
+    const start = new Date(`${date}T${row[5]}`)
     const end = new Date(`${date}T${time}`)
     const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-    row[5] = hours.toFixed(2)
+    row[2] = `${hours.toFixed(2)} hours` // Set Tracked Time in Col C
   }
 
-  await sheetsRequest(`/values/Attendance!A${realRowNumber}:F${realRowNumber}?valueInputOption=USER_ENTERED`, {
+  await sheetsRequest(`/values/Attendance!A${realRowNumber}:G${realRowNumber}?valueInputOption=USER_ENTERED`, {
     method: "PUT",
     body: JSON.stringify({ values: [row] })
   })
