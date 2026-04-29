@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import useSWR from "swr"
 import { ClipboardX, Loader2 } from "lucide-react"
 import { TaskCard } from "./task-card"
@@ -40,6 +40,7 @@ export function TaskDeck({ user }: TaskDeckProps) {
   const [highlightedTaskId, setHighlightedTaskId] = useState<number | null>(null)
 
   const searchParams = useSearchParams()
+  const router = useRouter()
   const taskIdParam = searchParams.get('taskId')
   const timestampParam = searchParams.get('t')
   const highlightToken = taskIdParam ? `${taskIdParam}-${timestampParam || ''}` : null
@@ -93,6 +94,11 @@ export function TaskDeck({ user }: TaskDeckProps) {
       // Role-based visibility:
       // We TRUST the API to have already filtered tasks for Team Members.
       // We only apply search and filter selections here.
+
+      // If a task is explicitly referred to by a notification URL, show ONLY that task
+      if (taskIdParam && task.id !== parseInt(taskIdParam)) {
+        return false
+      }
 
       // Search filter
       const matchesSearch =
@@ -158,6 +164,19 @@ export function TaskDeck({ user }: TaskDeckProps) {
 
   return (
     <div className="space-y-6">
+      {/* Target Task Banner */}
+      {taskIdParam && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-4 gap-4">
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold text-primary">Viewing Highlighted Task</span>
+            <span className="text-xs text-muted-foreground">The list is filtered to show only the currently selected task.</span>
+          </div>
+          <Button variant="default" size="sm" onClick={() => router.push('/tasks')}>
+            Show All Tasks
+          </Button>
+        </div>
+      )}
+
       {/* Stats */}
       {tasks && tasks.length > 0 && <TaskStats tasks={tasks} />}
 
