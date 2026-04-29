@@ -35,6 +35,14 @@ export default function ReportsPageClient() {
   const router = useRouter()
   const { data: stats, isLoading } = useSWR("/api/dashboard", fetcher)
 
+  const userRole = (session?.user as any)?.role || "Team Member"
+  const canManage = userRole === "Admin" || userRole === "Manager"
+
+  if (!isLoading && !canManage) {
+    router.replace("/dashboard")
+    return null
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -221,10 +229,12 @@ export default function ReportsPageClient() {
             <CheckSquare className="h-5 w-5" />
             <span className="text-[10px] mt-1">Tasks</span>
           </button>
-          <button className="flex flex-col items-center px-4 text-primary font-medium">
-            <BarChart3 className="h-5 w-5" />
-            <span className="text-[10px] mt-1">Reports</span>
-          </button>
+          {canManage && (
+            <button className="flex flex-col items-center px-4 text-primary font-medium">
+              <BarChart3 className="h-5 w-5" />
+              <span className="text-[10px] mt-1">Reports</span>
+            </button>
+          )}
           <button onClick={() => router.push("/clock-in")} className="flex flex-col items-center px-4 text-muted-foreground hover:text-primary transition-colors">
             <Clock className="h-5 w-5" />
             <span className="text-[10px] mt-1">Attendance</span>

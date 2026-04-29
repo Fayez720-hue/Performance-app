@@ -50,11 +50,11 @@ export function AppSidebar() {
       icon: CheckSquare,
       url: '/tasks',
     },
-    {
-      title: isAdminOrManager ? 'Reports' : 'Analytics',
+    ...(isAdminOrManager ? [{
+      title: 'Reports',
       icon: BarChart3,
       url: '/reports',
-    },
+    }] : []),
     {
       title: 'Attendance',
       icon: Clock,

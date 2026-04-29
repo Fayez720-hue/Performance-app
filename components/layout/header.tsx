@@ -34,12 +34,14 @@ export function Header() {
             >
               Dashboard
             </Link>
-            <Link
-              href="/reports"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-teal-400"
-            >
-              {canManage ? "Reports" : "Analytics"}
-            </Link>
+            {canManage && (
+              <Link
+                href="/reports"
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-teal-400"
+              >
+                Reports
+              </Link>
+            )}
             <Link
               href="/clock-in"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-teal-400"

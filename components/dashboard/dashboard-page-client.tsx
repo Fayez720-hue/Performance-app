@@ -389,15 +389,17 @@ export default function DashboardPageClient() {
           <span className="text-[9px] font-bold uppercase tracking-widest">Dashboard</span>
         </button>
 
-        <button
-          onClick={() => router.push("/reports")}
-          className="flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground"
-        >
-          <TrendingUp className="h-5 w-5" />
-          <span className="text-[9px] font-bold uppercase tracking-widest">
-            {canManage ? "Reports" : "Analytics"}
-          </span>
-        </button>
+        {canManage && (
+          <button
+            onClick={() => router.push("/reports")}
+            className="flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground"
+          >
+            <TrendingUp className="h-5 w-5" />
+            <span className="text-[9px] font-bold uppercase tracking-widest">
+              Reports
+            </span>
+          </button>
+        )}
 
         <button
           onClick={() => router.push("/clock-in")}
