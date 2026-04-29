@@ -36,6 +36,18 @@ export function TaskDeck({ user }: TaskDeckProps) {
   const [search, setSearch] = useState("")
   const [progressFilter, setProgressFilter] = useState<TaskProgress | "all">("all")
   const [assigneeFilter, setAssigneeFilter] = useState("all")
+  const [highlightedTaskId, setHighlightedTaskId] = useState<number | null>(null)
+
+  // Handle auto-opening task from URL param
+  useMemo(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const taskId = params.get('taskId')
+      if (taskId) {
+        setHighlightedTaskId(parseInt(taskId))
+      }
+    }
+  }, [])
 
   const permissions = ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS["Viewer"]
 
@@ -206,6 +218,7 @@ export function TaskDeck({ user }: TaskDeckProps) {
                         canEdit={canEdit}
                         canDelete={canDelete}
                         onDelete={() => mutate()}
+                        autoExpand={highlightedTaskId === task.id}
                       />
                     )
                   })}

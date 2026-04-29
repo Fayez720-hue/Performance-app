@@ -78,12 +78,18 @@ interface TaskCardProps {
   canEdit: boolean
   canDelete: boolean
   onDelete?: () => void
+  autoExpand?: boolean
 }
 
-export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) {
+export function TaskCard({ task, canEdit, canDelete, onDelete, autoExpand }: TaskCardProps) {
   const router = useRouter()
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(autoExpand || false)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Auto-expand if the prop changes
+  useEffect(() => {
+    if (autoExpand) setIsExpanded(true)
+  }, [autoExpand])
 
   const config = progressConfig[task.progress]
   
@@ -109,9 +115,11 @@ export function TaskCard({ task, canEdit, canDelete, onDelete }: TaskCardProps) 
   return (
     <>
       <Card
+        id={`task-${task.id}`}
         className={cn(
           "group cursor-pointer border-border bg-card transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5",
-          isOverdue && "border-red-500/30"
+          isOverdue && "border-destructive/30",
+          autoExpand && "ring-2 ring-primary ring-offset-2 ring-offset-background animate-pulse"
         )}
         onClick={() => setIsExpanded(true)}
       >

@@ -91,7 +91,7 @@ export function NotificationBell() {
                 return (
                   <Link
                     key={notification.id}
-                    href={`/tasks/${notification.taskId}/edit`}
+                    href={`/tasks?taskId=${notification.taskId}`}
                     onClick={() => setOpen(false)}
                     className={cn(
                       "flex gap-3 px-4 py-3 transition-colors hover:bg-muted/50",
