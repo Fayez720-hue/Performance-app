@@ -165,19 +165,6 @@ export function TaskDeck({ user }: TaskDeckProps) {
 
   return (
     <div className="space-y-6">
-      {/* Target Task Banner */}
-      {taskIdParam && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-4 gap-4">
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-primary">Viewing Highlighted Task</span>
-            <span className="text-xs text-muted-foreground">The list is filtered to show only the currently selected task.</span>
-          </div>
-          <Button variant="default" size="sm" onClick={() => router.push('/tasks')}>
-            Show All Tasks
-          </Button>
-        </div>
-      )}
-
       {/* Stats */}
       {tasks && tasks.length > 0 && <TaskStats tasks={tasks} />}
 
