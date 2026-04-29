@@ -114,7 +114,7 @@ export function TaskDeck({ user }: TaskDeckProps) {
 
       return matchesSearch && matchesProgress && matchesAssignee
     })
-  }, [tasks, search, progressFilter, assigneeFilter])
+  }, [tasks, search, progressFilter, assigneeFilter, taskIdParam])
 
   // Group tasks by progress
   const groupedTasks = useMemo(() => {
