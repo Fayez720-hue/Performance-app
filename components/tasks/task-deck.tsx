@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import useSWR from "swr"
 import { ClipboardX, Loader2 } from "lucide-react"
 import { TaskCard } from "./task-card"
@@ -39,7 +39,7 @@ export function TaskDeck({ user }: TaskDeckProps) {
   const [highlightedTaskId, setHighlightedTaskId] = useState<number | null>(null)
 
   // Handle auto-opening task from URL param
-  useMemo(() => {
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search)
       const taskId = params.get('taskId')
