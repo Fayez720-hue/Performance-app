@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import useSWR from "swr"
 import { ClipboardX, Loader2 } from "lucide-react"
 import { TaskCard } from "./task-card"
@@ -38,16 +39,29 @@ export function TaskDeck({ user }: TaskDeckProps) {
   const [assigneeFilter, setAssigneeFilter] = useState("all")
   const [highlightedTaskId, setHighlightedTaskId] = useState<number | null>(null)
 
+  const searchParams = useSearchParams()
+  const taskIdParam = searchParams.get('taskId')
+
   // Handle auto-opening task from URL param
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search)
-      const taskId = params.get('taskId')
-      if (taskId) {
-        setHighlightedTaskId(parseInt(taskId))
-      }
+    if (taskIdParam) {
+      const id = parseInt(taskIdParam)
+      setHighlightedTaskId(id)
+
+      // Clear filters so the task is visible
+      setSearch("")
+      setProgressFilter("all")
+      setAssigneeFilter("all")
+
+      // Auto-scroll to the highlighted task after a short delay
+      setTimeout(() => {
+        const element = document.getElementById(`task-${id}`)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 800)
     }
-  }, [])
+  }, [taskIdParam])
 
   const permissions = ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS["Viewer"]
 

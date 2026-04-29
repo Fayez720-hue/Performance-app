@@ -2,7 +2,7 @@
 
 import { useSession } from '@/components/providers/session-provider'
 import { useRouter } from "next/navigation"
-import { useEffect, useState, useCallback } from "react"
+import { Suspense, useEffect, useState, useCallback } from "react"
 import { Header } from "@/components/layout/header"
 import { TaskDeck as TaskList } from "@/components/tasks/task-deck"
 import { Loader2, Plus } from "lucide-react"
