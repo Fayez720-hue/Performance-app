@@ -79,17 +79,18 @@ interface TaskCardProps {
   canDelete: boolean
   onDelete?: () => void
   autoExpand?: boolean
+  highlightToken?: string | null
 }
 
-export function TaskCard({ task, canEdit, canDelete, onDelete, autoExpand }: TaskCardProps) {
+export function TaskCard({ task, canEdit, canDelete, onDelete, autoExpand, highlightToken }: TaskCardProps) {
   const router = useRouter()
   const [isExpanded, setIsExpanded] = useState(autoExpand || false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  // Auto-expand if the prop changes
+  // Auto-expand if the prop changes or token updates
   useEffect(() => {
-    if (autoExpand) setIsExpanded(true)
-  }, [autoExpand])
+    if (autoExpand || highlightToken) setIsExpanded(true)
+  }, [autoExpand, highlightToken])
 
   const config = progressConfig[task.progress]
   

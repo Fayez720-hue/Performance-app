@@ -90,7 +90,13 @@ export default function TasksPageClient() {
             </Button>
           )}
         </div>
-        <TaskList user={user} />
+        <Suspense fallback={
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        }>
+          <TaskList user={user} />
+        </Suspense>
       </main>
     </div>
   )

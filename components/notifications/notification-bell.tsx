@@ -16,6 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import type { Notification, NotificationType } from "@/types/user"
 import { getApiUrl } from "@/lib/api"
+import { useRouter } from "next/navigation"
 
 const _fetcher = (url: string) => fetch(getApiUrl(url)).then((res) => res.json())
 
@@ -37,6 +38,7 @@ const notificationColors: Record<NotificationType, string> = {
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false)
+  const router = useRouter()
   const { data: notifications, mutate, isLoading } = useSWR<Notification[]>(
     "/api/notifications",
     _fetcher,
@@ -89,12 +91,14 @@ export function NotificationBell() {
                 const color = notificationColors[notification.type]
 
                 return (
-                  <Link
+                  <div
                     key={notification.id}
-                    href={`/tasks?taskId=${notification.taskId}`}
-                    onClick={() => setOpen(false)}
+                    onClick={() => {
+                      setOpen(false)
+                      router.push(`/tasks?taskId=${notification.taskId}&t=${Date.now()}`)
+                    }}
                     className={cn(
-                      "flex gap-3 px-4 py-3 transition-colors hover:bg-muted/50",
+                      "cursor-pointer flex gap-3 px-4 py-3 transition-colors hover:bg-muted/50",
                       !notification.read && "bg-primary/5"
                     )}
                   >
@@ -124,7 +128,7 @@ export function NotificationBell() {
                     {!notification.read && (
                       <div className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-primary" />
                     )}
-                  </Link>
+                  </div>
                 )
               })}
             </div>

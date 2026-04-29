@@ -41,6 +41,8 @@ export function TaskDeck({ user }: TaskDeckProps) {
 
   const searchParams = useSearchParams()
   const taskIdParam = searchParams.get('taskId')
+  const timestampParam = searchParams.get('t')
+  const highlightToken = taskIdParam ? `${taskIdParam}-${timestampParam || ''}` : null
 
   // Handle auto-opening task from URL param
   useEffect(() => {
@@ -52,16 +54,21 @@ export function TaskDeck({ user }: TaskDeckProps) {
       setSearch("")
       setProgressFilter("all")
       setAssigneeFilter("all")
+    }
+  }, [taskIdParam, timestampParam])
 
-      // Auto-scroll to the highlighted task after a short delay
+  // Auto-scroll logic separated to run only when tasks load
+  useEffect(() => {
+    if (taskIdParam && !isLoading && Array.isArray(tasks) && tasks.length > 0) {
+      const id = parseInt(taskIdParam)
       setTimeout(() => {
         const element = document.getElementById(`task-${id}`)
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' })
         }
-      }, 800)
+      }, 300)
     }
-  }, [taskIdParam])
+  }, [taskIdParam, timestampParam, isLoading, tasks])
 
   const permissions = ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS["Viewer"]
 
@@ -233,6 +240,7 @@ export function TaskDeck({ user }: TaskDeckProps) {
                         canDelete={canDelete}
                         onDelete={() => mutate()}
                         autoExpand={highlightedTaskId === task.id}
+                        highlightToken={highlightedTaskId === task.id ? highlightToken : null}
                       />
                     )
                   })}
