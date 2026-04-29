@@ -1,143 +1,129 @@
-"use client"
+"use client";
 
-import { useState, useMemo, useEffect } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
-import useSWR from "swr"
-import { ClipboardX, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { TaskCard } from "./task-card"
-import { TaskFilters } from "./task-filters"
-import { TaskStats } from "./task-stats"
-import type { User } from "@/types/user"
-import { fetcher } from "@/lib/api"
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import useSWR from "swr";
+import { ClipboardX, Loader2 } from "lucide-react";
+import { TaskCard } from "./task-card";
+import { TaskFilters } from "./task-filters";
+import { TaskStats } from "./task-stats";
+import type { User } from "@/types/user";
+import { fetcher } from "@/lib/api";
 import {
   Empty,
   EmptyHeader,
   EmptyTitle,
   EmptyDescription,
   EmptyMedia,
-} from "@/components/ui/empty"
-import type { Task, TaskProgress } from "@/types/task"
-import type { UserRole } from "@/types/user"
-import { ROLE_PERMISSIONS } from "@/types/user"
+} from "@/components/ui/empty";
+import type { Task, TaskProgress } from "@/types/task";
+import type { UserRole } from "@/types/user";
+import { ROLE_PERMISSIONS } from "@/types/user";
 
 interface TaskDeckProps {
-  user: User
+  user: User;
 }
 
 export function TaskDeck({ user }: TaskDeckProps) {
-  const userRole = user.role || "Team Member"
-  const userName = user.name || "Guest"
+  const userRole = user.role || "Team Member";
+  const userName = user.name || "Guest";
 
   const { data: tasks, error, isLoading, mutate } = useSWR<Task[]>("/api/tasks", fetcher, {
-    refreshInterval: 30000, // Refresh every 30 seconds
-  })
+    refreshInterval: 30000,
+  });
 
-  const { data: users } = useSWR<User[]>("/api/users", fetcher)
+  const { data: users } = useSWR<User[]>("/api/users", fetcher);
 
-  const [search, setSearch] = useState("")
-  const [progressFilter, setProgressFilter] = useState<TaskProgress | "all">("all")
-  const [assigneeFilter, setAssigneeFilter] = useState("all")
-  const [highlightedTaskId, setHighlightedTaskId] = useState<number | null>(null)
+  const [search, setSearch] = useState("");
+  const [progressFilter, setProgressFilter] = useState<TaskProgress | "all">("all");
+  const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [highlightedTaskId, setHighlightedTaskId] = useState<number | null>(null);
 
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const taskIdParam = searchParams.get('taskId')
-  const timestampParam = searchParams.get('t')
-  const highlightToken = taskIdParam ? `${taskIdParam}-${timestampParam || ''}` : null
+  const searchParams = useSearchParams();
+  const taskIdParam = searchParams.get("taskId");
+  const timestampParam = searchParams.get("t");
+  const highlightToken = taskIdParam ? `${taskIdParam}-${timestampParam || ""}` : null;
 
-  // Handle auto-opening task from URL param
+  // Handle auto-opening and clean URL
   useEffect(() => {
     if (taskIdParam) {
-      const id = parseInt(taskIdParam)
-      setHighlightedTaskId(id)
+      const id = parseInt(taskIdParam, 10);
+      setHighlightedTaskId(id);
 
       // Clear filters so the task is visible
-      setSearch("")
-      setProgressFilter("all")
-      setAssigneeFilter("all")
-    }
-  }, [taskIdParam, timestampParam])
+      setSearch("");
+      setProgressFilter("all");
+      setAssigneeFilter("all");
 
-  // Auto-scroll logic separated to run only when tasks load
+      // Remove the query parameters from the URL without reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete("taskId");
+      url.searchParams.delete("t");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [taskIdParam]);
+
+  // Auto‑scroll to the task when tasks are loaded
   useEffect(() => {
     if (taskIdParam && !isLoading && Array.isArray(tasks) && tasks.length > 0) {
-      const id = parseInt(taskIdParam)
+      const id = parseInt(taskIdParam, 10);
       setTimeout(() => {
-        const element = document.getElementById(`task-${id}`)
+        const element = document.getElementById(`task-${id}`);
         if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
         }
-      }, 300)
+      }, 300);
     }
-  }, [taskIdParam, timestampParam, isLoading, tasks])
+  }, [taskIdParam, isLoading, tasks]);
 
-  const permissions = ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS["Viewer"]
+  const permissions = ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS.Viewer;
 
-  // Get unique assignees
+  // Unique assignees
   const assignees = useMemo(() => {
-    // Priority 1: All registered users
     if (Array.isArray(users) && users.length > 0) {
-      return [...new Set(users.map((u) => u.name).filter(Boolean))].sort()
+      return [...new Set(users.map((u) => u.name).filter(Boolean))].sort();
     }
-    // Priority 2: Unique names from existing tasks
     if (Array.isArray(tasks)) {
-      return [...new Set(tasks.map((t) => t.name).filter(Boolean))].sort()
+      return [...new Set(tasks.map((t) => t.name).filter(Boolean))].sort();
     }
-    return []
-  }, [tasks, users])
+    return [];
+  }, [tasks, users]);
 
-  // Filter tasks
+  // Filter tasks – no longer uses taskIdParam
   const filteredTasks = useMemo(() => {
-    if (!Array.isArray(tasks)) return []
+    if (!Array.isArray(tasks)) return [];
 
     return tasks.filter((task) => {
-      // Role-based visibility:
-      // We TRUST the API to have already filtered tasks for Team Members.
-      // We only apply search and filter selections here.
-
-      // If a task is explicitly referred to by a notification URL, show ONLY that task
-      if (taskIdParam && task.id !== parseInt(taskIdParam)) {
-        return false
-      }
-
-      // Search filter
       const matchesSearch =
         task.task.toLowerCase().includes(search.toLowerCase()) ||
-        task.name.toLowerCase().includes(search.toLowerCase())
+        task.name.toLowerCase().includes(search.toLowerCase());
 
-      // Progress filter
-      const matchesProgress = progressFilter === "all" || task.progress === progressFilter
+      const matchesProgress = progressFilter === "all" || task.progress === progressFilter;
+      const matchesAssignee = assigneeFilter === "all" || task.name === assigneeFilter;
 
-      // Assignee filter
-      const matchesAssignee = assigneeFilter === "all" || task.name === assigneeFilter
-
-      return matchesSearch && matchesProgress && matchesAssignee
-    })
-  }, [tasks, search, progressFilter, assigneeFilter, taskIdParam])
+      return matchesSearch && matchesProgress && matchesAssignee;
+    });
+  }, [tasks, search, progressFilter, assigneeFilter]);
 
   // Group tasks by progress
   const groupedTasks = useMemo(() => {
     const groups: Record<TaskProgress, Task[]> = {
       "To-do": [],
       "In Progress": [],
-      "Review": [],
-      "Completed": [],
-    }
+      Review: [],
+      Completed: [],
+    };
 
     filteredTasks.forEach((task) => {
-      // Ensure the task progress is a valid key in the groups object
-      const progress = task.progress as TaskProgress
+      const progress = task.progress as TaskProgress;
       if (groups[progress]) {
-        groups[progress].push(task)
+        groups[progress].push(task);
       } else {
-        // Fallback to To-do if status is invalid or missing
-        groups["To-do"].push(task)
+        groups["To-do"].push(task);
       }
-    })
-
-    return groups
-  }, [filteredTasks])
+    });
+    return groups;
+  }, [filteredTasks]);
 
   if (error) {
     return (
@@ -152,7 +138,7 @@ export function TaskDeck({ user }: TaskDeckProps) {
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
-    )
+    );
   }
 
   if (isLoading) {
@@ -160,15 +146,13 @@ export function TaskDeck({ user }: TaskDeckProps) {
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
-      {/* Stats */}
       {tasks && tasks.length > 0 && <TaskStats tasks={tasks} />}
 
-      {/* Filters */}
       <TaskFilters
         search={search}
         onSearchChange={setSearch}
@@ -180,7 +164,6 @@ export function TaskDeck({ user }: TaskDeckProps) {
         userRole={userRole}
       />
 
-      {/* Empty State */}
       {tasks && tasks.length === 0 && (
         <Empty className="py-20">
           <EmptyHeader>
@@ -197,7 +180,6 @@ export function TaskDeck({ user }: TaskDeckProps) {
         </Empty>
       )}
 
-      {/* No Results */}
       {tasks && tasks.length > 0 && filteredTasks.length === 0 && (
         <Empty className="py-20">
           <EmptyHeader>
@@ -205,19 +187,16 @@ export function TaskDeck({ user }: TaskDeckProps) {
               <ClipboardX />
             </EmptyMedia>
             <EmptyTitle>No matching tasks</EmptyTitle>
-            <EmptyDescription>
-              Try adjusting your search or filters.
-            </EmptyDescription>
+            <EmptyDescription>Try adjusting your search or filters.</EmptyDescription>
           </EmptyHeader>
         </Empty>
       )}
 
-      {/* Task Grid by Status */}
       {filteredTasks.length > 0 && (
         <div className="space-y-8">
           {(Object.keys(groupedTasks) as TaskProgress[]).map((status) => {
-            const statusTasks = groupedTasks[status]
-            if (statusTasks.length === 0) return null
+            const statusTasks = groupedTasks[status];
+            if (statusTasks.length === 0) return null;
 
             return (
               <div key={status}>
@@ -229,15 +208,14 @@ export function TaskDeck({ user }: TaskDeckProps) {
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {statusTasks.map((task) => {
-                    const isUnderReview = task.progress === "Review" || task.progress === "Completed"
+                    const isUnderReview = task.progress === "Review" || task.progress === "Completed";
                     const canEdit =
                       permissions.canEditAllTasks ||
                       (permissions.canEditOwnTasks &&
-                        !isUnderReview && (
-                        task.name.toLowerCase() === userName.toLowerCase() ||
-                        (user.email && task.name.toLowerCase() === user.email.toLowerCase())
-                      ))
-                    const canDelete = permissions.canDeleteTasks
+                        !isUnderReview &&
+                        (task.name.toLowerCase() === userName.toLowerCase() ||
+                          (user.email && task.name.toLowerCase() === user.email.toLowerCase())));
+                    const canDelete = permissions.canDeleteTasks;
 
                     return (
                       <TaskCard
@@ -249,14 +227,14 @@ export function TaskDeck({ user }: TaskDeckProps) {
                         autoExpand={highlightedTaskId === task.id}
                         highlightToken={highlightedTaskId === task.id ? highlightToken : null}
                       />
-                    )
+                    );
                   })}
                 </div>
               </div>
-            )
+            );
           })}
         </div>
       )}
     </div>
-  )
+  );
 }
