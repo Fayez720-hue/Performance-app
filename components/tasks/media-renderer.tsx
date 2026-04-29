@@ -31,7 +31,11 @@ export function MediaRenderer({ text }: MediaRendererProps) {
           }
 
           const type = (m[2] || '').toLowerCase(); // image, video, etc
-          const content = m[3]; // filename or URL
+          let content = m[3] || ''; // filename or URL
+          
+          if (content.startsWith('http://')) {
+            content = content.replace('http://', 'https://');
+          }
 
           const isUrl = content.startsWith('http') || content.startsWith('data:');
 
