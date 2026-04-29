@@ -89,8 +89,8 @@ export function TaskCard({ task, canEdit, canDelete, onDelete, autoExpand, highl
 
   // Auto-expand if the prop changes or token updates
   useEffect(() => {
-    if (autoExpand || highlightToken) setIsExpanded(true)
-  }, [autoExpand, highlightToken])
+  setIsExpanded(autoExpand ?? false);
+}, [autoExpand]);
 
   const config = progressConfig[task.progress]
   

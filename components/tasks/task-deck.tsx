@@ -41,8 +41,6 @@ export function TaskDeck({ user }: TaskDeckProps) {
 
   const searchParams = useSearchParams();
   const taskIdParam = searchParams.get("taskId");
-  const timestampParam = searchParams.get("t");
-  const highlightToken = taskIdParam ? `${taskIdParam}-${timestampParam || ""}` : null;
 
   // Handle auto-opening and clean URL
   useEffect(() => {
@@ -225,7 +223,6 @@ export function TaskDeck({ user }: TaskDeckProps) {
                         canDelete={canDelete}
                         onDelete={() => mutate()}
                         autoExpand={highlightedTaskId === task.id}
-                        highlightToken={highlightedTaskId === task.id ? highlightToken : null}
                       />
                     );
                   })}
