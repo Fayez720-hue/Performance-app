@@ -1,57 +1,53 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useSession } from '@/components/providers/session-provider'
-import { Header } from "@/components/layout/header"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Clock, LogIn, LogOut, Loader2, Calendar, History } from "lucide-react"
-import useSWR from "swr"
-import { fetcher } from "@/lib/api"
-import { toast } from "sonner"
-import { format } from "date-fns"
+import { useState, useEffect } from "react";
+import { useSession } from '@/components/providers/session-provider';
+import { Header } from "@/components/layout/header";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Clock, LogIn, LogOut, Loader2, Calendar, History } from "lucide-react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/api";
+import { toast } from "sonner";
+import { format } from "date-fns";
 
 export default function ClockPageClient() {
-  const { data: session } = useSession()
-  const { data: history, mutate, isLoading } = useSWR("/api/attendance", fetcher)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [currentTime, setCurrentTime] = useState<Date | null>(null)
+  const { data: session } = useSession();
+  const { data: history, mutate, isLoading } = useSWR("/api/attendance", fetcher);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
-  // Update clock every second
   useEffect(() => {
-    setCurrentTime(new Date()) // Set initial time on mount
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
+    setCurrentTime(new Date());
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-  const lastEntry = history && history.length > 0 ? history[history.length - 1] : null
-  const isClockedIn = lastEntry && lastEntry.date === format(new Date(), "yyyy-MM-dd") && !lastEntry.clockOut
+  const lastEntry = history && history.length > 0 ? history[history.length - 1] : null;
+  const isClockedIn = lastEntry && lastEntry.date === format(new Date(), "yyyy-MM-dd") && !lastEntry.clockOut;
 
   const handleClockAction = async () => {
-    setIsProcessing(true)
-    const action = isClockedIn ? "clock-out" : "clock-in"
+    setIsProcessing(true);
+    const action = isClockedIn ? "clock-out" : "clock-in";
 
     try {
       const res = await fetch("/api/attendance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action })
-      })
-
-      if (!res.ok) throw new Error(await res.text())
-
-      toast.success(isClockedIn ? "Clocked out successfully" : "Clocked in successfully")
-      mutate()
+      });
+      if (!res.ok) throw new Error(await res.text());
+      toast.success(isClockedIn ? "Clocked out successfully" : "Clocked in successfully");
+      mutate();
     } catch (error: any) {
-      toast.error(error.message || "Failed to process request")
+      toast.error(error.message || "Failed to process request");
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
-  }
+  };
 
-  // Prevent hydration error by not rendering the clock until mounted
-  const timeString = currentTime ? format(currentTime, "HH:mm:ss") : "--:--:--"
-  const dateString = currentTime ? format(currentTime, "EEEE, MMMM do") : "Loading..."
+  const timeString = currentTime ? format(currentTime, "HH:mm:ss") : "--:--:--";
+  const dateString = currentTime ? format(currentTime, "EEEE, MMMM do") : "Loading...";
 
   return (
     <div className="flex-1 flex flex-col">
@@ -86,8 +82,8 @@ export default function ClockPageClient() {
                 onClick={handleClockAction}
                 className={`h-32 w-32 rounded-full text-lg font-bold shadow-lg transition-all active:scale-95 ${
                   isClockedIn
-                  ? "bg-destructive hover:bg-destructive/90 shadow-destructive/20 text-destructive-foreground"
-                  : "bg-primary hover:bg-primary/90 shadow-primary/20 text-primary-foreground"
+                    ? "bg-destructive hover:bg-destructive/90 shadow-destructive/20 text-destructive-foreground"
+                    : "bg-primary hover:bg-primary/90 shadow-primary/20 text-primary-foreground"
                 }`}
               >
                 {isProcessing ? (
@@ -153,8 +149,5 @@ export default function ClockPageClient() {
         </main>
       )}
     </div>
-  )
-}
-    </div>
-  )
+  );
 }
