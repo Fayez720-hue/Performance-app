@@ -63,7 +63,7 @@ export default function TasksPageClient() {
     }
   }, [status, router, fetchUser])
 
-  if (status === "loading" || loading || !user) {
+  if (status === "loading") {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -72,32 +72,38 @@ export default function TasksPageClient() {
   }
 
   // Safe permission access
-  const userRole = user.role as UserRole
+  const userRole = (user?.role || (session?.user as any)?.role || "Viewer") as UserRole
   const permissions = ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS["Viewer"]
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex-1 flex flex-col">
       <Header />
-      <main className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Tasks</h1>
-            <p className="text-muted-foreground">Manage and track team progress</p>
-          </div>
-          {permissions.canCreateTasks && (
-            <Button onClick={() => router.push("/tasks/new")} className="w-full md:w-auto">
-              <Plus className="mr-2 h-4 w-4" /> Create Task
-            </Button>
-          )}
+      {loading || !user ? (
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-        <Suspense fallback={
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      ) : (
+        <main className="flex-1 container mx-auto px-4 py-8 max-w-7xl">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">Tasks</h1>
+              <p className="text-muted-foreground">Manage and track team progress</p>
+            </div>
+            {permissions.canCreateTasks && (
+              <Button onClick={() => router.push("/tasks/new")} className="w-full md:w-auto">
+                <Plus className="mr-2 h-4 w-4" /> Create Task
+              </Button>
+            )}
           </div>
-        }>
-          <TaskList user={user} />
-        </Suspense>
-      </main>
+          <Suspense fallback={
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          }>
+            <TaskList user={user} />
+          </Suspense>
+        </main>
+      )}
     </div>
   )
 }

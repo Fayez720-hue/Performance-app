@@ -45,7 +45,7 @@ export default function AdminUsersPageClient() {
     }
   }
 
-  if (status === "loading" || loading) {
+  if (status === "loading") {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -53,21 +53,27 @@ export default function AdminUsersPageClient() {
     )
   }
 
-  if (!user || !ROLE_PERMISSIONS[user.role].canManageUsers) {
+  if (!user && !loading && !ROLE_PERMISSIONS[((session?.user as any).role || "Viewer") as UserRole].canManageUsers) {
     router.replace("/")
     return null
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex-1 flex flex-col">
       <Header />
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-foreground">User Management</h1>
-          <p className="text-muted-foreground">Manage user roles and permissions</p>
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-        <UserManagement />
-      </main>
+      ) : (
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold text-foreground">User Management</h1>
+            <p className="text-muted-foreground">Manage user roles and permissions</p>
+          </div>
+          <UserManagement />
+        </main>
+      )}
     </div>
   )
 }

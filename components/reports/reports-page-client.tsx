@@ -43,91 +43,15 @@ export default function ReportsPageClient() {
     return null
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
-  }
-
-  const performanceTrends = stats?.scoreDistribution || [
-    { range: "0-20%", count: 0 },
-    { range: "21-40%", count: 0 },
-    { range: "41-60%", count: 0 },
-    { range: "61-80%", count: 0 },
-    { range: "81-100%", count: 0 },
-  ]
-
-  const metrics = [
-    {
-      title: "Avg. Performance",
-      value: `${Math.round(stats?.avgScore || 0)}%`,
-      description: "Across all active tasks",
-      icon: Target,
-      color: "text-primary",
-      bg: "bg-primary/10"
-    },
-    {
-      title: "Shift Adherence",
-      value: `${Math.round(stats?.avgShiftAdherence || 0)}%`,
-      description: "Punctuality & availability",
-      icon: Clock,
-      color: "text-primary",
-      bg: "bg-primary/10"
-    },
-    {
-      title: "Completion Rate",
-      value: `${Math.round(stats?.completionRate || 0)}%`,
-      description: "Tasks finished on time",
-      icon: CheckSquare,
-      color: "text-primary",
-      bg: "bg-primary/10"
-    },
-    {
-      title: "Total Employees",
-      value: stats?.totalEmployees || 0,
-      description: "Managed users",
-      icon: Users,
-      color: "text-primary",
-      bg: "bg-primary/10"
-    },
-  ]
-
-  const handleExport = () => {
-    if (!stats?.employees) return;
-
-    // Create CSV content
-    const headers = ["Name", "Title", "Overall Score", "Shift Adherence", "Tasks Completed"];
-    const rows = stats.employees.map((emp: any) => [
-      emp.name,
-      emp.title,
-      `${Math.round(emp.overallScore)}%`,
-      `${Math.round(emp.shiftAdherence)}%`,
-      emp.completedTasks
-    ]);
-
-    const csvContent = [
-      headers.join(","),
-      ...rows.map((row: any) => row.join(","))
-    ].join("\n");
-
-    // Create a blob and download it
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Performance_Report_${new Date().toLocaleDateString()}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex-1 flex flex-col">
       <Header />
-      <main className="container mx-auto px-4 py-8 max-w-6xl pb-24">
+      {isLoading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <main className="flex-1 container mx-auto px-4 py-8 max-w-6xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -218,33 +142,6 @@ export default function ReportsPageClient() {
           </Card>
         </div>
       </main>
-
-      <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-md border-t border-border shadow-lg md:hidden z-50">
-        <div className="flex justify-around py-3 max-w-md mx-auto">
-          <button onClick={() => router.push("/dashboard")} className="flex flex-col items-center px-4 text-muted-foreground hover:text-primary transition-colors">
-            <Home className="h-5 w-5" />
-            <span className="text-[10px] mt-1">Dashboard</span>
-          </button>
-          <button onClick={() => router.push("/tasks")} className="flex flex-col items-center px-4 text-muted-foreground hover:text-primary transition-colors">
-            <CheckSquare className="h-5 w-5" />
-            <span className="text-[10px] mt-1">Tasks</span>
-          </button>
-          {canManage && (
-            <button className="flex flex-col items-center px-4 text-primary font-medium">
-              <BarChart3 className="h-5 w-5" />
-              <span className="text-[10px] mt-1">Reports</span>
-            </button>
-          )}
-          <button onClick={() => router.push("/clock-in")} className="flex flex-col items-center px-4 text-muted-foreground hover:text-primary transition-colors">
-            <Clock className="h-5 w-5" />
-            <span className="text-[10px] mt-1">Attendance</span>
-          </button>
-          <button onClick={() => router.push("/settings")} className="flex flex-col items-center px-4 text-muted-foreground hover:text-primary transition-colors">
-            <SettingsIcon className="h-5 w-5" />
-            <span className="text-[10px] mt-1">Settings</span>
-          </button>
-        </div>
-      </div>
     </div>
   )
 }

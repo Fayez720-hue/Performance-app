@@ -33,7 +33,7 @@ export default function RootLayout({
             <NotificationManager />
             <SidebarProvider defaultOpen={true}>
               <AppSidebar />
-              <SidebarInset className="bg-[#090a11]">
+              <SidebarInset>
                 {children}
               </SidebarInset>
             </SidebarProvider>

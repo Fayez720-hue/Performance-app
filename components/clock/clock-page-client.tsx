@@ -54,102 +54,107 @@ export default function ClockPageClient() {
   const dateString = currentTime ? format(currentTime, "EEEE, MMMM do") : "Loading..."
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex-1 flex flex-col">
       <Header />
-      <main className="container mx-auto px-4 py-8 max-w-2xl">
-        <div className="text-center mb-10">
-          <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 mb-4">
-            <Clock className="h-10 w-10 text-primary" />
-          </div>
-          <h1 className="text-4xl font-bold tracking-tight">Attendance</h1>
-          <p className="text-muted-foreground mt-2">{dateString}</p>
-          <p className="text-5xl font-mono mt-4 font-bold text-foreground">
-            {timeString}
-          </p>
+      {isLoading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
+      ) : (
+        <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
+          <div className="text-center mb-10">
+            <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 mb-4">
+              <Clock className="h-10 w-10 text-primary" />
+            </div>
+            <h1 className="text-4xl font-bold tracking-tight">Attendance</h1>
+            <p className="text-muted-foreground mt-2">{dateString}</p>
+            <p className="text-5xl font-mono mt-4 font-bold text-foreground">
+              {timeString}
+            </p>
+          </div>
 
-        <Card className="border-border bg-card shadow-xl overflow-hidden relative">
-          <div className="absolute top-0 left-0 w-1 bg-primary h-full" />
-          <CardHeader>
-            <CardTitle>Daily Status</CardTitle>
-            <CardDescription>Click the button below to record your shift.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center py-6">
-            <Button
-              size="lg"
-              disabled={isProcessing || isLoading}
-              onClick={handleClockAction}
-              className={`h-32 w-32 rounded-full text-lg font-bold shadow-lg transition-all active:scale-95 ${
-                isClockedIn
-                ? "bg-destructive hover:bg-destructive/90 shadow-destructive/20 text-destructive-foreground"
-                : "bg-primary hover:bg-primary/90 shadow-primary/20 text-primary-foreground"
-              }`}
-            >
-              {isProcessing ? (
-                <Loader2 className="h-10 w-10 animate-spin" />
-              ) : isClockedIn ? (
-                <div className="flex flex-col items-center">
-                  <LogOut className="h-8 w-8 mb-2" />
-                  <span>Clock Out</span>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center">
-                  <LogIn className="h-8 w-8 mb-2" />
-                  <span>Clock In</span>
+          <Card className="border-border bg-card shadow-xl overflow-hidden relative">
+            <div className="absolute top-0 left-0 w-1 bg-primary h-full" />
+            <CardHeader>
+              <CardTitle>Daily Status</CardTitle>
+              <CardDescription>Click the button below to record your shift.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center py-6">
+              <Button
+                size="lg"
+                disabled={isProcessing || isLoading}
+                onClick={handleClockAction}
+                className={`h-32 w-32 rounded-full text-lg font-bold shadow-lg transition-all active:scale-95 ${
+                  isClockedIn
+                  ? "bg-destructive hover:bg-destructive/90 shadow-destructive/20 text-destructive-foreground"
+                  : "bg-primary hover:bg-primary/90 shadow-primary/20 text-primary-foreground"
+                }`}
+              >
+                {isProcessing ? (
+                  <Loader2 className="h-10 w-10 animate-spin" />
+                ) : isClockedIn ? (
+                  <div className="flex flex-col items-center">
+                    <LogOut className="h-8 w-8 mb-2" />
+                    <span>Clock Out</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center">
+                    <LogIn className="h-8 w-8 mb-2" />
+                    <span>Clock In</span>
+                  </div>
+                )}
+              </Button>
+
+              {isClockedIn && lastEntry && (
+                <div className="mt-6 p-4 bg-primary/5 rounded-xl border border-primary/10 w-full text-center">
+                  <p className="text-sm text-primary font-medium">Shift started at</p>
+                  <p className="text-2xl font-bold">{lastEntry.clockIn}</p>
                 </div>
               )}
-            </Button>
+            </CardContent>
+          </Card>
 
-            {isClockedIn && lastEntry && (
-              <div className="mt-6 p-4 bg-primary/5 rounded-xl border border-primary/10 w-full text-center">
-                <p className="text-sm text-primary font-medium">Shift started at</p>
-                <p className="text-2xl font-bold">{lastEntry.clockIn}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="mt-10">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold flex items-center gap-2 text-foreground">
-              <History className="h-5 w-5 text-primary" />
-              Recent History
-            </h2>
-          </div>
-          <div className="space-y-3">
-            {isLoading ? (
-              <div className="flex justify-center py-10">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            ) : history?.length === 0 ? (
-              <p className="text-center py-10 text-muted-foreground bg-muted/20 rounded-lg border border-dashed border-border">
-                No attendance history found.
-              </p>
-            ) : (
-              history?.slice().reverse().map((entry: any, i: number) => (
-                <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-border bg-card">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
-                      <Calendar className="h-5 w-5 text-muted-foreground" />
+          <div className="mt-10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold flex items-center gap-2 text-foreground">
+                <History className="h-5 w-5 text-primary" />
+                Recent History
+              </h2>
+            </div>
+            <div className="space-y-3">
+              {history?.length === 0 ? (
+                <p className="text-center py-10 text-muted-foreground bg-muted/20 rounded-lg border border-dashed border-border">
+                  No attendance history found.
+                </p>
+              ) : (
+                history?.slice().reverse().map((entry: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-border bg-card">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                        <Calendar className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{entry.date}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {entry.clockIn} - {entry.clockOut || "..."}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">{entry.date}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {entry.clockIn} - {entry.clockOut || "..."}
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-primary">
+                        {entry.trackedTime ? entry.trackedTime : "Active"}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-primary">
-                      {entry.trackedTime ? entry.trackedTime : "Active"}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
+                ))
+              )}
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
+      )}
+    </div>
+  )
+}
     </div>
   )
 }

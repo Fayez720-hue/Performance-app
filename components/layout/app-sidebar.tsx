@@ -11,6 +11,7 @@ import {
   Users,
   LogOut,
   ChevronRight,
+  ClipboardList,
 } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -79,23 +80,26 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-border bg-sidebar">
-      <SidebarHeader className="h-16 flex items-center px-4 border-b border-border">
-        <div className="flex items-center gap-2 overflow-hidden">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-            <CheckSquare className="h-5 w-5 text-primary" />
+    <Sidebar variant="inset" collapsible="icon" className="bg-sidebar">
+      <SidebarHeader className="h-16 flex items-center px-4">
+        <div className="flex items-center gap-3 overflow-hidden">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-500/10 shadow-sm border border-teal-500/20">
+            <ClipboardList className="h-5 w-5 text-teal-400" />
           </div>
-          <span className="font-bold text-primary truncate group-data-[collapsible=icon]:hidden">
-            Can shift
-          </span>
+          <div className="flex flex-col leading-none group-data-[collapsible=icon]:hidden">
+            <span className="font-bold text-foreground tracking-tight">Can shift</span>
+            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Performance</span>
+          </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="py-4">
+      <SidebarContent className="px-2 py-4 gap-4">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-muted-foreground group-data-[collapsible=icon]:hidden">Main Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs font-semibold px-2 mb-2 uppercase tracking-widest text-muted-foreground/50 group-data-[collapsible=icon]:hidden">
+            Main Menu
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-1">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
@@ -103,12 +107,14 @@ export function AppSidebar() {
                     onClick={() => router.push(item.url)}
                     tooltip={item.title}
                     className={cn(
-                      "hover:bg-primary/10 hover:text-primary transition-colors",
-                      pathname === item.url && "bg-primary/10 text-primary"
+                      "h-10 px-3 rounded-lg transition-all duration-200",
+                      pathname === item.url
+                        ? "bg-teal-500/10 text-teal-400 font-medium"
+                        : "hover:bg-accent/50 text-muted-foreground hover:text-foreground"
                     )}
                   >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
+                    <item.icon className={cn("h-4.5 w-4.5", pathname === item.url ? "text-teal-400" : "text-muted-foreground")} />
+                    <span className="ml-1">{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -118,9 +124,11 @@ export function AppSidebar() {
 
         {isAdminOrManager && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-muted-foreground group-data-[collapsible=icon]:hidden">Administration</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-xs font-semibold px-2 mb-2 uppercase tracking-widest text-muted-foreground/50 group-data-[collapsible=icon]:hidden">
+              Administration
+            </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="gap-1">
                 {adminItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
@@ -128,12 +136,14 @@ export function AppSidebar() {
                       onClick={() => router.push(item.url)}
                       tooltip={item.title}
                       className={cn(
-                        "hover:bg-primary/10 hover:text-primary transition-colors",
-                        pathname === item.url && "bg-primary/10 text-primary"
+                        "h-10 px-3 rounded-lg transition-all duration-200",
+                        pathname === item.url
+                          ? "bg-teal-500/10 text-teal-400 font-medium"
+                          : "hover:bg-accent/50 text-muted-foreground hover:text-foreground"
                       )}
                     >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <item.icon className={cn("h-4.5 w-4.5", pathname === item.url ? "text-teal-400" : "text-muted-foreground")} />
+                      <span className="ml-1">{item.title}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -143,9 +153,11 @@ export function AppSidebar() {
         )}
 
         <SidebarGroup className="mt-auto">
-          <SidebarGroupLabel className="text-muted-foreground group-data-[collapsible=icon]:hidden">Preferences</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs font-semibold px-2 mb-2 uppercase tracking-widest text-muted-foreground/50 group-data-[collapsible=icon]:hidden">
+            Preferences
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-1">
               {settingsItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
@@ -153,12 +165,14 @@ export function AppSidebar() {
                     onClick={() => router.push(item.url)}
                     tooltip={item.title}
                     className={cn(
-                      "hover:bg-primary/10 hover:text-primary transition-colors",
-                      pathname === item.url && "bg-primary/10 text-primary"
+                      "h-10 px-3 rounded-lg transition-all duration-200",
+                      pathname === item.url
+                        ? "bg-teal-500/10 text-teal-400 font-medium"
+                        : "hover:bg-accent/50 text-muted-foreground hover:text-foreground"
                     )}
                   >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
+                    <item.icon className={cn("h-4.5 w-4.5", pathname === item.url ? "text-teal-400" : "text-muted-foreground")} />
+                    <span className="ml-1">{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -167,48 +181,47 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border p-4">
+      <SidebarFooter className="p-3 border-t border-border/50">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
-              className="w-full flex items-center justify-between group-data-[collapsible=icon]:p-0"
+              className="w-full flex items-center justify-between group-data-[collapsible=icon]:p-0 hover:bg-accent/50 rounded-xl px-2 transition-all"
               onClick={() => router.push('/settings')}
             >
               <div className="flex items-center gap-3">
-                <Avatar className="h-8 w-8 border border-primary/30">
+                <Avatar className="h-9 w-9 border-2 border-teal-500/20 shadow-sm">
                   <AvatarImage src={session?.user?.image || ''} />
-                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                  <AvatarFallback className="bg-teal-500/10 text-teal-400 text-xs font-bold">
                     {session?.user?.name?.charAt(0) || session?.user?.email?.charAt(0)?.toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col text-left group-data-[collapsible=icon]:hidden overflow-hidden">
-                  <span className="text-xs font-bold text-foreground truncate max-w-[100px]">
+                  <span className="text-sm font-bold text-foreground truncate max-w-[120px]">
                     {session?.user?.name || session?.user?.email?.split('@')[0] || 'User'}
                   </span>
-                  <span className="text-[10px] text-muted-foreground truncate max-w-[100px]">
+                  <span className="text-[11px] text-muted-foreground font-medium truncate max-w-[120px]">
                     {userRole}
                   </span>
                 </div>
               </div>
-              <ChevronRight className="h-3 w-3 text-muted-foreground group-data-[collapsible=icon]:hidden" />
+              <ChevronRight className="h-4 w-4 text-muted-foreground group-data-[collapsible=icon]:hidden opacity-50" />
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem>
+          <SidebarMenuItem className="mt-2">
             <SidebarMenuButton
               onClick={async () => {
-                // Clear any potential local state before signing out
                 if (typeof window !== 'undefined') {
                   localStorage.removeItem('last_notification_time');
                   sessionStorage.clear();
                 }
                 await signOut({ callbackUrl: '/login' });
               }}
-              className="text-red-400 hover:bg-red-400/10 hover:text-red-300"
+              className="w-full h-10 px-3 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg transition-all"
               tooltip="Sign Out"
             >
-              <LogOut className="h-4 w-4" />
-              <span>Sign Out</span>
+              <LogOut className="h-4.5 w-4.5" />
+              <span className="font-medium">Sign Out</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

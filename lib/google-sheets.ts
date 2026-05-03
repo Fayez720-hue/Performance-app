@@ -17,7 +17,19 @@ const base64url = (str: string) => {
   return encodeBase64(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")
 }
 
+// Cache for the Google Sheets Access Token
+let cachedToken: { token: string; expiry: number } | null = null;
+// Cache for users list to speed up authentication and dashboard
+let cachedUsers: { data: User[]; expiry: number } | null = null;
+
 async function getAccessToken(): Promise<string> {
+  const now = Math.floor(Date.now() / 1000)
+
+  // Use cached token if it's still valid (with a 60s buffer)
+  if (cachedToken && cachedToken.expiry > now + 60) {
+    return cachedToken.token
+  }
+
   const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL?.replace(/\s/g, "")
   let privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY
 
@@ -34,8 +46,6 @@ async function getAccessToken(): Promise<string> {
     privateKey = `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----`
   }
 
-  const now = Math.floor(Date.now() / 1000)
-  const header = { alg: "RS256", typ: "JWT" }
   const payload = {
     iss: clientEmail,
     sub: clientEmail,
@@ -45,6 +55,7 @@ async function getAccessToken(): Promise<string> {
     scope: "https://www.googleapis.com/auth/spreadsheets",
   }
 
+  const header = { alg: "RS256", typ: "JWT" }
   const encodedHeader = base64url(JSON.stringify(header))
   const encodedPayload = base64url(JSON.stringify(payload))
   const unsignedToken = `${encodedHeader}.${encodedPayload}`
@@ -96,8 +107,16 @@ async function getAccessToken(): Promise<string> {
 
   const data = await response.json()
   if (!data.access_token) {
+    console.error("OAuth Token Error Response:", data);
     throw new Error(`Failed to get access token: ${JSON.stringify(data)}`)
   }
+
+  // Cache the token
+  cachedToken = {
+    token: data.access_token,
+    expiry: now + (data.expires_in || 3600)
+  }
+
   return data.access_token
 }
 
@@ -128,11 +147,17 @@ async function sheetsRequest(path: string, options: RequestInit = {}) {
 // ============ USERS ============
 
 export async function getUsers(): Promise<User[]> {
+  const now = Date.now();
+  if (cachedUsers && cachedUsers.expiry > now) {
+    return cachedUsers.data;
+  }
+
   try {
     const data = await sheetsRequest("/values/Employees!A1:Z100")
     const rows = data.values || []
     if (rows.length === 0) return []
 
+    // ... headers and emailIndex logic ...
     const headers = (rows[0] || []).map((h: any) => String(h).toLowerCase().trim())
     const emailIndex = headers.findIndex((h: string) => h.includes("email"))
     const nameIndex = headers.findIndex((h: string) => h.includes("name"))
@@ -169,7 +194,15 @@ export async function getUsers(): Promise<User[]> {
       }
     })
 
-    return Array.from(userMap.values()).sort((a, b) => a.name.localeCompare(b.name))
+    const users = Array.from(userMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+    // Cache users for 5 minutes
+    cachedUsers = {
+      data: users,
+      expiry: now + (5 * 60 * 1000)
+    };
+
+    return users;
   } catch (error) {
     console.error("getUsers error:", error)
     return []
@@ -447,9 +480,13 @@ export async function deleteTask(id: number): Promise<void> {
 
 export async function getDashboardStats(startDate?: string, endDate?: string, userEmail?: string, userRole?: string) {
   try {
-    const summaryData = await sheetsRequest("/values/Summary!A2:I2")
+    const [summaryData, employeeData, tasksData] = await Promise.all([
+      sheetsRequest("/values/Summary!A2:I2"),
+      sheetsRequest("/values/Employees!A2:I"),
+      sheetsRequest("/values/Performance!A2:T")
+    ])
+
     const summary = summaryData.values?.[0] || []
-    const employeeData = await sheetsRequest("/values/Employees!A2:I")
     const employeeRows = employeeData.values || []
 
     // Map employee stats
@@ -466,7 +503,6 @@ export async function getDashboardStats(startDate?: string, endDate?: string, us
     }))
 
     // Get real-time task data from Performance sheet to ensure consistency with Tasks page
-    const tasksData = await sheetsRequest("/values/Performance!A2:T")
     const taskRows = (tasksData.values || []).filter((row: any[]) => row[1] && row[1] !== "Name")
 
     let totalTasks = 0
