@@ -30,6 +30,7 @@ export default function RootLayout({
             <ReturnToAppHandler />
             <NotificationManager />
             <SidebarProvider defaultOpen={true}>
+              {/* ✅ This wrapper is crucial */}
               <div className="flex w-full">
                 <AppSidebar />
                 <SidebarInset className="flex-1 bg-[#090a11]">
