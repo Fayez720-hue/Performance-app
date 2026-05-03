@@ -83,7 +83,7 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar variant="inset" collapsible="icon" className="bg-sidebar">
+    <Sidebar collapsible="icon" className="bg-sidebar">
       <SidebarHeader className="h-16 flex items-center px-4">
         <div className="flex items-center gap-3 overflow-hidden">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-500/10 shadow-sm border border-teal-500/20">
