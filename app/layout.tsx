@@ -18,9 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* Scripts removed to prevent interference with Google OAuth security checks */}
-      </head>
+      <head />
       <body className="font-sans antialiased">
         <ThemeProvider
           attribute="class"
@@ -32,10 +30,12 @@ export default function RootLayout({
             <ReturnToAppHandler />
             <NotificationManager />
             <SidebarProvider defaultOpen={true}>
-              <AppSidebar />
-              <SidebarInset>
-                {children}
-              </SidebarInset>
+              <div className="flex w-full">
+                <AppSidebar />
+                <SidebarInset className="flex-1 bg-[#090a11]">
+                  {children}
+                </SidebarInset>
+              </div>
             </SidebarProvider>
             <Toaster position="top-right" richColors />
           </AuthProvider>
