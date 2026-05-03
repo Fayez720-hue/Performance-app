@@ -64,22 +64,6 @@
     --sidebar-ring: 171 66% 44%;
   }
 }
-/* Force sidebar content shift – fallback */
-.flex.w-full {
-  display: flex;
-  width: 100%;
-}
-
-[data-sidebar="sidebar"] {
-  position: relative;
-  width: var(--sidebar-width, 16rem);
-  flex-shrink: 0;
-}
-
-[data-slot="sidebar-inset"] {
-  flex: 1;
-  min-width: 0;
-}
 
 @layer base {
   * {
