@@ -22,6 +22,19 @@ let cachedToken: { token: string; expiry: number } | null = null;
 // Cache for users list to speed up authentication and dashboard
 let cachedUsers: { data: User[]; expiry: number } | null = null;
 
+// ============ HELPER: get last non-empty row ============
+async function getLastNonEmptyRow(sheetName: string, column: string = 'A'): Promise<number> {
+  const token = await getAccessToken();
+  const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID?.trim().replace(/^["']|["']$/g, "");
+  if (!spreadsheetId) throw new Error("Missing spreadsheet ID");
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}!${column}:${column}`;
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!response.ok) throw new Error("Failed to fetch last row");
+  const data = await response.json();
+  const values = data.values || [];
+  return values.length;
+}
+
 async function getAccessToken(): Promise<string> {
   const now = Math.floor(Date.now() / 1000)
 
@@ -145,7 +158,6 @@ async function sheetsRequest(path: string, options: RequestInit = {}) {
 }
 
 // ============ USERS ============
-
 export async function getUsers(): Promise<User[]> {
   const now = Date.now();
   if (cachedUsers && cachedUsers.expiry > now) {
@@ -153,11 +165,14 @@ export async function getUsers(): Promise<User[]> {
   }
 
   try {
-    const data = await sheetsRequest("/values/Employees!A1:Z100")
-    const rows = data.values || []
+    // Use open-ended range A:Z – Sheets API will stop at last row with data
+    const data = await sheetsRequest("/values/Employees!A:Z")
+    let rows = data.values || []
+    // Filter out completely empty rows (no email, no name)
+    rows = rows.filter(row => row[0] || row[1])
+
     if (rows.length === 0) return []
 
-    // ... headers and emailIndex logic ...
     const headers = (rows[0] || []).map((h: any) => String(h).toLowerCase().trim())
     const emailIndex = headers.findIndex((h: string) => h.includes("email"))
     const nameIndex = headers.findIndex((h: string) => h.includes("name"))
@@ -196,12 +211,7 @@ export async function getUsers(): Promise<User[]> {
 
     const users = Array.from(userMap.values()).sort((a, b) => a.name.localeCompare(b.name));
 
-    // Cache users for 5 minutes
-    cachedUsers = {
-      data: users,
-      expiry: now + (5 * 60 * 1000)
-    };
-
+    cachedUsers = { data: users, expiry: now + (5 * 60 * 1000) };
     return users;
   } catch (error) {
     console.error("getUsers error:", error)
@@ -215,32 +225,31 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 }
 
 export async function addUser(data: { email: string; name: string; role: UserRole }): Promise<void> {
-  const users = await getUsers()
+  const users = await getUsers();
   const existingUser = users.find(u => u.email.toLowerCase() === data.email.toLowerCase())
   if (existingUser) throw new Error("User already exists")
 
-  const values = [
-    [
-      data.email.toLowerCase(),
-      data.name,
-      data.role,
-      0, // Tasks
-      0, // Completed
-      0, // Overall Score
-      0, // Shift Adherence
-      0, // Edits
-      "Good" // Performance
-    ]
-  ]
+  const lastRow = await getLastNonEmptyRow('Employees', 'A')
+  const newRowIndex = lastRow + 1
 
-  await sheetsRequest("/values/Employees!A:I:append?valueInputOption=USER_ENTERED", {
-    method: "POST",
-    body: JSON.stringify({ values })
+  const values = [[
+    data.email.toLowerCase(),
+    data.name,
+    data.role,
+    0, 0, 0, 0, 0,
+    "Good"
+  ]]
+
+  await sheetsRequest(`/values/Employees!A${newRowIndex}:I${newRowIndex}?valueInputOption=USER_ENTERED`, {
+    method: "PUT",
+    body: JSON.stringify({ values }),
   })
+
+  cachedUsers = null
 }
 
 export async function updateUser(email: string, data: Partial<User>, oldEmail?: string): Promise<void> {
-  const res = await sheetsRequest("/values/Employees!A1:Z100")
+  const res = await sheetsRequest("/values/Employees!A:Z")
   const rows = res.values || []
   const headers = (rows[0] || []).map((h: any) => String(h).toLowerCase().trim())
   const emailIndex = headers.findIndex((h: string) => h.includes("email"))
@@ -278,10 +287,12 @@ export async function updateUser(email: string, data: Partial<User>, oldEmail?: 
     method: "PUT",
     body: JSON.stringify({ values: [currentRow] })
   })
+
+  cachedUsers = null
 }
 
 export async function deleteUserByEmail(email: string): Promise<void> {
-  const res = await sheetsRequest("/values/Employees!A1:Z100")
+  const res = await sheetsRequest("/values/Employees!A:Z")
   const rows = res.values || []
   const headers = (rows[0] || []).map((h: any) => String(h).toLowerCase().trim())
   const emailIndex = headers.findIndex((h: string) => h.includes("email"))
@@ -306,7 +317,10 @@ export async function deleteUserByEmail(email: string): Promise<void> {
   await sheetsRequest(`/values/Employees!A${realRowNumber}:Z${realRowNumber}:clear`, {
     method: "POST"
   })
+
+  cachedUsers = null
 }
+
 
 // ============ TASKS & OTHER METHODS ============
 // (Keeping other methods but they are not critical for login flow right now)
