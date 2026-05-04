@@ -5,7 +5,6 @@ const config: CapacitorConfig = {
   appName: 'Performance App',
   webDir: 'out',
   server: {
-    // Pointing to your live Vercel production deployment
     url: 'https://performance-app-ivory.vercel.app',
     cleartext: true,
     allowNavigation: [
@@ -15,7 +14,10 @@ const config: CapacitorConfig = {
       '*.youtube.com',
       '*.googleusercontent.com',
       'accounts.google.com',
-      'accounts.youtube.com'
+      'accounts.youtube.com',
+      'ssl.gstatic.com',
+      'www.gstatic.com',
+      'fonts.gstatic.com'
     ]
   },
   android: {
