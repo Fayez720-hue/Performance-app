@@ -6,6 +6,7 @@ import { Edit2, Loader2, Plus, Shield, Trash2, UserCog, Users } from "lucide-rea
 import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -50,10 +51,19 @@ import {
   EmptyDescription,
   EmptyMedia,
 } from "@/components/ui/empty"
-import { userSchema, type UserFormValues } from "@/lib/validations/task"
 import type { User, UserRole } from "@/types/user"
 import { cn } from "@/lib/utils"
 import { fetcher, getApiUrl } from "@/lib/api"
+
+// Extend the user schema to include optional title
+const userSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  name: z.string().min(1, "Name is required"),
+  role: z.enum(["Admin", "Manager", "Team Member", "Viewer"]),
+  title: z.string().optional(),
+})
+
+type UserFormValues = z.infer<typeof userSchema>
 
 const roleColors: Record<UserRole, string> = {
   Admin: "bg-red-500/10 text-red-400",
@@ -68,7 +78,6 @@ export function UserManagement() {
   const { data: users, error, isLoading, mutate } = useSWR<User[]>("/api/users", fetcher)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
-  const [updatingUser, setUpdatingUser] = useState<string | null>(null)
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
@@ -76,6 +85,7 @@ export function UserManagement() {
       email: "",
       name: "",
       role: "Team Member",
+      title: "",
     },
   })
 
@@ -87,6 +97,7 @@ export function UserManagement() {
         email: "",
         name: "",
         role: "Team Member",
+        title: "",
       })
     }
   }
@@ -97,6 +108,7 @@ export function UserManagement() {
       email: user.email,
       name: user.name,
       role: user.role,
+      title: user.title || "",
     })
     setIsDialogOpen(true)
   }
@@ -151,27 +163,6 @@ export function UserManagement() {
     } catch {
       mutate(previousUsers)
       toast.error("Failed to delete user")
-    }
-  }
-
-  async function handleRoleChange(email: string, newRole: UserRole) {
-    setUpdatingUser(email)
-    const previousUsers = users
-    mutate(users?.map(u => u.email === email ? { ...u, role: newRole } : u), false)
-    try {
-      const response = await fetch(getApiUrl("/api/users"), {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, role: newRole }),
-      })
-      if (!response.ok) throw new Error("Failed to update role")
-      toast.success("Role updated successfully")
-      mutate()
-    } catch {
-      mutate(previousUsers)
-      toast.error("Failed to update role")
-    } finally {
-      setUpdatingUser(null)
     }
   }
 
@@ -245,7 +236,7 @@ export function UserManagement() {
                 <DialogTitle>{editingUser ? "Edit User" : "Add New User"}</DialogTitle>
                 <DialogDescription>
                   {editingUser
-                    ? "Update the user's name or role."
+                    ? "Update the user's name, role, or job title."
                     : "Add a new user to the system. They will be able to sign in with Google."}
                 </DialogDescription>
               </DialogHeader>
@@ -272,6 +263,19 @@ export function UserManagement() {
                         <FormLabel>Name</FormLabel>
                         <FormControl>
                           <Input placeholder="John Doe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Job Title</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Lead Developer, Manager" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -318,7 +322,7 @@ export function UserManagement() {
               <TableHeader>
                 <TableRow>
                   <TableHead>User</TableHead>
-                  <TableHead>Title</TableHead>   {/* ✅ New column */}
+                  <TableHead>Title</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -345,7 +349,7 @@ export function UserManagement() {
                           <span className="font-medium">{user.name}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{user.title || "—"}</TableCell>   {/* ✅ Display title */}
+                      <TableCell>{user.title || "—"}</TableCell>
                       <TableCell className="text-muted-foreground">{user.email}</TableCell>
                       <TableCell>
                         <Badge className={cn("text-xs font-medium", roleColors[user.role])}>
