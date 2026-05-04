@@ -1,31 +1,36 @@
-"use client"
-import { signIn } from "next-auth/react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ClipboardList, Loader2 } from "lucide-react"
-import { useState, useEffect } from "react"
+"use client";
+import { Browser } from '@capacitor/browser';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ClipboardList, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export default function LoginPageClient() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [isApp, setIsApp] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
+  const [isApp, setIsApp] = useState(false);
 
   useEffect(() => {
-    // Check if running inside Capacitor
-    const isCapacitor = (window as any).Capacitor !== undefined || /CSPerformanceApp/i.test(navigator.userAgent)
-    setIsApp(isCapacitor)
-  }, [])
+    const isCapacitor = (window as any).Capacitor !== undefined || /CSPerformanceApp/i.test(navigator.userAgent);
+    setIsApp(isCapacitor);
+  }, []);
 
   const handleLogin = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      console.log("Initiating Google Sign-In...")
-      await signIn("google", { 
-  callbackUrl: "https://performance-app-ivory.vercel.app/dashboard"
-});
+      const vercelBase = "https://performance-app-ivory.vercel.app";
+      const callbackUrl = encodeURIComponent("/dashboard");
+      const loginUrl = `${vercelBase}/api/auth/signin/google?callbackUrl=${callbackUrl}`;
+
+      if (isApp) {
+        await Browser.open({ url: loginUrl });
+      } else {
+        window.location.href = loginUrl;
+      }
     } catch (error) {
-      console.error("Login failed:", error)
-      setIsLoading(false)
+      console.error("Login failed:", error);
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -67,5 +72,5 @@ export default function LoginPageClient() {
         </CardContent>
       </Card>
     </main>
-  )
+  );
 }
