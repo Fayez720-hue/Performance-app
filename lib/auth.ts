@@ -1,19 +1,61 @@
 import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { getUserByEmail } from "@/lib/google-sheets";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { OAuth2Client } from "google-auth-library";
+import { getUserByEmail, addUser } from "@/lib/google-sheets";
+
+// Initialize Google client for ID token verification
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export const authOptions: NextAuthOptions = {
   providers: [
+    // Web fallback provider (optional, but keep for web)
     GoogleProvider({
-      clientId: (process.env.GOOGLE_CLIENT_ID || "").trim(),
-      clientSecret: (process.env.GOOGLE_CLIENT_SECRET || "").trim(),
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       authorization: {
         params: {
-          // Force account selection every time
           prompt: "select_account",
-          // Ensure the redirect URI matches exactly what is in Google Cloud Console
           redirect_uri: "https://performance-app-ivory.vercel.app/api/auth/callback/google",
         },
+      },
+    }),
+    // Native OAuth provider (for Capacitor)
+    CredentialsProvider({
+      name: "credentials",
+      credentials: { id_token: { type: "text" } },
+      async authorize(credentials) {
+        if (!credentials?.id_token) return null;
+        try {
+          // Verify the Google ID token
+          const ticket = await googleClient.verifyIdToken({
+            idToken: credentials.id_token,
+            audience: process.env.GOOGLE_CLIENT_ID,
+          });
+          const payload = ticket.getPayload();
+          if (!payload) return null;
+
+          // Get or create user in Google Sheets
+          let user = await getUserByEmail(payload.email!);
+          if (!user) {
+            await addUser({
+              email: payload.email!,
+              name: payload.name || payload.email!.split("@")[0],
+              role: "Team Member",
+            });
+            user = await getUserByEmail(payload.email!);
+          }
+
+          return {
+            id: payload.sub,
+            email: payload.email,
+            name: payload.name,
+            role: user?.role || "Team Member",
+          };
+        } catch (error) {
+          console.error("ID token verification failed:", error);
+          return null;
+        }
       },
     }),
   ],
@@ -41,30 +83,8 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.email = user.email;
-
-        try {
-          if (user.email) {
-            const dbUser = await getUserByEmail(user.email);
-            if (dbUser) {
-              token.role = dbUser.role;
-              token.name = dbUser.name;
-            } else {
-              const adminEmails = (process.env.ADMIN_EMAILS || "")
-                .toLowerCase()
-                .split(",")
-                .map(e => e.trim())
-                .filter(Boolean);
-              if (adminEmails.includes(user.email.toLowerCase())) {
-                token.role = "Admin";
-              } else {
-                token.role = "Team Member";
-              }
-            }
-          }
-        } catch (error) {
-          console.error("JWT Callback error:", error);
-          token.role = "Team Member";
-        }
+        token.role = user.role;
+        token.name = user.name;
       }
       return token;
     },

@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export',        // ← REQUIRED for static export (Capacitor needs this)
   images: {
     unoptimized: true,
   },

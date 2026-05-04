@@ -1,34 +1,61 @@
 "use client";
-import { Browser } from '@capacitor/browser';
+import { OAuth2Client } from '@capacitor-community/oauth2';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClipboardList, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 export default function LoginPageClient() {
   const [isLoading, setIsLoading] = useState(false);
   const [isApp, setIsApp] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    const isCapacitor = (window as any).Capacitor !== undefined || /CSPerformanceApp/i.test(navigator.userAgent);
+    const isCapacitor = (window as any).Capacitor !== undefined;
     setIsApp(isCapacitor);
   }, []);
 
   const handleLogin = async () => {
     setIsLoading(true);
     try {
-      const vercelBase = "https://performance-app-ivory.vercel.app";
-      const callbackUrl = encodeURIComponent("/dashboard");
-      const loginUrl = `${vercelBase}/api/auth/signin/google?callbackUrl=${callbackUrl}`;
-
       if (isApp) {
-        await Browser.open({ url: loginUrl });
+        // 1. Native OAuth flow using Capacitor plugin
+        const result = await OAuth2Client.authenticate({
+          accessTokenEndpoint: 'https://oauth2.googleapis.com/token',
+          authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+          clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+          redirectUrl: 'com.canshift.performanceapp://callback', // must match the scheme in capacitor.config.json
+          scope: 'openid email profile',
+          responseType: 'code',
+          pkce: true,
+        });
+
+        const idToken = result.id_token;
+        if (!idToken) throw new Error("No ID token received");
+
+        // 2. Exchange ID token for a session using NextAuth Credentials provider
+        const signInResponse = await signIn('credentials', {
+          id_token: idToken,
+          redirect: false, // manual redirect
+        });
+
+        if (signInResponse?.error) {
+          throw new Error(signInResponse.error);
+        }
+
+        // 3. Session established, go to dashboard
+        router.push('/dashboard');
       } else {
-        window.location.href = loginUrl;
+        // Web fallback – regular NextAuth Google sign-in
+        await signIn('google', { callbackUrl: '/dashboard' });
       }
     } catch (error) {
-      console.error("Login failed:", error);
-    } finally {
+      console.error('Login failed:', error);
+      alert(error instanceof Error ? error.message : "Login failed");
       setIsLoading(false);
+    } finally {
+      if (!isApp) setIsLoading(false);
     }
   };
 
