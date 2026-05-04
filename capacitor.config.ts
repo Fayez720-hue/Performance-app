@@ -13,12 +13,14 @@ const config: CapacitorConfig = {
       '*.google.com',
       '*.googleapis.com',
       '*.youtube.com',
-      '*.googleusercontent.com'
+      '*.googleusercontent.com',
+      'accounts.google.com',
+      'accounts.youtube.com'
     ]
   },
   android: {
     allowMixedContent: true,
-    overrideUserAgent: 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36 CSPerformanceApp'
+    overrideUserAgent: 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36'
   }
 };
 
