@@ -12,14 +12,16 @@ export default function LoginPageClient() {
   const router = useRouter();
 
   useEffect(() => {
-    const isCapacitor = (window as any).Capacitor !== undefined;
+    // Detect if running inside Capacitor native app
+    const isCapacitor = !!(window as any).Capacitor;
     setIsApp(isCapacitor);
     if (isCapacitor) {
+      // Initialize the native plugin
       GoogleAuth.initialize({
         clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
         scopes: ['openid', 'email', 'profile'],
         grantOfflineAccess: true,
-      });
+      }).catch(console.error);
     }
   }, []);
 
@@ -27,11 +29,11 @@ export default function LoginPageClient() {
     setIsLoading(true);
     try {
       if (isApp) {
-        // Native Google Sign-In (no browser, no custom schemes)
+        // Native Google Sign‑In (no browser, no custom schemes)
         const user = await GoogleAuth.signIn();
         const idToken = user.authentication.idToken;
         if (!idToken) throw new Error("No ID token received");
-        
+
         // Exchange ID token for a NextAuth session
         const result = await signIn('credentials', {
           id_token: idToken,
@@ -40,7 +42,7 @@ export default function LoginPageClient() {
         if (result?.error) throw new Error(result.error);
         router.push('/dashboard');
       } else {
-        // Web fallback (regular NextAuth Google provider)
+        // Web fallback – regular NextAuth Google provider
         await signIn('google', { callbackUrl: '/dashboard' });
       }
     } catch (error) {
@@ -51,6 +53,7 @@ export default function LoginPageClient() {
     }
   };
 
+  // Your existing JSX (the button and card) – unchanged
   return (
     <main className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md border-border bg-card">
