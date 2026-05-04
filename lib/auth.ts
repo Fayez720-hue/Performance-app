@@ -4,12 +4,12 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { OAuth2Client } from "google-auth-library";
 import { getUserByEmail, addUser } from "@/lib/google-sheets";
 
-// Initialize Google client for ID token verification
+// Google client for ID token verification
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    // Web fallback provider (optional, but keep for web)
+    // Web fallback provider (used for regular browsers)
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
@@ -20,7 +20,7 @@ export const authOptions: NextAuthOptions = {
         },
       },
     }),
-    // Native OAuth provider (for Capacitor)
+    // Native OAuth provider for Capacitor (handles ID token from plugin)
     CredentialsProvider({
       name: "credentials",
       credentials: { id_token: { type: "text" } },
@@ -63,11 +63,11 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   },
   pages: {
-    signIn: '/login',
-    error: '/login',
+    signIn: "/login",
+    error: "/login",
   },
   callbacks: {
     async session({ session, token }) {
