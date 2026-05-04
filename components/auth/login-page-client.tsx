@@ -17,20 +17,18 @@ export default function LoginPageClient() {
   const handleLogin = async () => {
     setIsLoading(true)
     try {
-      console.log("Initiating login...")
-      // In Capacitor, we use redirect: false and manually set window.location
-      // to avoid issues with how NextAuth handles automatic redirects in WebViews
-      const result = await signIn("google", {
-        callbackUrl: "/dashboard",
-        redirect: false
+      console.log("Initiating login with absolute redirect...")
+
+      // Safety fallback: if standard signIn fails to redirect, use a direct link
+      const timeout = setTimeout(() => {
+        window.location.href = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(window.location.origin + '/dashboard')}`
+      }, 2500)
+
+      await signIn("google", {
+        callbackUrl: `${window.location.origin}/dashboard`
       })
 
-      if (result?.url) {
-        window.location.href = result.url
-      } else if (result?.error) {
-        console.error("SignIn error:", result.error)
-        setIsLoading(false)
-      }
+      return () => clearTimeout(timeout)
     } catch (error) {
       console.error("Login failed:", error)
       setIsLoading(false)
