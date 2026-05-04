@@ -18,7 +18,9 @@ export default function LoginPageClient() {
     setIsLoading(true)
     try {
       console.log("Initiating Google Sign-In...")
-      await signIn("google", { callbackUrl: "/dashboard" })
+      await signIn("google", { 
+  callbackUrl: "https://performance-app-ivory.vercel.app/dashboard"
+});
     } catch (error) {
       console.error("Login failed:", error)
       setIsLoading(false)
