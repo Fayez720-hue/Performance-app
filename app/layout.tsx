@@ -27,10 +27,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <SidebarProvider defaultOpen={false}>
               <AppSidebar />
               <SidebarInset className="relative flex flex-1 flex-col bg-background">
-                {/* Sticky header with toggle button */}
-                <div className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4">
+                {/* Sticky header with only the hamburger button */}
+                <div className="sticky top-0 z-10 flex h-16 items-center border-b bg-background px-4">
                   <SidebarTrigger />
-                  <h1 className="text-lg font-semibold">Can Shift</h1>
                 </div>
                 {children}
               </SidebarInset>
