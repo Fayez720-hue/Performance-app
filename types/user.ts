@@ -1,10 +1,10 @@
 export type UserRole = "Admin" | "Manager" | "Team Member" | "Viewer"
 
 export interface User {
-  email: string
-  name: string
-  role: UserRole
-  image?: string
+  email: string;
+  name: string;
+  role: UserRole;
+  title?: string;   
 }
 
 export interface Notification {

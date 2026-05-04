@@ -79,7 +79,6 @@ export function UserManagement() {
     },
   })
 
-  // Reset form when dialog opens/closes or editing user changes
   const handleOpenChange = (open: boolean) => {
     setIsDialogOpen(open)
     if (!open) {
@@ -103,13 +102,12 @@ export function UserManagement() {
   }
 
   async function onSubmit(values: UserFormValues) {
-    // Optimistic UI Update
     const previousUsers = users
     const updatedUsers = editingUser
       ? users?.map(u => u.email === values.email ? { ...values } as User : u)
       : [...(users || []), { ...values } as User]
 
-    mutate(updatedUsers, false) // Update UI immediately without re-fetching
+    mutate(updatedUsers, false)
 
     try {
       const method = editingUser ? "PUT" : "POST"
@@ -130,9 +128,9 @@ export function UserManagement() {
 
       toast.success(`User ${editingUser ? 'updated' : 'added'} successfully`)
       handleOpenChange(false)
-      mutate() // Re-fetch to sync with server
+      mutate()
     } catch (error) {
-      mutate(previousUsers) // Rollback on error
+      mutate(previousUsers)
       toast.error(error instanceof Error ? error.message : "An error occurred")
     }
   }
@@ -140,7 +138,6 @@ export function UserManagement() {
   async function handleDelete(email: string) {
     if (!confirm("Are you sure you want to delete this user? This will remove them from the Employees list.")) return
 
-    // Optimistic UI Update
     const previousUsers = users
     mutate(users?.filter(u => u.email !== email), false)
 
@@ -148,37 +145,30 @@ export function UserManagement() {
       const response = await fetch(getApiUrl(`/api/users?email=${encodeURIComponent(email)}`), {
         method: "DELETE",
       })
-
       if (!response.ok) throw new Error("Failed to delete user")
-
       toast.success("User deleted successfully")
-      mutate() // Re-fetch to sync
+      mutate()
     } catch {
-      mutate(previousUsers) // Rollback
+      mutate(previousUsers)
       toast.error("Failed to delete user")
     }
   }
 
   async function handleRoleChange(email: string, newRole: UserRole) {
     setUpdatingUser(email)
-
-    // Optimistic UI Update
     const previousUsers = users
     mutate(users?.map(u => u.email === email ? { ...u, role: newRole } : u), false)
-
     try {
       const response = await fetch(getApiUrl("/api/users"), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, role: newRole }),
       })
-
       if (!response.ok) throw new Error("Failed to update role")
-
       toast.success("Role updated successfully")
       mutate()
     } catch {
-      mutate(previousUsers) // Rollback
+      mutate(previousUsers)
       toast.error("Failed to update role")
     } finally {
       setUpdatingUser(null)
@@ -268,10 +258,7 @@ export function UserManagement() {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="user@example.com"
-                            {...field}
-                          />
+                          <Input placeholder="user@example.com" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -318,9 +305,7 @@ export function UserManagement() {
                     <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
                       Cancel
                     </Button>
-                    <Button type="submit">
-                      {editingUser ? "Update User" : "Add User"}
-                    </Button>
+                    <Button type="submit">{editingUser ? "Update User" : "Add User"}</Button>
                   </div>
                 </form>
               </Form>
@@ -333,6 +318,7 @@ export function UserManagement() {
               <TableHeader>
                 <TableRow>
                   <TableHead>User</TableHead>
+                  <TableHead>Title</TableHead>   {/* ✅ New column */}
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -359,6 +345,7 @@ export function UserManagement() {
                           <span className="font-medium">{user.name}</span>
                         </div>
                       </TableCell>
+                      <TableCell>{user.title || "—"}</TableCell>   {/* ✅ Display title */}
                       <TableCell className="text-muted-foreground">{user.email}</TableCell>
                       <TableCell>
                         <Badge className={cn("text-xs font-medium", roleColors[user.role])}>
@@ -397,9 +384,7 @@ export function UserManagement() {
                   <Users />
                 </EmptyMedia>
                 <EmptyTitle>No users yet</EmptyTitle>
-                <EmptyDescription>
-                  Add your first user to get started.
-                </EmptyDescription>
+                <EmptyDescription>Add your first user to get started.</EmptyDescription>
               </EmptyHeader>
             </Empty>
           )}
