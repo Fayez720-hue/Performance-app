@@ -7,19 +7,21 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: (process.env.GOOGLE_CLIENT_ID || "").trim(),
       clientSecret: (process.env.GOOGLE_CLIENT_SECRET || "").trim(),
-      // ✅ Add this block to force the correct redirect URI
       authorization: {
         params: {
-          redirect_uri: "https://performance-app-ivory.vercel.app/api/auth/callback/google"
-        }
-      }
+          // Force account selection every time
+          prompt: "select_account",
+          // Ensure the redirect URI matches exactly what is in Google Cloud Console
+          redirect_uri: "https://performance-app-ivory.vercel.app/api/auth/callback/google",
+        },
+      },
     }),
   ],
   debug: process.env.NODE_ENV === "development",
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
     signIn: '/login',
@@ -39,6 +41,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.email = user.email;
+
         try {
           if (user.email) {
             const dbUser = await getUserByEmail(user.email);
@@ -46,7 +49,11 @@ export const authOptions: NextAuthOptions = {
               token.role = dbUser.role;
               token.name = dbUser.name;
             } else {
-              const adminEmails = (process.env.ADMIN_EMAILS || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean);
+              const adminEmails = (process.env.ADMIN_EMAILS || "")
+                .toLowerCase()
+                .split(",")
+                .map(e => e.trim())
+                .filter(Boolean);
               if (adminEmails.includes(user.email.toLowerCase())) {
                 token.role = "Admin";
               } else {
