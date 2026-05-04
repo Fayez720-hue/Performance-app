@@ -7,13 +7,19 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: (process.env.GOOGLE_CLIENT_ID || "").trim(),
       clientSecret: (process.env.GOOGLE_CLIENT_SECRET || "").trim(),
+      // ✅ Add this block to force the correct redirect URI
+      authorization: {
+        params: {
+          redirect_uri: "https://performance-app-ivory.vercel.app/api/auth/callback/google"
+        }
+      }
     }),
   ],
   debug: process.env.NODE_ENV === "development",
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   },
   pages: {
     signIn: '/login',
@@ -33,7 +39,6 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.email = user.email;
-
         try {
           if (user.email) {
             const dbUser = await getUserByEmail(user.email);
