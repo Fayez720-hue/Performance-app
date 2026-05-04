@@ -73,13 +73,19 @@
     @apply bg-background text-foreground;
   }
 }
-/* Force main content to respect the sidebar width */
-[data-slot="sidebar-inset"] {
-  margin-left: var(--sidebar-width, 16rem) !important;
-  transition: margin-left 0.2s ease;
+
+/* 
+  FIX: Only apply sidebar content shift on screens 768px and wider.
+  On mobile (<768px), the content stays full width (no shift).
+*/
+@media (min-width: 768px) {
+  [data-slot="sidebar-inset"] {
+    margin-left: var(--sidebar-width, 16rem) !important;
+    transition: margin-left 0.2s ease;
+  }
 }
 
-/* Ensure the sidebar stays fixed and doesn't shrink */
+/* Sidebar stays fixed on all screens, but on mobile it can be toggled/overlay if needed */
 [data-sidebar="sidebar"] {
   position: fixed !important;
   width: var(--sidebar-width, 16rem) !important;

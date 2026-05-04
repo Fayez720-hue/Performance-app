@@ -23,7 +23,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             <ReturnToAppHandler />
             <NotificationManager />
-            <SidebarProvider defaultOpen={true}>
+            {/* Add collapsible="offcanvas" for mobile drawer behavior */}
+            <SidebarProvider defaultOpen={true} collapsible="offcanvas">
               <AppSidebar />
               <SidebarInset className="bg-background">
                 {children}
