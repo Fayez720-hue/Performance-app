@@ -22,11 +22,17 @@ export async function POST(request: Request) {
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const data = await request.json()
+    // Required fields: email, name, role. Title is optional.
     if (!data.email || !data.name || !data.role) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    await addUser(data)
+    await addUser({
+      email: data.email,
+      name: data.name,
+      role: data.role,
+      title: data.title || "",   // ✅ pass title (optional)
+    })
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error("Add User API Error:", error)
@@ -42,7 +48,12 @@ export async function PUT(request: Request) {
     const data = await request.json()
     if (!data.email) return NextResponse.json({ error: "Email is required" }, { status: 400 })
 
-    const { email, oldEmail, ...updateData } = data
+    const { email, oldEmail, name, role, title } = data
+    const updateData: Partial<{ name: string; role: string; title: string }> = {}
+    if (name !== undefined) updateData.name = name
+    if (role !== undefined) updateData.role = role
+    if (title !== undefined) updateData.title = title   // ✅ include title
+
     await updateUser(email, updateData, oldEmail)
     return NextResponse.json({ success: true })
   } catch (error: any) {

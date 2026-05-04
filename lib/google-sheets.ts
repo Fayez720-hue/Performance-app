@@ -165,18 +165,31 @@ export async function getUsers(): Promise<User[]> {
   }
 
   try {
-    // Use open-ended range A:Z – Sheets API will stop at last row with data
     const data = await sheetsRequest("/values/Employees!A:Z")
     let rows = data.values || []
-    // Filter out completely empty rows (no email, no name)
     rows = rows.filter(row => row[0] || row[1])
 
     if (rows.length === 0) return []
 
-    const headers = (rows[0] || []).map((h: any) => String(h).toLowerCase().trim())
-    const emailIndex = headers.findIndex((h: string) => h.includes("email"))
-    const nameIndex = headers.findIndex((h: string) => h.includes("name"))
-    const roleIndex = headers.findIndex((h: string) => h.includes("role") || h.includes("title"))
+    const headers = rows[0].map((h: any) => String(h).trim())
+    // Clean headers: remove leading/trailing dots, spaces, and lowercase
+    const cleanHeaders = headers.map(h => h.replace(/^[.\s]+|[.\s]+$/g, '').toLowerCase())
+
+    // Exact or prioritized mapping
+    let nameIndex = cleanHeaders.findIndex(h => h === 'name' || h === '.name' || h === 'employee name');
+    let emailIndex = cleanHeaders.findIndex(h => h === 'email' || h === 'emp email' || h === 'employee email');
+    let roleIndex = cleanHeaders.findIndex(h => h === 'role' || h === 'user role');
+    let titleIndex = cleanHeaders.findIndex(h => h === 'title');  // ✅ Title column
+
+    // Fallback to substring search for role
+    if (roleIndex === -1) {
+      roleIndex = headers.findIndex(h => h.toLowerCase().includes('role') || h.toLowerCase().includes('title'));
+    }
+    // Fallback for name and email
+    if (nameIndex === -1) nameIndex = headers.findIndex(h => h.toLowerCase().includes('name'));
+    if (emailIndex === -1) emailIndex = headers.findIndex(h => h.toLowerCase().includes('email'));
+    // Title fallback: if not found, title will be undefined (no column)
+    if (titleIndex === -1) titleIndex = -1;
 
     const adminEmails = (process.env.ADMIN_EMAILS || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean)
     const managerEmails = (process.env.MANAGER_EMAILS || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean)
@@ -187,6 +200,7 @@ export async function getUsers(): Promise<User[]> {
       let email = emailIndex !== -1 ? String(row[emailIndex] || "").trim().toLowerCase() : ""
       let name = nameIndex !== -1 ? String(row[nameIndex] || "").trim() : ""
       let roleStr = roleIndex !== -1 ? String(row[roleIndex] || "").trim() : ""
+      let title = titleIndex !== -1 ? String(row[titleIndex] || "").trim() : ""   // ✅
 
       if (!name && !email) return
 
@@ -199,7 +213,8 @@ export async function getUsers(): Promise<User[]> {
       const user: User = {
         email: email || `no-email-${index}`,
         name: name || email.split("@")[0] || "Unknown",
-        role
+        role,
+        title: title || undefined,   // ✅
       }
 
       if (email) {
@@ -210,7 +225,6 @@ export async function getUsers(): Promise<User[]> {
     })
 
     const users = Array.from(userMap.values()).sort((a, b) => a.name.localeCompare(b.name));
-
     cachedUsers = { data: users, expiry: now + (5 * 60 * 1000) };
     return users;
   } catch (error) {
@@ -224,28 +238,30 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   return users.find((u) => u.email.trim().toLowerCase() === email.trim().toLowerCase()) || null
 }
 
-export async function addUser(data: { email: string; name: string; role: UserRole }): Promise<void> {
+export async function addUser(data: { email: string; name: string; role: UserRole; title?: string }): Promise<void> {
   const users = await getUsers();
-  const existingUser = users.find(u => u.email.toLowerCase() === data.email.toLowerCase())
-  if (existingUser) throw new Error("User already exists")
+  const existingUser = users.find(u => u.email.toLowerCase() === data.email.toLowerCase());
+  if (existingUser) throw new Error("User already exists");
 
-  const lastRow = await getLastNonEmptyRow('Employees', 'A')
-  const newRowIndex = lastRow + 1
+  const lastRow = await getLastNonEmptyRow('Employees', 'A');
+  const newRowIndex = lastRow + 1;
 
+  // Prepare row: email, name, role, title, then 0s and "Good"
   const values = [[
     data.email.toLowerCase(),
     data.name,
     data.role,
-    0, 0, 0, 0, 0,
-    "Good"
-  ]]
+    data.title || "",          // title column (Column D)
+    0, 0, 0, 0, 0,             // stats columns
+    "Good"                     // performance
+  ]];
 
-  await sheetsRequest(`/values/Employees!A${newRowIndex}:I${newRowIndex}?valueInputOption=USER_ENTERED`, {
+  await sheetsRequest(`/values/Employees!A${newRowIndex}:J${newRowIndex}?valueInputOption=USER_ENTERED`, {
     method: "PUT",
     body: JSON.stringify({ values }),
-  })
+  });
 
-  cachedUsers = null
+  cachedUsers = null;
 }
 
 export async function updateUser(email: string, data: Partial<User>, oldEmail?: string): Promise<void> {
