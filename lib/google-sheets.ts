@@ -179,7 +179,8 @@ export async function getUsers(): Promise<User[]> {
     let nameIndex = cleanHeaders.findIndex(h => h === 'name' || h === '.name' || h === 'employee name');
     let emailIndex = cleanHeaders.findIndex(h => h === 'email' || h === 'emp email' || h === 'employee email');
     let roleIndex = cleanHeaders.findIndex(h => h === 'role' || h === 'user role');
-    let titleIndex = cleanHeaders.findIndex(h => h === 'title');  // ✅ Title column
+    let titleIndex = cleanHeaders.findIndex(h => h === 'title');
+    let pushTokenIndex = cleanHeaders.findIndex(h => h.includes('push token') || h.includes('pushtoken'));
 
     // Fallback to substring search for role
     if (roleIndex === -1) {
@@ -200,7 +201,8 @@ export async function getUsers(): Promise<User[]> {
       let email = emailIndex !== -1 ? String(row[emailIndex] || "").trim().toLowerCase() : ""
       let name = nameIndex !== -1 ? String(row[nameIndex] || "").trim() : ""
       let roleStr = roleIndex !== -1 ? String(row[roleIndex] || "").trim() : ""
-      let title = titleIndex !== -1 ? String(row[titleIndex] || "").trim() : ""   // ✅
+      let title = titleIndex !== -1 ? String(row[titleIndex] || "").trim() : ""
+      let pushToken = pushTokenIndex !== -1 ? String(row[pushTokenIndex] || "").trim() : ""
 
       if (!name && !email) return
 
@@ -214,7 +216,8 @@ export async function getUsers(): Promise<User[]> {
         email: email || `no-email-${index}`,
         name: name || email.split("@")[0] || "Unknown",
         role,
-        title: title || undefined,   // ✅
+        title: title || undefined,
+        pushToken: pushToken || undefined,
       }
 
       if (email) {
@@ -420,18 +423,27 @@ export async function createTask(data: any): Promise<number> {
     ]
   ]
 
-  await sheetsRequest("/values/Performance!A:T:append?valueInputOption=USER_ENTERED", {
-    method: "POST",
+  const lastRow = await getLastNonEmptyRow('Performance', 'A');
+  const nextRow = lastRow + 1;
+
+  await sheetsRequest(`/values/Performance!A${nextRow}:T${nextRow}?valueInputOption=USER_ENTERED`, {
+    method: "PUT",
     body: JSON.stringify({ values })
   })
 
   // Optional: Sync to user-specific sheet
   const userSheetName = String(data.name || "").trim()
   if (userSheetName) {
-    sheetsRequest(`/values/'${userSheetName}'!A:S:append?valueInputOption=USER_ENTERED`, {
-      method: "POST",
-      body: JSON.stringify({ values })
-    }).catch(err => console.log(`User sheet ${userSheetName} not found, skipping sync.`))
+    try {
+      const userLastRow = await getLastNonEmptyRow(userSheetName, 'A');
+      const userNextRow = userLastRow + 1;
+      await sheetsRequest(`/values/'${userSheetName}'!A${userNextRow}:S${userNextRow}?valueInputOption=USER_ENTERED`, {
+        method: "PUT",
+        body: JSON.stringify({ values })
+      });
+    } catch (err) {
+      console.log(`User sheet ${userSheetName} not found or sync failed, skipping.`);
+    }
   }
 
   return nextId
@@ -631,6 +643,42 @@ export async function getDashboardStats(startDate?: string, endDate?: string, us
   }
 }
 
+export async function savePushToken(email: string, token: string): Promise<void> {
+  const res = await sheetsRequest("/values/Employees!A:Z")
+  const rows = res.values || []
+  const headers = (rows[0] || []).map((h: any) => String(h).toLowerCase().trim())
+  const emailIndex = headers.findIndex((h: string) => h.includes("email"))
+  let pushTokenIndex = headers.findIndex((h: string) => h.includes("push token") || h.includes("pushtoken"))
+
+  if (emailIndex === -1) throw new Error("Email column not found")
+
+  // If header doesn't exist, use column J (index 9) and add header
+  if (pushTokenIndex === -1) {
+    pushTokenIndex = 9;
+    await sheetsRequest(`/values/Employees!J1?valueInputOption=USER_ENTERED`, {
+      method: "PUT",
+      body: JSON.stringify({ values: [["Push Token"]] })
+    })
+  }
+
+  const rowIndex = rows.findIndex((row: any[]) =>
+    String(row[emailIndex] || "").trim().toLowerCase() === email.toLowerCase()
+  )
+
+  if (rowIndex === -1) throw new Error("User not found")
+
+  const realRowNumber = rowIndex + 1
+  const colLetter = String.fromCharCode(65 + pushTokenIndex)
+
+  await sheetsRequest(`/values/Employees!${colLetter}${realRowNumber}?valueInputOption=USER_ENTERED`, {
+    method: "PUT",
+    body: JSON.stringify({ values: [[token]] })
+  })
+
+  // Invalidate cache
+  cachedUsers = null;
+}
+
 // ============ ATTENDANCE ============
 
 export async function getAttendance(email: string): Promise<any[]> {
@@ -664,8 +712,11 @@ export async function clockIn(email: string, name: string): Promise<void> {
   // Column H (UserEmail) is a hidden helper to identify user uniquely
   const values = [[name, date, "Working...", "", "", time, "", email]]
 
-  await sheetsRequest("/values/Attendance!A:H:append?valueInputOption=USER_ENTERED", {
-    method: "POST",
+  const lastRow = await getLastNonEmptyRow('Attendance', 'A');
+  const nextRow = lastRow + 1;
+
+  await sheetsRequest(`/values/Attendance!A${nextRow}:H${nextRow}?valueInputOption=USER_ENTERED`, {
+    method: "PUT",
     body: JSON.stringify({ values })
   })
 }
@@ -724,8 +775,11 @@ export async function createNotification(notification: Notification): Promise<vo
     ],
   ]
 
-  await sheetsRequest("/values/Notifications!A:F:append?valueInputOption=USER_ENTERED", {
-    method: "POST",
+  const lastRow = await getLastNonEmptyRow('Notifications', 'A');
+  const nextRow = lastRow + 1;
+
+  await sheetsRequest(`/values/Notifications!A${nextRow}:F${nextRow}?valueInputOption=USER_ENTERED`, {
+    method: "PUT",
     body: JSON.stringify({ values }),
   })
 }

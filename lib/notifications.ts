@@ -5,6 +5,38 @@ import type { Task } from "@/types/task"
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
+async function sendPushNotification(token: string, title: string, body: string, data: any = {}) {
+  const fcmKey = process.env.FCM_SERVER_KEY;
+  if (!fcmKey) {
+    console.log("Skipping push notification: FCM_SERVER_KEY is missing");
+    return;
+  }
+
+  try {
+    await fetch('https://fcm.googleapis.com/fcm/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `key=${fcmKey}`,
+      },
+      body: JSON.stringify({
+        to: token,
+        notification: {
+          title,
+          body,
+          sound: 'default',
+        },
+        data: {
+          ...data,
+        },
+        priority: 'high',
+      }),
+    });
+  } catch (error) {
+    console.error("Failed to send FCM push notification:", error);
+  }
+}
+
 interface NotificationData {
   type: NotificationType
   task: Task
@@ -36,8 +68,9 @@ const emailSubjects: Record<NotificationType, (task: Task) => string> = {
 export async function sendNotification(data: NotificationData): Promise<void> {
   const { type, task, recipientEmail, senderName } = data
   const message = notificationMessages[type](task, senderName)
+  const title = emailSubjects[type](task)
 
-  // Create in-app notification
+  // 1. Create in-app notification
   await createNotification({
     userEmail: recipientEmail,
     type,
@@ -47,7 +80,13 @@ export async function sendNotification(data: NotificationData): Promise<void> {
     timestamp: new Date().toISOString(),
   })
 
-  // Send email notification if Resend is configured
+  // 2. Send native push notification if user has a token
+  const recipient = await getUserByEmail(recipientEmail);
+  if (recipient?.pushToken) {
+    await sendPushNotification(recipient.pushToken, title, message, { taskId: task.id.toString() });
+  }
+
+  // 3. Send email notification if Resend is configured
   if (resend) {
     try {
       await resend.emails.send({
