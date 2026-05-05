@@ -13,10 +13,10 @@ export default function AuthCallback() {
     const isCapacitor = (window as any).Capacitor !== undefined;
 
     if (isCapacitor) {
-      // Only for Capacitor mobile app
+      // Capacitor mobile app only
       window.location.href = `com.canshift.performanceapp://callback?url=${encodeURIComponent(callbackUrl)}`;
     } else {
-      // For web browser
+      // Web browser
       router.push(callbackUrl);
     }
   }, [router, callbackUrl]);
