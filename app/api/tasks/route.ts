@@ -99,10 +99,14 @@ export async function POST(request: Request) {
     const data = await request.json()
     const id = await createTask(data)
 
-    // Notify assignee, managers, and assigner
-    const newTask = await getTaskById(id)
-    if (newTask) {
-      await notifyTaskAssigned(newTask, session.user.email, session.user.name || undefined)
+    // Safety: Wrap notifications in try-catch so task creation succeeds even if notify fails
+    try {
+      const newTask = await getTaskById(id)
+      if (newTask) {
+        await notifyTaskAssigned(newTask, session.user.email, session.user.name || undefined)
+      }
+    } catch (notifyError) {
+      console.error("Task Created but Notification failed:", notifyError)
     }
 
     return NextResponse.json({ id })
