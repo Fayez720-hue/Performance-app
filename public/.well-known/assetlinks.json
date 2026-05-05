@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.canshift.performanceapp",
+      "sha256_cert_fingerprints": [
+        "FA:C6:17:45:DC:09:03:78:6F:B9:ED:46:28:C3:39:D2:C0:19:50:AD:3A:86:4C:E0:E2:B0:81:F0:56:1F:B1:06"
+      ]
+    }
+  }
+]
