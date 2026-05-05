@@ -28,12 +28,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSeparator,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-
-// ❌ Remove this line – it's the cause of the build error
-// import './globals.css';
 
 export function AppSidebar() {
   const { data: session } = useSession();
@@ -199,7 +197,7 @@ export function AppSidebar() {
                     <AvatarFallback className="bg-teal-500/10 text-teal-400 text-xs font-bold">
                       {session?.user?.name?.charAt(0) || session?.user?.email?.charAt(0)?.toUpperCase() || 'U'}
                     </AvatarFallback>
-                  </div>
+                  </Avatar>
                   <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-[#090a11] rounded-full" />
                 </div>
                 <div className="flex flex-col text-left overflow-hidden">
