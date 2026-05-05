@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 export default function AuthCallback() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const callbackUrl = searchParams?.get("callbackUrl") || "/dashboard";
 
   useEffect(() => {
     const isCapacitor = (window as any).Capacitor !== undefined;

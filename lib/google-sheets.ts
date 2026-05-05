@@ -25,7 +25,7 @@ let cachedUsers: { data: User[]; expiry: number } | null = null;
 // ============ HELPER: get last non-empty row ============
 async function getLastNonEmptyRow(sheetName: string, column: string = 'A'): Promise<number> {
   try {
-    const range = `${sheetName}!${column}:${column}`;
+    const range = `'${sheetName.replace(/'/g, "''")}'!${column}:${column}`;
     const data = await sheetsRequest(`/values/${range}`);
     const rows = data.values || [];
 
@@ -44,9 +44,7 @@ async function getLastNonEmptyRow(sheetName: string, column: string = 'A'): Prom
 
 async function getAccessToken(): Promise<string> {
   const now = Math.floor(Date.now() / 1000)
-  if (cachedToken && cachedToken.expiry > now + 60) {
-    return cachedToken.token
-  }
+  if (cachedToken && cachedToken.expiry > now + 60) return cachedToken.token
 
   const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL?.replace(/\s/g, "")
   let privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY
@@ -61,20 +59,15 @@ async function getAccessToken(): Promise<string> {
   }
 
   const payload = {
-    iss: clientEmail,
-    sub: clientEmail,
-    aud: "https://oauth2.googleapis.com/token",
-    exp: now + 3600,
-    iat: now,
-    scope: "https://www.googleapis.com/auth/spreadsheets",
+    iss: clientEmail, sub: clientEmail, aud: "https://oauth2.googleapis.com/token",
+    exp: now + 3600, iat: now, scope: "https://www.googleapis.com/auth/spreadsheets",
   }
 
   const encodedHeader = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }))
   const encodedPayload = base64url(JSON.stringify(payload))
   const unsignedToken = `${encodedHeader}.${encodedPayload}`
 
-  const pemHeader = "-----BEGIN PRIVATE KEY-----";
-  const pemFooter = "-----END PRIVATE KEY-----";
+  const pemHeader = "-----BEGIN PRIVATE KEY-----", pemFooter = "-----END PRIVATE KEY-----";
   let pemContents = privateKey.includes(pemHeader) && privateKey.includes(pemFooter)
     ? privateKey.split(pemHeader)[1].split(pemFooter)[0].replace(/\s/g, "")
     : privateKey.replace(/\s/g, "");
@@ -84,17 +77,12 @@ async function getAccessToken(): Promise<string> {
     "pkcs8", binaryKey, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]
   );
 
-  const signature = await crypto.subtle.sign(
-    "RSASSA-PKCS1-v1_5", importedKey, new TextEncoder().encode(unsignedToken)
-  );
-
-  const encodedSignature = encodeBase64(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")
+  const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", importedKey, new TextEncoder().encode(unsignedToken));
+  const encodedSignature = encodeBase64(String.fromCharCode(...new Uint8Array(signature))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")
 
   const jwt = `${unsignedToken}.${encodedSignature}`
   const response = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
   })
 
@@ -109,25 +97,19 @@ async function sheetsRequest(path: string, options: RequestInit = {}) {
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID?.trim().replace(/^["']|["']$/g, "")
   if (!spreadsheetId) throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is missing")
 
-  // Robust path encoding: Only encode the segments, but preserve '!' and ':'
-  const [basePath, query] = path.split('?');
-  const encodedPath = basePath.split('/').map(segment => {
-    if (!segment) return "";
-    if (segment.includes('!')) {
-      const [sheet, range] = segment.split('!');
-      return `${encodeURIComponent(sheet)}!${range}`;
-    }
-    return encodeURIComponent(segment);
-  }).join('/');
+  // standard Google Sheets base URL
+  const baseUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`;
 
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}${encodedPath}${query ? '?' + query : ''}`;
+  // Build clean path without doubling /values
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const url = `${baseUrl}${cleanPath}`;
 
   const response = await fetch(url, {
     ...options,
     headers: {
       ...options.headers,
       Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
+      "Content-Type": "application/json"
     },
   })
 
@@ -176,8 +158,7 @@ export async function getUsers(): Promise<User[]> {
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  const users = await getUsers()
-  return users.find((u) => u.email.toLowerCase() === email.toLowerCase()) || null
+  const users = await getUsers(); return users.find((u) => u.email.toLowerCase() === email.toLowerCase()) || null;
 }
 
 export async function createTask(data: any): Promise<number> {
@@ -197,19 +178,20 @@ export async function createTask(data: any): Promise<number> {
   const nextRow = Math.max(lastRow, 1) + 1;
 
   await sheetsRequest(`/values/Performance!A${nextRow}:T${nextRow}?valueInputOption=USER_ENTERED`, {
-    method: "PUT",
-    body: JSON.stringify({ values })
+    method: "PUT", body: JSON.stringify({ values })
   })
 
   try {
     const userSheet = String(data.name || "").trim()
     if (userSheet) {
       const uRow = await getLastNonEmptyRow(userSheet, 'A');
-      await sheetsRequest(`/values/${userSheet}!A${uRow + 1}:S${uRow + 1}?valueInputOption=USER_ENTERED`, {
+      await sheetsRequest(`/values/'${userSheet.replace(/'/g, "''")}'!A${uRow + 1}:S${uRow + 1}?valueInputOption=USER_ENTERED`, {
         method: "PUT", body: JSON.stringify({ values })
       });
     }
-  } catch {}
+  } catch (err) {
+    console.warn("Individual user sheet sync failed:", err);
+  }
 
   return nextId
 }
@@ -260,7 +242,9 @@ export async function updateTask(id: number, data: any): Promise<void> {
 export async function getDashboardStats(startDate?: string, endDate?: string, userEmail?: string, userRole?: string) {
   try {
     const [summaryData, employeeData, tasksData] = await Promise.all([
-      sheetsRequest("Summary!A2:I2"), sheetsRequest("Employees!A2:I"), sheetsRequest("Performance!A2:T")
+      sheetsRequest("/values/Summary!A2:I2"),
+      sheetsRequest("/values/Employees!A2:I"),
+      sheetsRequest("/values/Performance!A2:T")
     ])
     const employeeRows = employeeData.values || []
     let employeeStats = employeeRows.map((row: any[]) => ({
@@ -308,6 +292,40 @@ export async function getDashboardStats(startDate?: string, endDate?: string, us
   } catch (error) { return { employees: [], scoreDistribution: [], shiftTrend: [] } as any }
 }
 
+export async function savePushToken(email: string, token: string): Promise<void> {
+  const res = await sheetsRequest("/values/Employees!A:Z")
+  const rows = res.values || []
+  const headers = (rows[0] || []).map((h: any) => String(h).toLowerCase().trim())
+  const emailIndex = headers.indexOf("email")
+  let pushTokenIndex = headers.indexOf("push token");
+
+  if (emailIndex === -1) throw new Error("Email column not found")
+  if (pushTokenIndex === -1) {
+    pushTokenIndex = 9;
+    await sheetsRequest("/values/Employees!J1?valueInputOption=USER_ENTERED", {
+      method: "PUT", body: JSON.stringify({ values: [["Push Token"]] })
+    })
+  }
+
+  const rowIndex = rows.findIndex((row: any[]) => String(row[emailIndex]).toLowerCase() === email.toLowerCase())
+  if (rowIndex === -1) throw new Error("User not found")
+
+  const colLetter = String.fromCharCode(65 + pushTokenIndex)
+  await sheetsRequest(`/values/Employees!${colLetter}${rowIndex + 1}?valueInputOption=USER_ENTERED`, {
+    method: "PUT", body: JSON.stringify({ values: [[token]] })
+  })
+  cachedUsers = null;
+}
+
+export async function getAttendance(email: string): Promise<any[]> {
+  try {
+    const data = await sheetsRequest("/values/Attendance!A2:G")
+    return (data.values || []).map((row: any[]) => ({
+      name: row[0], date: row[1], trackedTime: row[2], clockIn: row[5], clockOut: row[6],
+    }))
+  } catch { return [] }
+}
+
 export async function clockIn(email: string, name: string): Promise<void> {
   const values = [[name, format(new Date(), "yyyy-MM-dd"), "Working...", "", "", format(new Date(), "HH:mm:ss"), "", email]]
   const lastRow = await getLastNonEmptyRow('Attendance', 'A');
@@ -317,7 +335,7 @@ export async function clockIn(email: string, name: string): Promise<void> {
 }
 
 export async function clockOut(email: string): Promise<void> {
-  const res = await sheetsRequest("Attendance!A1:H2000")
+  const res = await sheetsRequest("/values/Attendance!A1:H2000")
   const date = format(new Date(), "yyyy-MM-dd")
   const rowIndex = (res.values || []).findLastIndex((row: any[]) => String(row[7]).toLowerCase() === email.toLowerCase() && row[1] === date && !row[6])
   if (rowIndex === -1) throw new Error("No active clock-in")
@@ -331,21 +349,21 @@ export async function clockOut(email: string): Promise<void> {
 export async function createNotification(n: Notification): Promise<void> {
   const values = [[n.userEmail, n.type, n.taskId || "", n.message, n.read ? "TRUE" : "FALSE", n.timestamp]]
   const lastRow = await getLastNonEmptyRow('Notifications', 'A');
-  await sheetsRequest(`/values/Notifications!A${lastRow + 1}:F${lastRow + 1}?valueInputOption=USER_ENTERED`, {
+  await sheetsRequest(`/values/Notifications!A${Math.max(lastRow, 1) + 1}:F${Math.max(lastRow, 1) + 1}?valueInputOption=USER_ENTERED`, {
     method: "PUT", body: JSON.stringify({ values }),
   })
 }
 
 export async function getNotifications(email: string): Promise<Notification[]> {
   try {
-    const data = await sheetsRequest("Notifications!A2:F")
-    return (data.values || []).filter((r: any[]) => String(row[0]).toLowerCase() === email.toLowerCase())
+    const data = await sheetsRequest("/values/Notifications!A2:F")
+    return (data.values || []).filter((r: any[]) => String(r[0]).toLowerCase() === email.toLowerCase())
       .map((r: any[], i: number) => ({ id: `n-${i}`, userEmail: r[0], type: r[1], taskId: parseInt(r[2]) || 0, message: r[3], read: r[4] === "TRUE", timestamp: r[5] }))
   } catch { return [] }
 }
 
 export async function markNotificationAsRead(email: string, ts: string): Promise<void> {
-  const res = await sheetsRequest("Notifications!A1:F2000")
+  const res = await sheetsRequest("/values/Notifications!A1:F2000")
   const idx = (res.values || []).findIndex((r: any[]) => r[0].toLowerCase() === email.toLowerCase() && r[5] === ts)
   if (idx !== -1) {
     const row = res.values[idx]; row[4] = "TRUE";

@@ -6,6 +6,7 @@ export interface User {
   role: UserRole
   image?: string
   pushToken?: string
+  title?: string
 }
 
 export interface Notification {
