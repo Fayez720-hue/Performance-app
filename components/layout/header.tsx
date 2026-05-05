@@ -15,13 +15,6 @@ export function Header() {
       <div className="flex h-16 items-center justify-between px-4 lg:px-8">
         <div className="flex items-center gap-4">
           <SidebarTrigger className="h-10 w-10 text-white/50 hover:text-teal-400 hover:bg-teal-500/10 rounded-xl transition-all" />
-          <div className="h-6 w-px bg-white/10 mx-2 hidden md:block" />
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-500/10 border border-teal-500/20 shadow-[0_0_15px_rgba(20,184,166,0.1)]">
-              <ClipboardList className="h-5 w-5 text-teal-400" suppressHydrationWarning />
-            </div>
-            <span className="text-lg font-bold text-white tracking-tight hidden sm:block">Can shift</span>
-          </Link>
         </div>
 
         <div className="flex items-center gap-3">

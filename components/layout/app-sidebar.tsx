@@ -39,9 +39,15 @@ export function AppSidebar() {
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const { setOpen } = useSidebar();
 
   const userRole = (session?.user as any)?.role || 'Team Member';
   const isAdminOrManager = userRole === 'Admin' || userRole === 'Manager';
+
+  const navigate = (url: string) => {
+    router.push(url);
+    setOpen(false); // Auto-close sidebar on click
+  };
 
   const menuItems = [
     {
@@ -84,21 +90,9 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="offcanvas" className="bg-[#090a11] border-r border-white/5">
-      <SidebarHeader className="h-16 flex items-center px-4 border-b border-white/5">
-        <div className="flex items-center gap-3 overflow-hidden">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-500/10 shadow-[0_0_15px_rgba(20,184,166,0.1)] border border-teal-500/20">
-            <ClipboardList className="h-6 w-6 text-teal-400" />
-          </div>
-          <div className="flex flex-col leading-none group-data-[collapsible=icon]:hidden">
-            <span className="font-bold text-white text-lg tracking-tight">Can shift</span>
-            <span className="text-[10px] text-teal-500/60 font-bold uppercase tracking-[0.2em] mt-0.5">Performance</span>
-          </div>
-        </div>
-      </SidebarHeader>
-
-      <SidebarContent className="px-3 py-6 gap-6 custom-scrollbar">
+      <SidebarContent className="px-3 py-10 gap-6 custom-scrollbar">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] font-bold px-3 mb-3 uppercase tracking-[0.2em] text-white/30 group-data-[collapsible=icon]:hidden">
+          <SidebarGroupLabel className="text-[10px] font-bold px-3 mb-3 uppercase tracking-[0.2em] text-white/30">
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -107,23 +101,19 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     isActive={pathname === item.url}
-                    onClick={() => router.push(item.url)}
-                    tooltip={item.title}
+                    onClick={() => navigate(item.url)}
                     className={cn(
-                      "h-11 px-3 rounded-xl transition-all duration-300 group/btn",
+                      "h-12 px-3 rounded-xl transition-all duration-200 group/btn",
                       pathname === item.url
-                        ? "bg-teal-500/10 text-teal-400 font-bold shadow-[inset_0_0_10px_rgba(20,184,166,0.05)] border border-teal-500/10"
+                        ? "bg-teal-500/10 text-teal-400 font-bold border border-teal-500/10"
                         : "hover:bg-white/5 text-white/60 hover:text-white"
                     )}
                   >
                     <item.icon className={cn(
                       "h-5 w-5 transition-transform duration-300 group-hover/btn:scale-110",
-                      pathname === item.url ? "text-teal-400" : "text-white/40 group-hover/btn:text-white/80"
+                      pathname === item.url ? "text-teal-400" : "text-white/40"
                     )} />
-                    <span className="ml-2">{item.title}</span>
-                    {pathname === item.url && (
-                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-teal-400 shadow-[0_0_8px_#2dd4bf]" />
-                    )}
+                    <span className="ml-2 text-base">{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -133,7 +123,7 @@ export function AppSidebar() {
 
         {isAdminOrManager && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-[10px] font-bold px-3 mb-3 uppercase tracking-[0.2em] text-white/30 group-data-[collapsible=icon]:hidden">
+            <SidebarGroupLabel className="text-[10px] font-bold px-3 mb-3 uppercase tracking-[0.2em] text-white/30">
               Administration
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -142,10 +132,9 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       isActive={pathname === item.url}
-                      onClick={() => router.push(item.url)}
-                      tooltip={item.title}
+                      onClick={() => navigate(item.url)}
                       className={cn(
-                        "h-11 px-3 rounded-xl transition-all duration-300 group/btn",
+                        "h-12 px-3 rounded-xl transition-all duration-200 group/btn",
                         pathname === item.url
                           ? "bg-teal-500/10 text-teal-400 font-bold border border-teal-500/10"
                           : "hover:bg-white/5 text-white/60 hover:text-white"
@@ -153,9 +142,9 @@ export function AppSidebar() {
                     >
                       <item.icon className={cn(
                         "h-5 w-5 transition-transform duration-300 group-hover/btn:scale-110",
-                        pathname === item.url ? "text-teal-400" : "text-white/40 group-hover/btn:text-white/80"
+                        pathname === item.url ? "text-teal-400" : "text-white/40"
                       )} />
-                      <span className="ml-2">{item.title}</span>
+                      <span className="ml-2 text-base">{item.title}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -165,7 +154,7 @@ export function AppSidebar() {
         )}
 
         <SidebarGroup className="mt-auto">
-          <SidebarGroupLabel className="text-[10px] font-bold px-3 mb-3 uppercase tracking-[0.2em] text-white/30 group-data-[collapsible=icon]:hidden">
+          <SidebarGroupLabel className="text-[10px] font-bold px-3 mb-3 uppercase tracking-[0.2em] text-white/30">
             Settings
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -174,10 +163,9 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     isActive={pathname === item.url}
-                    onClick={() => router.push(item.url)}
-                    tooltip={item.title}
+                    onClick={() => navigate(item.url)}
                     className={cn(
-                      "h-11 px-3 rounded-xl transition-all duration-300 group/btn",
+                      "h-12 px-3 rounded-xl transition-all duration-200 group/btn",
                       pathname === item.url
                         ? "bg-teal-500/10 text-teal-400 font-bold border border-teal-500/10"
                         : "hover:bg-white/5 text-white/60 hover:text-white"
@@ -185,9 +173,9 @@ export function AppSidebar() {
                   >
                     <item.icon className={cn(
                       "h-5 w-5 transition-transform duration-300 group-hover/btn:scale-110",
-                      pathname === item.url ? "text-teal-400" : "text-white/40 group-hover/btn:text-white/80"
+                      pathname === item.url ? "text-teal-400" : "text-white/40"
                     )} />
-                    <span className="ml-2">{item.title}</span>
+                    <span className="ml-2 text-base">{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -201,8 +189,8 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
-              className="w-full h-14 flex items-center justify-between group-data-[collapsible=icon]:p-0 hover:bg-white/5 rounded-2xl px-3 transition-all duration-300 border border-transparent hover:border-white/5"
-              onClick={() => router.push('/settings')}
+              className="w-full h-14 flex items-center justify-between hover:bg-white/5 rounded-2xl px-3 transition-all duration-300 border border-transparent hover:border-white/5"
+              onClick={() => navigate('/settings')}
             >
               <div className="flex items-center gap-3">
                 <div className="relative">
@@ -211,10 +199,10 @@ export function AppSidebar() {
                     <AvatarFallback className="bg-teal-500/10 text-teal-400 text-xs font-bold">
                       {session?.user?.name?.charAt(0) || session?.user?.email?.charAt(0)?.toUpperCase() || 'U'}
                     </AvatarFallback>
-                  </Avatar>
+                  </div>
                   <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-[#090a11] rounded-full" />
                 </div>
-                <div className="flex flex-col text-left group-data-[collapsible=icon]:hidden overflow-hidden">
+                <div className="flex flex-col text-left overflow-hidden">
                   <span className="text-sm font-bold text-white truncate max-w-[120px]">
                     {session?.user?.name || session?.user?.email?.split('@')[0] || 'User'}
                   </span>
@@ -223,7 +211,7 @@ export function AppSidebar() {
                   </span>
                 </div>
               </div>
-              <ChevronRight className="h-4 w-4 text-white/20 group-data-[collapsible=icon]:hidden group-hover:translate-x-0.5 transition-transform" />
+              <ChevronRight className="h-4 w-4 text-white/20 group-hover:translate-x-0.5 transition-transform" />
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
