@@ -17,29 +17,8 @@ const base64url = (str: string) => {
   return encodeBase64(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")
 }
 
-// Cache for the Google Sheets Access Token
 let cachedToken: { token: string; expiry: number } | null = null;
-// Cache for users list to speed up authentication and dashboard
 let cachedUsers: { data: User[]; expiry: number } | null = null;
-
-// ============ HELPER: get last non-empty row ============
-async function getLastNonEmptyRow(sheetName: string, column: string = 'A'): Promise<number> {
-  try {
-    const range = `'${sheetName.replace(/'/g, "''")}'!${column}:${column}`;
-    const data = await sheetsRequest(`/values/${range}`);
-    const rows = data.values || [];
-    for (let i = rows.length - 1; i >= 0; i--) {
-      const row = rows[i];
-      if (row && row.some((cell: any) => cell !== null && cell !== "" && String(cell).trim() !== "")) {
-        return i + 1;
-      }
-    }
-    return 0;
-  } catch (error) {
-    console.error(`Row Detection Error for ${sheetName}:`, error);
-    return 0;
-  }
-}
 
 async function getAccessToken(): Promise<string> {
   const now = Math.floor(Date.now() / 1000)
@@ -93,28 +72,30 @@ async function getAccessToken(): Promise<string> {
 
 async function sheetsRequest(path: string, options: RequestInit = {}) {
   const token = await getAccessToken()
-  const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID?.trim().replace(/^["']|["']$/g, "")
-  if (!spreadsheetId) throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is missing")
+  const spreadsheetId = (process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "").trim().replace(/^["']|["']$/g, "")
 
-  // Cleanup path and ensure /values/ prefix
-  let cleanPath = path.startsWith('/') ? path : `/${path}`;
-  if (!cleanPath.startsWith('/values/')) cleanPath = `/values${cleanPath}`;
+  // Construct clean URL
+  const baseUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values`;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
 
-  const [basePath, query] = cleanPath.split('?');
-  const encodedPath = basePath.split('/').map(segment => {
-    if (!segment || segment === "values") return segment;
-    if (segment.includes('!')) {
-      const [sheet, range] = segment.split('!');
-      return `${encodeURIComponent(sheet)}!${range}`;
-    }
-    return encodeURIComponent(segment);
-  }).join('/');
+  // Separate range and query params
+  const parts = cleanPath.split('?');
+  const rangePart = parts[0];
+  const queryPart = parts[1] || "";
 
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}${encodedPath}${query ? '?' + query : ''}`;
+  // Handle sheet names with spaces by wrapping them in single quotes and URL encoding
+  const rangeSegments = rangePart.split('!').map(s => encodeURIComponent(s.replace(/^\/+/, "")));
+  const finalRange = rangeSegments.join('!');
+
+  const url = `${baseUrl}/${finalRange}${queryPart ? '?' + queryPart : ''}`;
 
   const response = await fetch(url, {
     ...options,
-    headers: { ...options.headers, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    headers: {
+      ...options.headers,
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
   })
 
   if (!response.ok) {
@@ -132,7 +113,7 @@ export async function getUsers(): Promise<User[]> {
   if (cachedUsers && cachedUsers.expiry > now) return cachedUsers.data;
 
   try {
-    const data = await sheetsRequest("/Employees!A:Z")
+    const data = await sheetsRequest("Employees!A:Z")
     let rows = (data.values || []).filter((row: any[]) => row[0] || row[1])
     if (rows.length === 0) return []
 
@@ -162,7 +143,8 @@ export async function getUsers(): Promise<User[]> {
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  const users = await getUsers(); return users.find((u) => u.email.toLowerCase() === email.toLowerCase()) || null;
+  const users = await getUsers();
+  return users.find((u) => u.email.toLowerCase() === email.toLowerCase()) || null;
 }
 
 export async function createTask(data: any): Promise<number> {
@@ -178,16 +160,15 @@ export async function createTask(data: any): Promise<number> {
     data.edits || "", 0, `Created: ${new Date().toLocaleString()}`
   ]]
 
-  // Use append targeting the header to find the FIRST empty row and avoid zombie rows at the bottom
-  await sheetsRequest("/Performance!A1:T1:append?valueInputOption=USER_ENTERED", {
+  // Use append targeting row 1. This is the most reliable way to find the actual next empty row.
+  await sheetsRequest("Performance!A1:T1:append?valueInputOption=USER_ENTERED", {
     method: "POST", body: JSON.stringify({ values })
   })
 
   try {
     const userSheet = String(data.name || "").trim()
     if (userSheet) {
-      // Also use the header-targeting append for individual user sheets
-      await sheetsRequest(`/'${userSheet.replace(/'/g, "''")}'!A1:S1:append?valueInputOption=USER_ENTERED`, {
+      await sheetsRequest(`${userSheet}!A1:S1:append?valueInputOption=USER_ENTERED`, {
         method: "POST", body: JSON.stringify({ values })
       });
     }
@@ -198,7 +179,7 @@ export async function createTask(data: any): Promise<number> {
 
 export async function getTasks(): Promise<Task[]> {
   try {
-    const data = await sheetsRequest("/Performance!A2:T")
+    const data = await sheetsRequest("Performance!A2:T")
     return (data.values || []).map((row: any[], index: number) => {
       const name = (row[1] || "").trim()
       if (!name && !row[3]) return null
@@ -223,7 +204,7 @@ export async function getTaskById(id: number): Promise<Task | null> {
 }
 
 export async function updateTask(id: number, data: any): Promise<void> {
-  const res = await sheetsRequest("/Performance!A1:A2000")
+  const res = await sheetsRequest("Performance!A1:A2000")
   const rowIndex = (res.values || []).findIndex((row: any[]) => String(row[0]) === String(id))
   if (rowIndex === -1) throw new Error("Task not found")
 
@@ -234,7 +215,7 @@ export async function updateTask(id: number, data: any): Promise<void> {
     data.overallScore, data.taskTimeStamp, data.edits, data.noOfEdits, data.performanceHistory
   ]]
 
-  await sheetsRequest(`/Performance!A${rowIndex + 1}:T${rowIndex + 1}?valueInputOption=USER_ENTERED`, {
+  await sheetsRequest(`Performance!A${rowIndex + 1}:T${rowIndex + 1}?valueInputOption=USER_ENTERED`, {
     method: "PUT", body: JSON.stringify({ values })
   })
 }
@@ -242,7 +223,7 @@ export async function updateTask(id: number, data: any): Promise<void> {
 export async function getDashboardStats(startDate?: string, endDate?: string, userEmail?: string, userRole?: string) {
   try {
     const [summaryData, employeeData, tasksData] = await Promise.all([
-      sheetsRequest("/Summary!A2:I2"), sheetsRequest("/Employees!A2:I"), sheetsRequest("/Performance!A2:T")
+      sheetsRequest("Summary!A2:I2"), sheetsRequest("Employees!A2:I"), sheetsRequest("Performance!A2:T")
     ])
     const employeeRows = employeeData.values || []
     let employeeStats = employeeRows.map((row: any[]) => ({
@@ -291,33 +272,32 @@ export async function getDashboardStats(startDate?: string, endDate?: string, us
 }
 
 export async function savePushToken(email: string, token: string): Promise<void> {
-  const res = await sheetsRequest("/Employees!A:Z")
+  const res = await sheetsRequest("Employees!A:Z")
   const rows = res.values || []
   const headers = (rows[0] || []).map((h: any) => String(h).toLowerCase().trim())
-  const emailIndex = headers.indexOf("email")
+  const emailIdx = headers.indexOf("email")
   let pushTokenIndex = headers.indexOf("push token");
 
-  if (emailIndex === -1) throw new Error("Email column not found")
+  if (emailIdx === -1) throw new Error("Email column not found")
   if (pushTokenIndex === -1) {
     pushTokenIndex = 9;
-    await sheetsRequest("/Employees!J1?valueInputOption=USER_ENTERED", {
+    await sheetsRequest("Employees!J1?valueInputOption=USER_ENTERED", {
       method: "PUT", body: JSON.stringify({ values: [["Push Token"]] })
     })
   }
 
-  const rowIndex = rows.findIndex((row: any[]) => String(row[emailIndex]).toLowerCase() === email.toLowerCase())
+  const rowIndex = rows.findIndex((row: any[]) => String(row[emailIdx]).toLowerCase() === email.toLowerCase())
   if (rowIndex === -1) throw new Error("User not found")
 
   const colLetter = String.fromCharCode(65 + pushTokenIndex)
-  await sheetsRequest(`/Employees!${colLetter}${rowIndex + 1}?valueInputOption=USER_ENTERED`, {
+  await sheetsRequest(`Employees!${colLetter}${rowIndex + 1}?valueInputOption=USER_ENTERED`, {
     method: "PUT", body: JSON.stringify({ values: [[token]] })
   })
-  cachedUsers = null;
 }
 
 export async function getAttendance(email: string): Promise<any[]> {
   try {
-    const data = await sheetsRequest("/Attendance!A2:G")
+    const data = await sheetsRequest("Attendance!A2:G")
     return (data.values || []).map((row: any[]) => ({
       name: row[0], date: row[1], trackedTime: row[2], clockIn: row[5], clockOut: row[6],
     }))
@@ -326,43 +306,43 @@ export async function getAttendance(email: string): Promise<any[]> {
 
 export async function clockIn(email: string, name: string): Promise<void> {
   const values = [[name, format(new Date(), "yyyy-MM-dd"), "Working...", "", "", format(new Date(), "HH:mm:ss"), "", email]]
-  await sheetsRequest("/Attendance!A1:H1:append?valueInputOption=USER_ENTERED", {
+  await sheetsRequest("Attendance!A1:H1:append?valueInputOption=USER_ENTERED", {
     method: "POST", body: JSON.stringify({ values })
   })
 }
 
 export async function clockOut(email: string): Promise<void> {
-  const res = await sheetsRequest("/Attendance!A1:H2000")
+  const res = await sheetsRequest("Attendance!A1:H2000")
   const date = format(new Date(), "yyyy-MM-dd")
   const rowIndex = (res.values || []).findLastIndex((row: any[]) => String(row[7]).toLowerCase() === email.toLowerCase() && row[1] === date && !row[6])
   if (rowIndex === -1) throw new Error("No active clock-in")
   const row = res.values[rowIndex]
   row[6] = format(new Date(), "HH:mm:ss")
-  await sheetsRequest(`/Attendance!A${rowIndex + 1}:H${rowIndex + 1}?valueInputOption=USER_ENTERED`, {
+  await sheetsRequest(`Attendance!A${rowIndex + 1}:H${rowIndex + 1}?valueInputOption=USER_ENTERED`, {
     method: "PUT", body: JSON.stringify({ values: [row] })
   })
 }
 
 export async function createNotification(n: Notification): Promise<void> {
   const values = [[n.userEmail, n.type, n.taskId || "", n.message, n.read ? "TRUE" : "FALSE", n.timestamp]]
-  await sheetsRequest("/Notifications!A1:F1:append?valueInputOption=USER_ENTERED", {
+  await sheetsRequest("Notifications!A1:F1:append?valueInputOption=USER_ENTERED", {
     method: "POST", body: JSON.stringify({ values }),
   })
 }
 
 export async function getNotifications(email: string): Promise<Notification[]> {
   try {
-    const data = await sheetsRequest("/Notifications!A2:F")
+    const data = await sheetsRequest("Notifications!A2:F")
     return (data.values || []).filter((r: any[]) => r && r[0] && String(r[0]).toLowerCase() === email.toLowerCase())
       .map((r: any[], i: number) => ({ id: `n-${i}`, userEmail: r[0], type: r[1], taskId: parseInt(r[2]) || 0, message: r[3], read: r[4] === "TRUE", timestamp: r[5] }))
   } catch { return [] }
 }
 
 export async function markNotificationAsRead(email: string, ts: string): Promise<void> {
-  const res = await sheetsRequest("/Notifications!A1:F2000")
+  const res = await sheetsRequest("Notifications!A1:F2000")
   const idx = (res.values || []).findIndex((r: any[]) => r[0].toLowerCase() === email.toLowerCase() && r[5] === ts)
   if (idx !== -1) {
     const row = res.values[idx]; row[4] = "TRUE";
-    await sheetsRequest(`/Notifications!A${idx + 1}:F${idx + 1}?valueInputOption=USER_ENTERED`, { method: "PUT", body: JSON.stringify({ values: [row] }) })
+    await sheetsRequest(`Notifications!A${idx + 1}:F${idx + 1}?valueInputOption=USER_ENTERED`, { method: "PUT", body: JSON.stringify({ values: [row] }) })
   }
 }
