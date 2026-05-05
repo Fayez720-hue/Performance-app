@@ -4,12 +4,10 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { OAuth2Client } from "google-auth-library";
 import { getUserByEmail, addUser } from "@/lib/google-sheets";
 
-// Google client for ID token verification
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    // Web fallback provider (used for regular browsers)
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
@@ -20,22 +18,18 @@ export const authOptions: NextAuthOptions = {
         },
       },
     }),
-    // Native OAuth provider for Capacitor (handles ID token from plugin)
     CredentialsProvider({
       name: "credentials",
       credentials: { id_token: { type: "text" } },
       async authorize(credentials) {
         if (!credentials?.id_token) return null;
         try {
-          // Verify the Google ID token
           const ticket = await googleClient.verifyIdToken({
             idToken: credentials.id_token,
             audience: process.env.GOOGLE_CLIENT_ID,
           });
           const payload = ticket.getPayload();
           if (!payload) return null;
-
-          // Get or create user in Google Sheets
           let user = await getUserByEmail(payload.email!);
           if (!user) {
             await addUser({
@@ -45,20 +39,20 @@ export const authOptions: NextAuthOptions = {
             });
             user = await getUserByEmail(payload.email!);
           }
-
           return {
             id: payload.sub,
             email: payload.email,
             name: payload.name,
             role: user?.role || "Team Member",
           };
-        } catch (error) {
-          console.error("ID token verification failed:", error);
+        } catch (err) {
+          console.error("Token verification error:", err);
           return null;
         }
       },
     }),
   ],
+  
   debug: process.env.NODE_ENV === "development",
   secret: process.env.NEXTAUTH_SECRET,
   session: {
