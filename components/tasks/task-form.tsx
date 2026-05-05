@@ -151,7 +151,7 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
       }
 
       if (!response.ok) {
-        throw new Error(responseData.error || "Failed to save task")
+        throw new Error(responseData.message || responseData.error || "Failed to save task")
       }
 
       toast.success(mode === "create" ? "Task created successfully" : "Task updated successfully")

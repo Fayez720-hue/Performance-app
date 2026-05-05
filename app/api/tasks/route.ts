@@ -112,6 +112,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ id })
   } catch (error) {
     console.error("Create Task Error:", error)
-    return NextResponse.json({ error: "Failed to create task" }, { status: 500 })
+    const message = error instanceof Error ? error.message : String(error)
+    return NextResponse.json(
+      { error: "Failed to create task", message },
+      { status: 500 }
+    )
   }
 }
