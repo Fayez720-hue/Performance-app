@@ -74,20 +74,30 @@ async function sheetsRequest(path: string, options: RequestInit = {}) {
   const token = await getAccessToken()
   const spreadsheetId = (process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "").trim().replace(/^["']|["']$/g, "")
 
+  if (!spreadsheetId) {
+    throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is not configured");
+  }
+
   // Construct clean URL
   const baseUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values`;
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
 
   // Separate range and query params
-  const parts = cleanPath.split('?');
-  const rangePart = parts[0];
-  const queryPart = parts[1] || "";
+  const [rangeAndMethod, queryPart] = path.split('?');
 
-  // Handle sheet names with spaces by wrapping them in single quotes and URL encoding
-  const rangeSegments = rangePart.split('!').map(s => encodeURIComponent(s.replace(/^\/+/, "")));
+  // Handle :append method suffix correctly as a custom method
+  let rangePart = rangeAndMethod;
+  let methodSuffix = "";
+  if (rangeAndMethod.endsWith(":append")) {
+    rangePart = rangeAndMethod.substring(0, rangeAndMethod.length - 7);
+    methodSuffix = ":append";
+  }
+
+  // Handle sheet names and ranges by URL encoding segments, preserving !
+  const cleanRangePart = rangePart.replace(/^\/+/, "");
+  const rangeSegments = cleanRangePart.split('!').map(s => encodeURIComponent(s));
   const finalRange = rangeSegments.join('!');
 
-  const url = `${baseUrl}/${finalRange}${queryPart ? '?' + queryPart : ''}`;
+  const url = `${baseUrl}/${finalRange}${methodSuffix}${queryPart ? '?' + queryPart : ''}`;
 
   const response = await fetch(url, {
     ...options,
@@ -145,6 +155,13 @@ export async function getUsers(): Promise<User[]> {
 export async function getUserByEmail(email: string): Promise<User | null> {
   const users = await getUsers();
   return users.find((u) => u.email.toLowerCase() === email.toLowerCase()) || null;
+}
+
+export async function addUser(user: { email: string; name: string; role: string }): Promise<void> {
+  const values = [[user.email, user.name, user.role]]
+  await sheetsRequest("Employees!A1:C1:append?valueInputOption=USER_ENTERED", {
+    method: "POST", body: JSON.stringify({ values })
+  })
 }
 
 export async function createTask(data: any): Promise<number> {
