@@ -18,10 +18,10 @@ export default function LoginPageClient() {
     if (isCapacitor) {
       // Initialize the native plugin
       GoogleAuth.initialize({
-        clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
-        scopes: ['openid', 'email', 'profile'],
-        grantOfflineAccess: true,
-      }).catch(console.error);
+  clientId: '423199982215-9f8naaojguulkgha5nmlpumpb00d6j3j.apps.googleusercontent.com', // hardcoded
+  scopes: ['openid', 'email', 'profile'],
+  grantOfflineAccess: true,
+  }).catch(console.error);
     }
   }, []);
 
