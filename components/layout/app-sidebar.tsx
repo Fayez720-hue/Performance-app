@@ -28,6 +28,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSeparator,
+  SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -88,6 +89,9 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="offcanvas" className="bg-[#090a11] border-r border-white/5">
+      <SidebarHeader className="h-16 flex items-center px-4 border-b border-white/5">
+        <SidebarTrigger className="h-10 w-10 text-white/50 hover:text-teal-400 hover:bg-teal-500/10 rounded-xl transition-all -ml-1" />
+      </SidebarHeader>
       <SidebarContent className="px-3 py-10 gap-6 custom-scrollbar">
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] font-bold px-3 mb-3 uppercase tracking-[0.2em] text-white/30">

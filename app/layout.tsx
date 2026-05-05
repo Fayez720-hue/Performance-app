@@ -26,11 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <NotificationManager />
             <SidebarProvider defaultOpen={false}>
               <AppSidebar />
-              <SidebarInset className="relative flex flex-1 flex-col bg-background">
-                {/* Sticky header with only the hamburger button */}
-                <div className="sticky top-0 z-10 flex h-16 items-center border-b bg-background px-4">
-                  <SidebarTrigger />
-                </div>
+              <SidebarInset>
                 {children}
               </SidebarInset>
             </SidebarProvider>
