@@ -79,25 +79,33 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email;
         token.name = user.name;
 
-        try {
-          if (user.email) {
-            const dbUser = await getUserByEmail(user.email);
+        const email = user.email?.toLowerCase() || "";
+        const adminEmails = (process.env.ADMIN_EMAILS || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean);
+        const managerEmails = (process.env.MANAGER_EMAILS || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean);
+
+        // 1. Check Environment Variables first (Master Override)
+        if (adminEmails.includes(email)) {
+          token.role = "Admin";
+        } else if (managerEmails.includes(email)) {
+          token.role = "Manager";
+        } else {
+          // 2. Fallback to Spreadsheet lookup
+          try {
+            const dbUser = await getUserByEmail(email);
             if (dbUser) {
-              token.role = dbUser.role;
+              const role = dbUser.role?.trim() || "";
+              if (/admin/i.test(role)) token.role = "Admin";
+              else if (/manager/i.test(role)) token.role = "Manager";
+              else if (/viewer/i.test(role)) token.role = "Viewer";
+              else token.role = "Team Member";
               token.name = dbUser.name;
             } else {
-              // Optional: Add to DB if not found or handle guest logic
-              const adminEmails = (process.env.ADMIN_EMAILS || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean);
-              if (adminEmails.includes(user.email.toLowerCase())) {
-                token.role = "Admin";
-              } else {
-                token.role = "Team Member";
-              }
+              token.role = "Team Member";
             }
+          } catch (error) {
+            console.error("JWT Role Sync Error:", error);
+            token.role = "Team Member";
           }
-        } catch (error) {
-          console.error("JWT Callback error:", error);
-          token.role = (user as any).role || "Team Member";
         }
       }
       return token;

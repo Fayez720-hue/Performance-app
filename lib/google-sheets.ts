@@ -24,15 +24,18 @@ let cachedUsers: { data: User[]; expiry: number } | null = null;
 
 // ============ HELPER: get last non-empty row ============
 async function getLastNonEmptyRow(sheetName: string, column: string = 'A'): Promise<number> {
-  const token = await getAccessToken();
-  const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID?.trim().replace(/^["']|["']$/g, "");
-  if (!spreadsheetId) throw new Error("Missing spreadsheet ID");
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}!${column}:${column}`;
-  const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!response.ok) throw new Error("Failed to fetch last row");
-  const data = await response.json();
-  const values = data.values || [];
-  return values.length;
+  try {
+    // Quote sheet name if it has spaces and URL encode the entire range
+    const range = `'${sheetName}'!${column}:${column}`;
+    const path = `/values/${encodeURIComponent(range)}`;
+    const data = await sheetsRequest(path);
+    const values = data.values || [];
+    return values.length;
+  } catch (error) {
+    console.error(`Error in getLastNonEmptyRow for ${sheetName}:`, error);
+    // If sheet doesn't exist, return 0 (will start at row 1)
+    return 0;
+  }
 }
 
 async function getAccessToken(): Promise<string> {
