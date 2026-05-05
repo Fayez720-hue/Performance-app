@@ -1,17 +1,15 @@
 "use client";
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';   // ✅ import router
+import { useRouter } from 'next/navigation';
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { PushNotifications } from '@capacitor/push-notifications';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { fetcher } from '@/lib/api';
 
 export function useNotifications() {
-  const router = useRouter();                    // ✅ get router instance
+  const router = useRouter();
   const { data: session } = useSession();
   const { data: notifications, mutate } = useSWR(
     session?.user?.email ? '/api/notifications' : null,
@@ -40,7 +38,7 @@ export function useNotifications() {
         (notification) => {
           const taskId = notification.notification?.extra?.taskId;
           if (taskId) {
-            router.push(`/tasks/${taskId}`);
+            router.push(`/tasks?taskId=${taskId}&t=${Date.now()}`);
           }
         }
       );

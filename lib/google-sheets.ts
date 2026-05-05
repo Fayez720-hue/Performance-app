@@ -379,16 +379,73 @@ export async function createNotification(n: Notification): Promise<void> {
 export async function getNotifications(email: string): Promise<Notification[]> {
   try {
     const data = await sheetsRequest("Notifications!A2:F")
-    return (data.values || []).filter((r: any[]) => r && r[0] && String(r[0]).toLowerCase() === email.toLowerCase())
-      .map((r: any[], i: number) => ({ id: `n-${i}`, userEmail: r[0], type: r[1], taskId: parseInt(r[2]) || 0, message: r[3], read: r[4] === "TRUE", timestamp: r[5] }))
-  } catch { return [] }
+    const notifications = (data.values || [])
+      .filter((r: any[]) => r && r[0] && String(r[0]).toLowerCase() === email.toLowerCase())
+      .map((r: any[], i: number) => ({
+        id: `n-${i}`,
+        userEmail: r[0],
+        type: r[1] as any,
+        taskId: parseInt(r[2]) || 0,
+        message: r[3],
+        read: r[4] === "TRUE",
+        timestamp: r[5]
+      }))
+
+    // Return newest first
+    return notifications.reverse()
+  } catch (error) {
+    console.error("Error fetching notifications:", error)
+    return []
+  }
+}
+
+export async function markAllNotificationsAsRead(email: string): Promise<void> {
+  try {
+    const res = await sheetsRequest("Notifications!A:F")
+    const rows = res.values || []
+    if (rows.length <= 1) return
+
+    // Identify which rows need updating
+    const updates = []
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i]
+      if (row[0] && String(row[0]).toLowerCase() === email.toLowerCase() && row[4] !== "TRUE") {
+        // We found an unread notification for this user
+        updates.push({
+          range: `Notifications!E${i + 1}`,
+          values: [["TRUE"]]
+        })
+      }
+    }
+
+    if (updates.length === 0) return
+
+    // Perform batch update using the 'batchUpdate' endpoint
+    // We need a helper for batch updates or just do it sequentially but without re-fetching
+    // Given the current architecture, let's add a simple batch helper if possible or just loop PUTs
+    // but the key is we ONLY fetch once.
+
+    // For now, to keep it simple and compatible with sheetsRequest, we'll loop the PUTs
+    // but the main bottleneck was the RE-FETCHING inside the loop.
+    for (const update of updates) {
+      await sheetsRequest(update.range + "?valueInputOption=USER_ENTERED", {
+        method: "PUT",
+        body: JSON.stringify({ values: update.values })
+      })
+    }
+  } catch (error) {
+    console.error("Error marking all notifications as read:", error)
+    throw error
+  }
 }
 
 export async function markNotificationAsRead(email: string, ts: string): Promise<void> {
-  const res = await sheetsRequest("Notifications!A1:F2000")
-  const idx = (res.values || []).findIndex((r: any[]) => r[0].toLowerCase() === email.toLowerCase() && r[5] === ts)
+  const res = await sheetsRequest("Notifications!A:F")
+  const idx = (res.values || []).findIndex((r: any[]) => r[0] && r[0].toLowerCase() === email.toLowerCase() && r[5] === ts)
   if (idx !== -1) {
-    const row = res.values[idx]; row[4] = "TRUE";
-    await sheetsRequest(`Notifications!A${idx + 1}:F${idx + 1}?valueInputOption=USER_ENTERED`, { method: "PUT", body: JSON.stringify({ values: [row] }) })
+    await sheetsRequest(`Notifications!E${idx + 1}?valueInputOption=USER_ENTERED`, {
+      method: "PUT",
+      body: JSON.stringify({ values: [["TRUE"]] })
+    })
   }
 }

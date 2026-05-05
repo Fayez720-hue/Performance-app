@@ -58,6 +58,13 @@ export function TaskDeck({ user }: TaskDeckProps) {
       url.searchParams.delete("taskId");
       url.searchParams.delete("t");
       window.history.replaceState({}, "", url.toString());
+
+      // Reset highlight state after a delay so it can be re-triggered
+      const timeoutId = setTimeout(() => {
+        setHighlightedTaskId(null);
+      }, 500);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [taskIdParam]);
 

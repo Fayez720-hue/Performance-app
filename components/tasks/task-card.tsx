@@ -84,13 +84,21 @@ interface TaskCardProps {
 
 export function TaskCard({ task, canEdit, canDelete, onDelete, autoExpand, highlightToken }: TaskCardProps) {
   const router = useRouter()
-  const [isExpanded, setIsExpanded] = useState(autoExpand || false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  // Auto-expand if the prop changes or token updates
+  // Auto-expand if the prop becomes true
   useEffect(() => {
-  setIsExpanded(autoExpand ?? false);
-}, [autoExpand]);
+    if (autoExpand) {
+      setIsExpanded(true);
+
+      // Also scroll into view specifically for this card if it's the one
+      const element = document.getElementById(`task-${task.id}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  }, [autoExpand, task.id]);
 
   const config = progressConfig[task.progress]
   

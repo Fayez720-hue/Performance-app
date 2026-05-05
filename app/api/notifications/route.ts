@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
-import { getNotifications, markNotificationAsRead } from "@/lib/google-sheets"
+import { getNotifications, markAllNotificationsAsRead } from "@/lib/google-sheets"
 
 import { authOptions } from "@/lib/auth"
 
@@ -22,12 +22,7 @@ export async function PUT() {
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-    const notifications = await getNotifications(session.user.email)
-    const unread = notifications.filter(n => !n.read)
-
-    for (const notification of unread) {
-      await markNotificationAsRead(session.user.email, notification.timestamp)
-    }
+    await markAllNotificationsAsRead(session.user.email)
 
     return NextResponse.json({ success: true })
   } catch (error) {
