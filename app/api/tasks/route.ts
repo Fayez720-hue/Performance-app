@@ -80,6 +80,8 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+    console.log("Creating task for user:", session.user.email)
+
     // Check permissions
     const user = await getUserByEmail(session.user.email)
     const adminEmails = (process.env.ADMIN_EMAILS || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean)
@@ -97,6 +99,8 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json()
+    console.log("Task data:", data)
+
     const id = await createTask(data)
 
     // Safety: Wrap notifications in try-catch so task creation succeeds even if notify fails
