@@ -1,59 +1,30 @@
 "use client";
-import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
+import { Browser } from '@capacitor/browser';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClipboardList, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
 
 export default function LoginPageClient() {
   const [isLoading, setIsLoading] = useState(false);
   const [isApp, setIsApp] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
-    // Detect if running inside Capacitor native app
-    const isCapacitor = !!(window as any).Capacitor;
+    const isCapacitor = (window as any).Capacitor !== undefined;
     setIsApp(isCapacitor);
-    if (isCapacitor) {
-      // Initialize the native plugin
-      GoogleAuth.initialize({
-  clientId: '423199982215-9f8naaojguulkgha5nmlpumpb00d6j3j.apps.googleusercontent.com', // hardcoded
-  scopes: ['openid', 'email', 'profile'],
-  grantOfflineAccess: true,
-  }).catch(console.error);
-    }
   }, []);
 
   const handleLogin = async () => {
     setIsLoading(true);
-    try {
-      if (isApp) {
-        // Native Google Sign‑In (no browser, no custom schemes)
-        const user = await GoogleAuth.signIn();
-        const idToken = user.authentication.idToken;
-        if (!idToken) throw new Error("No ID token received");
-
-        // Exchange ID token for a NextAuth session
-        const result = await signIn('credentials', {
-          id_token: idToken,
-          redirect: false,
-        });
-        if (result?.error) throw new Error(result.error);
-        router.push('/dashboard');
-      } else {
-        // Web fallback – regular NextAuth Google provider
-        await signIn('google', { callbackUrl: '/dashboard' });
-      }
-    } catch (error) {
-      console.error('Login failed:', error);
-      alert(error instanceof Error ? error.message : "Login failed");
-    } finally {
-      setIsLoading(false);
+    const baseUrl = 'https://performance-app-ivory.vercel.app';
+    const loginUrl = `${baseUrl}/api/auth/signin/google?callbackUrl=${encodeURIComponent('/dashboard')}`;
+    if (isApp) {
+      await Browser.open({ url: loginUrl });
+    } else {
+      window.location.href = loginUrl;
     }
+    // No need to setIsLoading(false) – the page will redirect
   };
 
-  // Your existing JSX (the button and card) – unchanged
   return (
     <main className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md border-border bg-card">
