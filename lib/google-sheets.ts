@@ -24,9 +24,13 @@ async function getAccessToken(): Promise<string> {
   const now = Math.floor(Date.now() / 1000)
   if (cachedToken && cachedToken.expiry > now + 60) return cachedToken.token
 
+  console.log("Generating new Google Sheets access token...")
   const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL?.replace(/\s/g, "")
   let privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY
-  if (!clientEmail || !privateKey) throw new Error("Missing Google Sheets credentials")
+  if (!clientEmail || !privateKey) {
+    console.error("Missing Google Sheets credentials:", { clientEmail: !!clientEmail, privateKey: !!privateKey })
+    throw new Error("Missing Google Sheets credentials")
+  }
 
   if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
     privateKey = privateKey.substring(1, privateKey.length - 1)
@@ -75,6 +79,7 @@ async function sheetsRequest(path: string, options: RequestInit = {}) {
   const spreadsheetId = (process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "").trim().replace(/^["']|["']$/g, "")
 
   if (!spreadsheetId) {
+    console.error("GOOGLE_SHEETS_SPREADSHEET_ID is missing");
     throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is not configured");
   }
 
@@ -94,27 +99,51 @@ async function sheetsRequest(path: string, options: RequestInit = {}) {
 
   // Handle sheet names and ranges by URL encoding segments, preserving !
   const cleanRangePart = rangePart.replace(/^\/+/, "");
-  const rangeSegments = cleanRangePart.split('!').map(s => encodeURIComponent(s));
+  const rangeSegments = cleanRangePart.split('!').map(s => {
+    // If segment has spaces and isn't already quoted, wrap in single quotes for Google Sheets API
+    let segment = s.trim();
+    if (segment.includes(' ') && !segment.startsWith("'")) {
+      segment = `'${segment}'`;
+    }
+    return encodeURIComponent(segment);
+  });
   const finalRange = rangeSegments.join('!');
 
   const url = `${baseUrl}/${finalRange}${methodSuffix}${queryPart ? '?' + queryPart : ''}`;
 
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...options.headers,
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json"
-    },
-  })
+  console.log(`Sheets API Request: ${options.method || 'GET'} ${url}`);
 
-  if (!response.ok) {
-    const errorBody = await response.text();
-    console.error(`Sheets API Error (${response.status}) at ${url}:`, errorBody);
-    throw new Error(`Google Sheets API error: ${response.status}`);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        ...options.headers,
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+    })
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error(`Sheets API Error (${response.status}) at ${url}:`, errorBody);
+      throw new Error(`Google Sheets API error: ${response.status}`);
+    }
+
+    return response.json()
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error(`Sheets API Timeout (15s) at ${url}`);
+      throw new Error("Google Sheets API request timed out");
+    }
+    throw error;
   }
-
-  return response.json()
 }
 
 // ============ USERS ============

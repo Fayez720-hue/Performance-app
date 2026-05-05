@@ -23,7 +23,14 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: true,
     overrideUserAgent: 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36 CSPerformanceApp'
-  }
+  },
+  plugins: {
+    GoogleAuth: {
+      scopes: ['profile', 'email'],
+      serverClientId: '423199982215-9f8naaojguulkgha5nmlpumpb00d6j3j.apps.googleusercontent.com',
+      forceCodeForRefreshToken: true,
+    },
+  },
 };
 
 export default config;

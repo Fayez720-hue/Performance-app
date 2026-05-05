@@ -14,7 +14,6 @@ export const authOptions: NextAuthOptions = {
       authorization: {
         params: {
           prompt: "select_account",
-          redirect_uri: "https://performance-app-ivory.vercel.app/api/auth/callback/google",
         },
       },
     }),
@@ -80,6 +79,8 @@ export const authOptions: NextAuthOptions = {
         token.name = user.name;
 
         const email = user.email?.toLowerCase() || "";
+        console.log(`[NextAuth] Syncing role for ${email}...`);
+
         const adminEmails = (process.env.ADMIN_EMAILS || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean);
         const managerEmails = (process.env.MANAGER_EMAILS || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean);
 
@@ -103,10 +104,11 @@ export const authOptions: NextAuthOptions = {
               token.role = "Team Member";
             }
           } catch (error) {
-            console.error("JWT Role Sync Error:", error);
+            console.error(`[NextAuth] Role sync failed for ${email}:`, error);
             token.role = "Team Member";
           }
         }
+        console.log(`[NextAuth] Final role for ${email}: ${token.role}`);
       }
       return token;
     },

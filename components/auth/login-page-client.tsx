@@ -4,6 +4,7 @@ import { signIn } from "next-auth/react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ClipboardList, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth'
 
 export default function LoginPageClient() {
   const [isLoading, setIsLoading] = useState(false)
@@ -13,14 +14,36 @@ export default function LoginPageClient() {
     // Detect Capacitor environment
     const isCapacitor = (window as any).Capacitor !== undefined || /CSPerformanceApp/i.test(navigator.userAgent)
     setIsApp(isCapacitor)
+
+    if (isCapacitor) {
+      GoogleAuth.initialize().catch(console.error)
+    }
   }, [])
 
   const handleLogin = async () => {
     setIsLoading(true)
     try {
-      const callbackUrl = isApp ? "/auth/callback?callbackUrl=/dashboard&app=1" : "/dashboard"
-      // Use standard signIn. NextAuth will handle the CSRF and callback logic.
-      await signIn("google", { callbackUrl })
+      if (isApp) {
+        console.log("Attempting native Google login...");
+        try {
+          const user = await GoogleAuth.signIn();
+          if (user?.authentication?.idToken) {
+            console.log("Native login success, authenticating with backend...");
+            await signIn("credentials", {
+              id_token: user.authentication.idToken,
+              callbackUrl: "/dashboard",
+              redirect: true
+            });
+            return;
+          }
+        } catch (nativeError) {
+          console.warn("Native Google login failed or cancelled:", nativeError);
+          // Fallback to web login if native fails
+        }
+      }
+
+      console.log("Using web-based Google login...");
+      await signIn("google", { callbackUrl: "/dashboard" })
     } catch (error) {
       console.error("Login failed:", error)
       setIsLoading(false)
