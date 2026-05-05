@@ -25,15 +25,13 @@ let cachedUsers: { data: User[]; expiry: number } | null = null;
 // ============ HELPER: get last non-empty row ============
 async function getLastNonEmptyRow(sheetName: string, column: string = 'A'): Promise<number> {
   try {
-    // Quote sheet name if it has spaces and URL encode the entire range
+    // Quote sheet name to handle spaces and special characters
     const range = `'${sheetName}'!${column}:${column}`;
-    const path = `/values/${encodeURIComponent(range)}`;
-    const data = await sheetsRequest(path);
+    const data = await sheetsRequest(`/values/${encodeURIComponent(range)}`);
     const values = data.values || [];
     return values.length;
   } catch (error) {
-    console.error(`Error in getLastNonEmptyRow for ${sheetName}:`, error);
-    // If sheet doesn't exist, return 0 (will start at row 1)
+    console.error(`Row Detection Error for ${sheetName}:`, error);
     return 0;
   }
 }
