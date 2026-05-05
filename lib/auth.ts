@@ -77,8 +77,28 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.email = user.email;
-        token.role = user.role;
         token.name = user.name;
+
+        try {
+          if (user.email) {
+            const dbUser = await getUserByEmail(user.email);
+            if (dbUser) {
+              token.role = dbUser.role;
+              token.name = dbUser.name;
+            } else {
+              // Optional: Add to DB if not found or handle guest logic
+              const adminEmails = (process.env.ADMIN_EMAILS || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean);
+              if (adminEmails.includes(user.email.toLowerCase())) {
+                token.role = "Admin";
+              } else {
+                token.role = "Team Member";
+              }
+            }
+          }
+        } catch (error) {
+          console.error("JWT Callback error:", error);
+          token.role = (user as any).role || "Team Member";
+        }
       }
       return token;
     },
