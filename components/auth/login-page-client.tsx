@@ -18,8 +18,9 @@ export default function LoginPageClient() {
   const handleLogin = async () => {
     setIsLoading(true)
     try {
+      const callbackUrl = isApp ? "/auth/callback?callbackUrl=/dashboard&app=1" : "/dashboard"
       // Use standard signIn. NextAuth will handle the CSRF and callback logic.
-      await signIn("google", { callbackUrl: "/dashboard" })
+      await signIn("google", { callbackUrl })
     } catch (error) {
       console.error("Login failed:", error)
       setIsLoading(false)

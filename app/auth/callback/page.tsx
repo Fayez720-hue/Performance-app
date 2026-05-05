@@ -10,7 +10,10 @@ export default function AuthCallback() {
   const callbackUrl = searchParams?.get("callbackUrl") || "/dashboard";
 
   useEffect(() => {
-    const isCapacitor = (window as any).Capacitor !== undefined;
+    const isAppBrowser =
+      (window as any).Capacitor !== undefined ||
+      /CSPerformanceApp/i.test(navigator.userAgent) ||
+      searchParams?.get("app") === "1";
 
     // collect query params and fragment tokens
     const qp = new URLSearchParams(window.location.search);
@@ -26,11 +29,16 @@ export default function AuthCallback() {
     if (state) params.set("state", state);
     if (id_token) params.set("id_token", id_token);
     if (access_token) params.set("access_token", access_token);
+    if (searchParams?.get("app") === "1") params.set("app", "1");
 
-    if (isCapacitor) {
+    const nativeScheme = /Android/i.test(navigator.userAgent)
+      ? "performanceapp"
+      : "com.canshift.performanceapp";
+
+    const deepLink = `${nativeScheme}://callback?${params.toString()}`;
+
+    if (isAppBrowser) {
       // deep link back to the mobile app with all relevant tokens/params
-      const deepLink = `com.canshift.performanceapp://callback?${params.toString()}`;
-      // attempt navigation
       window.location.replace(deepLink);
       // also set href as a fallback for some WebViews/browsers
       window.location.href = deepLink;
