@@ -16,46 +16,64 @@ export default function LoginPageClient() {
     setIsApp(isCapacitor)
 
     if (isCapacitor) {
-      GoogleAuth.initialize().catch(console.error)
+      GoogleAuth.initialize({
+        clientId: '423199982215-9f8naaojguulkgha5nmlpumpb00d6j3j.apps.googleusercontent.com',
+        scopes: ['profile', 'email'],
+        grantOfflineAccess: true,
+      }).catch(console.error)
     }
   }, [])
 
   const handleLogin = async () => {
     setIsLoading(true)
+    console.log("Login button clicked. isApp:", isApp);
     try {
       if (isApp) {
         console.log("Attempting native Google login...");
         try {
           const user = await GoogleAuth.signIn();
+          console.log("Native Google sign-in response received");
+
           if (user?.authentication?.idToken) {
-            console.log("Native login success, authenticating with backend...");
+            console.log("ID Token obtained, authenticating with NextAuth...");
             const result = await signIn("credentials", {
               id_token: user.authentication.idToken,
               callbackUrl: "/dashboard",
               redirect: false // Manual redirect to handle better in App
             });
 
+            console.log("NextAuth credentials sign-in result:", result);
+
             if (result?.error) {
                console.error("Backend auth failed:", result.error);
-               toast.error("Authentication failed. Please try again.");
+               toast.error(`Authentication failed: ${result.error}`);
                setIsLoading(false);
             } else {
+               console.log("Sign-in successful, manual redirecting to dashboard...");
                window.location.href = "/dashboard";
             }
             return;
+          } else {
+            console.error("No ID token in native response", user);
+            throw new Error("Failed to get ID token from Google");
           }
-        } catch (nativeError) {
+        } catch (nativeError: any) {
           console.warn("Native Google login failed or cancelled:", nativeError);
-          // Fallback to web login if native fails
+          // Only fall back to web if it's not a user cancellation
+          if (nativeError.error === "popup_closed_by_user" || nativeError.error === "user_cancelled") {
+            setIsLoading(false);
+            return;
+          }
+          // Continue to web fallback for other errors (like config issues if we want)
         }
       }
 
       console.log("Using web-based Google login...");
       await signIn("google", { callbackUrl: "/dashboard" })
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login failed:", error)
       setIsLoading(false)
-      toast.error("Login failed. Please try again.")
+      toast.error(`Login failed: ${error.message || 'Please try again.'}`)
     }
   }
 
