@@ -9,7 +9,6 @@ const config: CapacitorConfig = {
     cleartext: true,
     allowNavigation: [
       'performance-app-ivory.vercel.app',
-      'performance-app-6yb.pages.dev',
       '*.google.com',
       '*.googleapis.com',
       '*.youtube.com',
