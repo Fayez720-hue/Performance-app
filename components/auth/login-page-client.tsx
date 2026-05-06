@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ClipboardList, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth'
+import { toast } from "sonner"
 
 export default function LoginPageClient() {
   const [isLoading, setIsLoading] = useState(false)
