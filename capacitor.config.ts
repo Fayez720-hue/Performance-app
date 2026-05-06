@@ -5,9 +5,10 @@ const config: CapacitorConfig = {
   appName: 'Performance App',
   webDir: 'out',
   server: {
-    url: 'https://performance-app-6yb.pages.dev',
+    url: 'https://performance-app-ivory.vercel.app',
     cleartext: true,
     allowNavigation: [
+      'performance-app-ivory.vercel.app',
       'performance-app-6yb.pages.dev',
       '*.google.com',
       '*.googleapis.com',
