@@ -284,7 +284,7 @@ export default function DashboardPageClient() {
               <div className="py-2">
                 <p className="text-5xl font-serif italic text-white mb-2">
                   {data?.isPersonalView
-                    ? `${currentUserStats?.completed ?? 0}/${currentUserStats?.tasks ?? 0}`
+                    ? `${data.completedTasks ?? 0}/${data.totalTasks ?? 0}`
                     : `${data?.completedTasks ?? 0}/${data?.totalTasks ?? 0}`
                   }
                 </p>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, File, Image, Video, Music } from 'lucide-react';
+import { ExternalLink, File, Image, Video, Music, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface MediaRendererProps {
@@ -49,13 +49,29 @@ export function MediaRenderer({ text }: MediaRendererProps) {
                 <span className="text-xs font-medium truncate flex-1">{isUrl ? 'Media Attachment' : content}</span>
 
                 {isUrl && (
-                  <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
-                    <a href={content} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" asChild title="Open link">
+                      <a href={content} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" asChild title="Download">
+                      <a href={content} download target="_blank" rel="noopener noreferrer">
+                        <Download className="h-3 w-3" />
+                      </a>
+                    </Button>
+                  </div>
                 )}
               </div>
+
+              {isUrl && (type.includes('audio') || content.match(/\.(mp3|wav|ogg|m4a)/i)) && (
+                <div className="w-full bg-black/5 rounded p-1">
+                  <audio controls className="w-full h-8 scale-90 origin-left">
+                    <source src={content} />
+                    Your browser does not support the audio element.
+                  </audio>
+                </div>
+              )}
 
               {isUrl && (type.includes('image') || content.match(/\.(jpg|jpeg|png|gif|webp)/i)) && (
                 <div className="relative aspect-video w-full overflow-hidden rounded-sm border border-border bg-black/20">

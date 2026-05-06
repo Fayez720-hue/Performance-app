@@ -16,6 +16,7 @@ import {
   CheckSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/layout/header";
 import {
@@ -83,22 +84,30 @@ export default function ReportsPageClient() {
   ];
 
   const handleExport = () => {
-    if (!stats?.employees) return;
+    if (!stats?.employees) {
+      toast.error("No data available to export");
+      return;
+    }
     // Simple CSV export
-    const headers = ["Name", "Role", "Overall Score", "Completed Tasks"];
+    const headers = ["Name", "Title", "Role", "Overall Score", "Total Tasks", "Completed Tasks", "Shift Adherence"];
     const rows = stats.employees.map((emp: any) => [
-      emp.name,
-      emp.role,
-      emp.overallScore,
-      emp.completedTasks
+      `"${emp.name || ""}"`,
+      `"${emp.title || ""}"`,
+      `"${emp.role || ""}"`,
+      `"${emp.overallScore || 0}%"`,
+      emp.tasks || 0,
+      emp.completed || 0,
+      `"${emp.shiftAdherence || 0}%"`
     ]);
     const csvContent = [headers, ...rows].map(row => row.join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv" });
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `performance-report-${new Date().toISOString().slice(0,10)}.csv`;
+    a.setAttribute("download", `performance-report-${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 

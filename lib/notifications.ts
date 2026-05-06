@@ -120,15 +120,20 @@ export async function notifyTaskAssigned(task: Task, assignedByEmail?: string, a
   const recipients = new Set<string>()
 
   // 1. Add Assignee
-  const assignee = users.find(u => u.name === task.name)
+  const assignee = users.find(u => u.name === task.name || u.email === task.name)
   if (assignee) recipients.add(assignee.email)
 
   // 2. Add Assigner (the person who just created/updated it)
-  if (assignedByEmail) recipients.add(assignedByEmail)
+  // if (assignedByEmail) recipients.add(assignedByEmail)
 
   // 3. Add all Managers and Admins
   const managers = users.filter((u) => u.role === "Manager" || u.role === "Admin")
-  managers.forEach(m => recipients.add(m.email))
+  managers.forEach(m => {
+    // Don't notify the person who made the change
+    if (m.email !== assignedByEmail) {
+      recipients.add(m.email)
+    }
+  })
 
   for (const email of recipients) {
     await sendNotification({
@@ -147,18 +152,25 @@ export async function notifyProgressUpdate(task: Task, previousProgress: string,
   const recipients = new Set<string>()
 
   // 1. Add Assignee
-  const assignee = users.find(u => u.name === task.name)
+  const assignee = users.find(u => u.name === task.name || u.email === task.name)
   if (assignee) recipients.add(assignee.email)
 
   // 2. Add the person who made the update
-  if (updatedByEmail) recipients.add(updatedByEmail)
+  // if (updatedByEmail) recipients.add(updatedByEmail)
 
   // 3. Add all Managers and Admins
   const managers = users.filter((u) => u.role === "Manager" || u.role === "Admin")
-  managers.forEach(m => recipients.add(m.email))
+  managers.forEach(m => {
+    if (m.email !== updatedByEmail) {
+      recipients.add(m.email)
+    }
+  })
 
   const type = task.progress === "Review" ? "submitted_for_review" :
                task.progress === "Completed" ? "task_completed" : "progress_updated"
+
+  // Remove the triggerer from recipients if they are the assignee too
+  if (updatedByEmail) recipients.delete(updatedByEmail)
 
   for (const email of recipients) {
     await sendNotification({
@@ -174,16 +186,22 @@ export async function notifyRevisionsRequested(task: Task, managerEmail?: string
   const recipients = new Set<string>()
 
   // 1. Add Assignee
-  const assignee = users.find(u => u.name === task.name)
+  const assignee = users.find(u => u.name === task.name || u.email === task.name)
   if (assignee) recipients.add(assignee.email)
 
   // 2. Add the manager who requested revisions
-  if (managerEmail) recipients.add(managerEmail)
+  // if (managerEmail) recipients.add(managerEmail)
 
   // 3. Add all Managers and Admins
   const managers = users.filter((u) => u.role === "Manager" || u.role === "Admin")
-  managers.forEach(m => recipients.add(m.email))
+  managers.forEach(m => {
+    if (m.email !== managerEmail) {
+      recipients.add(m.email)
+    }
+  })
   
+  if (managerEmail) recipients.delete(managerEmail)
+
   for (const email of recipients) {
     await sendNotification({
       type: "revisions_requested",

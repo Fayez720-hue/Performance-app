@@ -170,9 +170,14 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       updateData.grading = `${rawGrade}%`
 
       let score = rawGrade
-      if (updateData.deadlineAdherence === "0%") {
-        score = score * 0.9 // 10% penalty for late
+      // Apply 10% deduction if late (adherence < 100% or "0%")
+      const adherenceValue = parseFloat(updateData.deadlineAdherence.replace(/%/g, ""))
+      if (!isNaN(adherenceValue) && adherenceValue < 100) {
+        score = score * 0.9 // 10% penalty for being late
+      } else if (updateData.deadlineAdherence === "0%") {
+        score = score * 0.9
       }
+
       updateData.overallScore = `${score.toFixed(1)}%`
     } else {
       updateData.overallScore = existingTask.overallScore

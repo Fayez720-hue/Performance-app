@@ -214,11 +214,18 @@ export async function createTask(data: any): Promise<number> {
   try {
     const userSheet = String(data.name || "").trim()
     if (userSheet) {
-      await sheetsRequest(`${userSheet}!A1:S1:append?valueInputOption=USER_ENTERED`, {
+      // Find the user email for the name to match sheet filtering logic
+      const users = await getUsers();
+      const user = users.find(u => u.name.toLowerCase() === userSheet.toLowerCase());
+      const sheetName = user ? user.email : userSheet;
+
+      await sheetsRequest(`${sheetName}!A1:S1:append?valueInputOption=USER_ENTERED`, {
         method: "POST", body: JSON.stringify({ values })
       });
     }
-  } catch {}
+  } catch (err) {
+    console.warn("Could not append to individual user sheet:", err);
+  }
 
   return nextId
 }
@@ -439,6 +446,74 @@ export async function markAllNotificationsAsRead(email: string): Promise<void> {
   }
 }
 
+export async function deleteUserByEmail(email: string): Promise<void> {
+  try {
+    const res = await sheetsRequest("Employees!A:Z")
+    const rows = res.values || []
+    const headers = (rows[0] || []).map((h: any) => String(h).toLowerCase().trim())
+    const emailIdx = headers.indexOf("email")
+
+    if (emailIdx === -1) throw new Error("Email column not found")
+
+    const rowIndex = rows.findIndex((row: any[]) => String(row[emailIdx]).toLowerCase() === email.toLowerCase())
+    if (rowIndex === -1) throw new Error("User not found")
+
+    // In Google Sheets API v4, there's no direct "delete row" by value.
+    // We have to use batchUpdate with deleteDimension request or clear the row.
+    // For simplicity with our sheetsRequest helper, we'll clear the row values first.
+    // However, a true delete requires a spreadsheetId and a batchUpdate call.
+    // Let's clear the values for now to "remove" the user.
+    await sheetsRequest(`Employees!A${rowIndex + 1}:Z${rowIndex + 1}`, {
+      method: "DELETE" // Sheets API supports clearing via DELETE on the range
+    })
+  } catch (error) {
+    console.error("Error deleting user:", error)
+    throw error
+  }
+}
+
+export async function deleteTask(id: number): Promise<void> {
+  try {
+    const res = await sheetsRequest("Performance!A:A")
+    const rows = res.values || []
+    const rowIndex = rows.findIndex((row: any[]) => String(row[0]) === String(id))
+
+    if (rowIndex === -1) throw new Error("Task not found")
+
+    await sheetsRequest(`Performance!A${rowIndex + 1}:T${rowIndex + 1}`, {
+      method: "DELETE"
+    })
+  } catch (error) {
+    console.error("Error deleting task:", error)
+    throw error
+  }
+}
+
+export async function updateUser(email: string, data: any, oldEmail?: string): Promise<void> {
+  const targetEmail = oldEmail || email
+  const res = await sheetsRequest("Employees!A:Z")
+  const rows = res.values || []
+  const headers = (rows[0] || []).map((h: any) => String(h).toLowerCase().trim())
+
+  const emailIdx = headers.indexOf("email")
+  const nameIdx = headers.indexOf("name")
+  const roleIdx = headers.indexOf("role")
+  const titleIdx = headers.indexOf("title")
+
+  const rowIndex = rows.findIndex((row: any[]) => String(row[emailIdx]).toLowerCase() === targetEmail.toLowerCase())
+  if (rowIndex === -1) throw new Error("User not found")
+
+  const row = [...rows[rowIndex]]
+  if (emailIdx !== -1 && data.email) row[emailIdx] = data.email
+  if (nameIdx !== -1 && data.name) row[nameIdx] = data.name
+  if (roleIdx !== -1 && data.role) row[roleIdx] = data.role
+  if (titleIdx !== -1 && data.title) row[titleIdx] = data.title
+
+  await sheetsRequest(`Employees!A${rowIndex + 1}:Z${rowIndex + 1}?valueInputOption=USER_ENTERED`, {
+    method: "PUT", body: JSON.stringify({ values: [row] })
+  })
+}
+
 export async function markNotificationAsRead(email: string, ts: string): Promise<void> {
   const res = await sheetsRequest("Notifications!A:F")
   const idx = (res.values || []).findIndex((r: any[]) => r[0] && r[0].toLowerCase() === email.toLowerCase() && r[5] === ts)
@@ -447,5 +522,28 @@ export async function markNotificationAsRead(email: string, ts: string): Promise
       method: "PUT",
       body: JSON.stringify({ values: [["TRUE"]] })
     })
+  }
+}
+
+export async function verifySpreadsheetAccess(): Promise<{ valid: boolean; sheets: string[] }> {
+  try {
+    const spreadsheetId = (process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "").trim().replace(/^["']|["']$/g, "")
+    const token = await getAccessToken()
+
+    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to access spreadsheet: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    const sheets = (data.sheets || []).map((s: any) => s.properties.title)
+
+    return { valid: true, sheets }
+  } catch (error) {
+    console.error("Spreadsheet verification failed:", error)
+    throw error
   }
 }

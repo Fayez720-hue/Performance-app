@@ -29,11 +29,19 @@ export default function LoginPageClient() {
           const user = await GoogleAuth.signIn();
           if (user?.authentication?.idToken) {
             console.log("Native login success, authenticating with backend...");
-            await signIn("credentials", {
+            const result = await signIn("credentials", {
               id_token: user.authentication.idToken,
               callbackUrl: "/dashboard",
-              redirect: true
+              redirect: false // Manual redirect to handle better in App
             });
+
+            if (result?.error) {
+               console.error("Backend auth failed:", result.error);
+               toast.error("Authentication failed. Please try again.");
+               setIsLoading(false);
+            } else {
+               window.location.href = "/dashboard";
+            }
             return;
           }
         } catch (nativeError) {
@@ -47,6 +55,7 @@ export default function LoginPageClient() {
     } catch (error) {
       console.error("Login failed:", error)
       setIsLoading(false)
+      toast.error("Login failed. Please try again.")
     }
   }
 
