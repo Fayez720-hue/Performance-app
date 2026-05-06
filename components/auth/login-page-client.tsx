@@ -6,10 +6,12 @@ import { ClipboardList, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth'
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 export default function LoginPageClient() {
   const [isLoading, setIsLoading] = useState(false)
   const [isApp, setIsApp] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     // Detect Capacitor environment
@@ -43,8 +45,8 @@ export default function LoginPageClient() {
                toast.error(`Authentication failed: ${result.error}`);
                setIsLoading(false);
             } else {
-               console.log("Sign-in successful, manual redirecting to dashboard...");
-               window.location.href = "/dashboard";
+               console.log("Sign-in successful, redirecting to dashboard...");
+               router.push("/dashboard");
             }
             return;
           } else {
