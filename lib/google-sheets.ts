@@ -89,12 +89,15 @@ async function sheetsRequest(path: string, options: RequestInit = {}) {
   // Separate range and query params
   const [rangeAndMethod, queryPart] = path.split('?');
 
-  // Handle :append method suffix correctly as a custom method
+  // Handle :append or :clear method suffixes correctly as a custom methods
   let rangePart = rangeAndMethod;
   let methodSuffix = "";
   if (rangeAndMethod.endsWith(":append")) {
     rangePart = rangeAndMethod.substring(0, rangeAndMethod.length - 7);
     methodSuffix = ":append";
+  } else if (rangeAndMethod.endsWith(":clear")) {
+    rangePart = rangeAndMethod.substring(0, rangeAndMethod.length - 6);
+    methodSuffix = ":clear";
   }
 
   // Handle sheet names and ranges by URL encoding segments, preserving !
@@ -194,8 +197,10 @@ export async function addUser(user: { email: string; name: string; role: string 
 }
 
 export async function createTask(data: any): Promise<number> {
-  const tasks = await getTasks()
-  const nextId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1
+  const idRes = await sheetsRequest("Performance!A2:A")
+  const idRows = idRes.values || []
+  const nextId = idRows.length > 0 ? Math.max(...idRows.map((r: any[]) => parseInt(r[0]) || 0)) + 1 : 1
+
   const currentTimestamp = format(new Date(), "yyyy-MM-dd HH:mm:ss")
 
   const values = [[
@@ -213,15 +218,17 @@ export async function createTask(data: any): Promise<number> {
 
   try {
     const userSheet = String(data.name || "").trim()
-    if (userSheet) {
+    if (userSheet && userSheet.toLowerCase() !== "performance") {
       // Find the user email for the name to match sheet filtering logic
       const users = await getUsers();
       const user = users.find(u => u.name.toLowerCase() === userSheet.toLowerCase());
       const sheetName = user ? user.email : userSheet;
 
-      await sheetsRequest(`${sheetName}!A1:S1:append?valueInputOption=USER_ENTERED`, {
-        method: "POST", body: JSON.stringify({ values })
-      });
+      if (sheetName && sheetName.toLowerCase() !== "performance") {
+        await sheetsRequest(`${sheetName}!A1:S1:append?valueInputOption=USER_ENTERED`, {
+          method: "POST", body: JSON.stringify({ values })
+        });
+      }
     }
   } catch (err) {
     console.warn("Could not append to individual user sheet:", err);
@@ -278,7 +285,7 @@ export async function getDashboardStats(startDate?: string, endDate?: string, us
     const [summaryData, employeeData, tasksData] = await Promise.all([
       sheetsRequest("Summary!A2:I2"), sheetsRequest("Employees!A2:I"), sheetsRequest("Performance!A2:T")
     ])
-    const employeeRows = employeeData.values || []
+    const employeeRows = (employeeData.values || []).filter((row: any[]) => row[0] || row[1])
     let employeeStats = employeeRows.map((row: any[]) => ({
       email: String(row[0] || "").trim().toLowerCase(), name: String(row[1] || "Unknown").trim(),
       title: String(row[2] || "Employee").trim(), tasks: parseInt(row[3]) || 0,
@@ -458,13 +465,9 @@ export async function deleteUserByEmail(email: string): Promise<void> {
     const rowIndex = rows.findIndex((row: any[]) => String(row[emailIdx]).toLowerCase() === email.toLowerCase())
     if (rowIndex === -1) throw new Error("User not found")
 
-    // In Google Sheets API v4, there's no direct "delete row" by value.
-    // We have to use batchUpdate with deleteDimension request or clear the row.
-    // For simplicity with our sheetsRequest helper, we'll clear the row values first.
-    // However, a true delete requires a spreadsheetId and a batchUpdate call.
-    // Let's clear the values for now to "remove" the user.
-    await sheetsRequest(`Employees!A${rowIndex + 1}:Z${rowIndex + 1}`, {
-      method: "DELETE" // Sheets API supports clearing via DELETE on the range
+    // In Google Sheets API v4, clearing a row is done by POSTing to the :clear endpoint.
+    await sheetsRequest(`Employees!A${rowIndex + 1}:Z${rowIndex + 1}:clear`, {
+      method: "POST"
     })
   } catch (error) {
     console.error("Error deleting user:", error)
@@ -480,8 +483,8 @@ export async function deleteTask(id: number): Promise<void> {
 
     if (rowIndex === -1) throw new Error("Task not found")
 
-    await sheetsRequest(`Performance!A${rowIndex + 1}:T${rowIndex + 1}`, {
-      method: "DELETE"
+    await sheetsRequest(`Performance!A${rowIndex + 1}:T${rowIndex + 1}:clear`, {
+      method: "POST"
     })
   } catch (error) {
     console.error("Error deleting task:", error)
