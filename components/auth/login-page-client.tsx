@@ -12,16 +12,9 @@ export default function LoginPageClient() {
 
   useEffect(() => {
     // Detect Capacitor environment
-    const isCapacitor = (window as any).Capacitor !== undefined || /CSPerformanceApp/i.test(navigator.userAgent)
+    const isCapacitor = (typeof window !== 'undefined' && (window as any).Capacitor !== undefined) || 
+                        (typeof navigator !== 'undefined' && /CSPerformanceApp/i.test(navigator.userAgent))
     setIsApp(isCapacitor)
-
-    if (isCapacitor) {
-      GoogleAuth.initialize({
-        clientId: '423199982215-9f8naaojguulkgha5nmlpumpb00d6j3j.apps.googleusercontent.com',
-        scopes: ['profile', 'email'],
-        grantOfflineAccess: true,
-      }).catch(console.error)
-    }
   }, [])
 
   const handleLogin = async () => {
