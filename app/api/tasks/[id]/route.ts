@@ -87,7 +87,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         const deadlineRaw = data.deadline || existingTask.deadline
         if (deadlineRaw) {
           try {
-            const deadDate = new Date(deadlineRaw.endsWith("Z") ? deadlineRaw : deadlineRaw + "Z")
+            const deadDate = new Date(deadlineRaw)
             if (!isNaN(deadDate.getTime())) {
               const submissionTime = now.getTime()
               const deadlineTime = deadDate.getTime()
