@@ -90,6 +90,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       updateData.submissionDate = now.toISOString()
 
       // Update Adherence only on first submission or if it was "0%"
+            // Update Adherence: 100% if on time, deduct 10% if late
       let adherence = existingTask.deadlineAdherence || "Pending"
       if (!existingTask.deadlineAdherence || existingTask.deadlineAdherence === "Pending" || existingTask.deadlineAdherence === "0%") {
         if (data.deadline || existingTask.deadline) {
@@ -102,22 +103,16 @@ export async function PUT(request: Request, { params }: { params: { id: string }
               if (submissionTime <= deadlineTime) {
                 adherence = "100%"
               } else {
-                const latencyMs = submissionTime - deadlineTime
-                const estTimeStr = data.taskEstimatedTime || existingTask.taskEstimatedTime || "01:00"
-                const [estH, estM] = estTimeStr.split(":").map(Number)
-                const estMs = ((estH || 0) * 3600000) + ((estM || 0) * 60000)
-
-                if (estMs > 0) {
-                  const latencyPercentage = (latencyMs / estMs) * 100
-                  const calculatedAdherence = Math.max(0, 100 - latencyPercentage)
-                  adherence = `${Math.round(calculatedAdherence)}%`
-                } else {
-                  adherence = "0%"
-                }
+                // Late submission: deduct 10%
+                adherence = "90%"
               }
             }
-          } catch (e) {}
+          } catch (e) {
+            adherence = "Pending"
+          }
         }
+        updateData.deadlineAdherence = adherence
+      }
         updateData.deadlineAdherence = adherence
       }
 
