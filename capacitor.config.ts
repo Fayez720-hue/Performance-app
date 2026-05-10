@@ -3,7 +3,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'performanceapp.canshift.com',
   appName: 'Performance App',
-  webDir: 'out',
+  webDir: 'public',
   server: {
     url: 'https://performance-app-ivory.vercel.app',
     cleartext: true,
