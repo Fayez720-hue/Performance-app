@@ -26,14 +26,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const data = await request.json()
     const taskId = parseInt(params.id)
 
-    // Get existing task to compare changes
     const existingTask = await getTaskById(taskId)
     if (!existingTask) return NextResponse.json({ error: "Task not found" }, { status: 404 })
 
-    // --- AUTO-CALCULATION ENGINE ---
     const now = new Date()
 
-    // 1. Accumulate Time Taken ONLY when transition happens FROM "In Progress"
+    // 1. Accumulate Time Taken
     let totalTimeTakenStr = existingTask.taskTimeTaken || "0h 0m"
     if (existingTask.progress === "In Progress" && data.progress && data.progress !== "In Progress") {
       if (existingTask.taskStartingDate) {
@@ -42,14 +40,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
           if (!isNaN(start.getTime())) {
             const diffMs = now.getTime() - start.getTime()
             const diffMins = Math.floor(diffMs / (1000 * 60))
-
-            // Parse existing time
             const timeMatch = totalTimeTakenStr.match(/(\d+)h\s*(\d+)m/)
             let totalMins = diffMins
             if (timeMatch) {
               totalMins += (parseInt(timeMatch[1]) * 60) + parseInt(timeMatch[2])
             }
-
             const h = Math.floor(totalMins / 60)
             const m = totalMins % 60
             totalTimeTakenStr = `${h}h ${m}m`
@@ -60,25 +55,25 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       }
     }
 
-    // 2. Set Starting Date when transition happens TO "In Progress"
+    // 2. Set Starting Date when transitioning TO "In Progress"
     let taskStartingDate = data.taskStartingDate || existingTask.taskStartingDate || ""
     if (data.progress === "In Progress" && existingTask.progress !== "In Progress") {
       taskStartingDate = now.toISOString()
     }
 
     // Initialize updateData
-    let updateData = {
+    let updateData: any = {
       ...existingTask,
       ...data,
       taskStartingDate,
       taskTimeTaken: totalTimeTakenStr,
       noOfEdits: Number(existingTask.noOfEdits) || 0,
-      deadlineAdherence: data.deadlineAdherence || existingTask.deadlineAdherence || "",
-      overallScore: data.overallScore || existingTask.overallScore || "",
-      submissionDate: data.submissionDate || existingTask.submissionDate || "",
+      deadlineAdherence: existingTask.deadlineAdherence || "",
+      overallScore: existingTask.overallScore || "",
+      submissionDate: existingTask.submissionDate || "",
     }
 
-    // 3. Handle Submission specific logic (Review/Completed)
+    // 3. Handle Submission (Review/Completed)
     const isStatusTransitionToFinished = (data.progress === "Review" || data.progress === "Completed") &&
                                          (existingTask.progress !== "Review" && existingTask.progress !== "Completed")
     const isSubmissionUpdate = (data.submissionLink && data.submissionLink !== existingTask.submissionLink) || isStatusTransitionToFinished
@@ -86,11 +81,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     let performanceHistory = existingTask.performanceHistory || ""
 
     if (isSubmissionUpdate) {
-      // Use toISOString to avoid timezone shifts during storage
       updateData.submissionDate = now.toISOString()
 
-      // Update Adherence only on first submission or if it was "0%"
-            // Update Adherence: 100% if on time, deduct 10% if late
+      // Calculate adherence: 100% on time, 90% if late
       let adherence = existingTask.deadlineAdherence || "Pending"
       if (!existingTask.deadlineAdherence || existingTask.deadlineAdherence === "Pending" || existingTask.deadlineAdherence === "0%") {
         if (data.deadline || existingTask.deadline) {
@@ -103,7 +96,6 @@ export async function PUT(request: Request, { params }: { params: { id: string }
               if (submissionTime <= deadlineTime) {
                 adherence = "100%"
               } else {
-                // Late submission: deduct 10%
                 adherence = "90%"
               }
             }
@@ -111,8 +103,6 @@ export async function PUT(request: Request, { params }: { params: { id: string }
             adherence = "Pending"
           }
         }
-        updateData.deadlineAdherence = adherence
-      }
         updateData.deadlineAdherence = adherence
       }
 
@@ -123,7 +113,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       updateData.performanceHistory = performanceHistory
     }
 
-    // 4. Log "Edits Requested" in history
+    // 4. Handle Edits Requested (Manager feedback)
     if ((data.userRole === "Admin" || data.userRole === "Manager") && data.edits && data.edits !== existingTask.edits) {
       updateData.noOfEdits = (Number(existingTask.noOfEdits) || 0) + 1
 
@@ -132,23 +122,13 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       performanceHistory = performanceHistory ? `${performanceHistory} | ${newEntry}` : newEntry
       updateData.performanceHistory = performanceHistory
 
-      // Automatically switch from Review back to To-do if manager adds an edit
       if (existingTask.progress === "Review") {
         updateData.progress = "To-do"
       }
     }
 
-    // 3. Increment Edits count if Manager adds new feedback
-    if ((data.userRole === "Admin" || data.userRole === "Manager") && data.edits && data.edits !== existingTask.edits) {
-      updateData.noOfEdits = (Number(existingTask.noOfEdits) || 0) + 1
-    }
-
-    // Ensure progress is preserved:
-    // 1. If the task is already "Completed", it stays "Completed"
-    // 2. UNLESS the user explicitly sent a different progress (Manager changing it)
-    if (updateData.progress !== existingTask.progress) {
-      // If progress was already changed by auto-logic (like switching to To-do), keep it
-    } else if (existingTask.progress === "Completed" && !data.progress) {
+    // 5. Preserve progress
+    if (existingTask.progress === "Completed" && !data.progress) {
       updateData.progress = "Completed"
     } else if (data.progress) {
       updateData.progress = data.progress
@@ -156,53 +136,33 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       updateData.progress = existingTask.progress
     }
 
-    // 4. Calculate Overall Score (Grade - Penalty if Late)
+    // 6. Calculate Overall Score
     if (data.grading) {
-      // Extract numeric value from grading (handles "90" or "90%")
       let rawGrade = parseFloat(String(data.grading).replace(/%/g, "")) || 0
-
-      // Update the grading field itself to have % suffix
       updateData.grading = `${rawGrade}%`
-
+      
       let score = rawGrade
-      // Apply 10% deduction if late (adherence < 100% or "0%")
-      const adherenceValue = parseFloat(updateData.deadlineAdherence.replace(/%/g, ""))
-      if (!isNaN(adherenceValue) && adherenceValue < 100) {
-        score = score * 0.9 // 10% penalty for being late
-      } else if (updateData.deadlineAdherence === "0%") {
+      const adherenceValue = parseFloat(updateData.deadlineAdherence?.replace(/%/g, "") || "100")
+      if (adherenceValue < 100) {
         score = score * 0.9
       }
-
       updateData.overallScore = `${score.toFixed(1)}%`
-    } else {
-      updateData.overallScore = existingTask.overallScore
     }
 
-    // Update the task with calculated values
+    // Save
     await updateTask(taskId, updateData)
 
+    // Notifications
     const updatedTask = await getTaskById(taskId)
     if (updatedTask && session.user?.email) {
-      // 0. Notify if assignee changed
       if (data.name && data.name !== existingTask.name) {
         await notifyTaskAssigned(updatedTask, session.user.email, session.user.name || undefined)
       }
-
-      // 1. Notify about progress change
       if (data.progress && data.progress !== existingTask.progress) {
         await notifyProgressUpdate(updatedTask, existingTask.progress, session.user.email)
       }
-
-      // 2. Notify specifically about "Review" status from Team Members
-      else if (data.userRole === "Team Member" && data.progress === "Review" && existingTask.progress !== "Review") {
-        await notifyProgressUpdate(updatedTask, existingTask.progress, session.user.email)
-      }
-
-      // 3. Notify Team Member if Manager adds edits
-      if ((data.userRole === "Admin" || data.userRole === "Manager") && data.userRole !== undefined) {
-        if (data.edits && data.edits !== existingTask.edits) {
-          await notifyRevisionsRequested(updatedTask, session.user.email)
-        }
+      if ((data.userRole === "Admin" || data.userRole === "Manager") && data.edits && data.edits !== existingTask.edits) {
+        await notifyRevisionsRequested(updatedTask, session.user.email)
       }
     }
 
