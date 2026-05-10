@@ -45,6 +45,17 @@ export async function getUserByEmailAndPassword(email: string, password: string)
   const row = rows[0]
   return { email: row.email as string, name: row.name as string, role: row.role as UserRole, title: row.title as string || undefined }
 }
+export async function addUser(data: { email: string; name: string; role: UserRole; title?: string }): Promise<void> {
+  const existing = await getUserByEmail(data.email)
+  if (existing) throw new Error("User already exists")
+
+  await db.insert(employees).values({
+    email: data.email.toLowerCase(),
+    name: data.name,
+    role: data.role,
+    title: data.title || "",
+  })
+} 
 
 export async function updateUser(email: string, data: Partial<User>, oldEmail?: string): Promise<void> {
   const searchEmail = (oldEmail || email).toLowerCase()
@@ -356,9 +367,10 @@ export async function getDashboardStats(startDate?: string, endDate?: string, us
     }
   })
 
-  const employeeStats = relevantEmployees.map(emp => ({
+      const employeeStats = relevantEmployees.map(emp => ({
     email: emp.email,
     name: emp.name,
+    role: emp.role || "Team Member",
     title: emp.title || "Employee",
     tasks: emp.tasks || 0,
     completed: emp.completed || 0,

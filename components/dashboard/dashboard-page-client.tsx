@@ -33,7 +33,9 @@ import {
 import { Header } from "@/components/layout/header";
 
 interface Employee {
+  email: string;
   name: string;
+  role: string;
   title: string;
   tasks: number;
   completed: number;
@@ -66,7 +68,7 @@ export default function DashboardPageClient() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-
+  const [roleFilter, setRoleFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<{
     from: Date;
     to: Date;
@@ -115,15 +117,22 @@ export default function DashboardPageClient() {
     return null;
   }, [data?.employees, data?.isPersonalView, session?.user?.name]);
 
-  const filteredEmployees = useMemo(() => {
+      const filteredEmployees = useMemo(() => {
     if (!data?.employees) return [];
     if (data.isPersonalView) {
       return currentUserStats ? [currentUserStats] : [];
     }
-    return data.employees.filter(emp =>
-      emp.name.toLowerCase().includes(searchTerm.toLowerCase())
-    ).slice(0, 3);
-  }, [data?.employees, searchTerm, data?.isPersonalView, currentUserStats]);
+    return data.employees
+      .filter(emp => {
+        const matchesSearch = emp.name.toLowerCase().includes(searchTerm.toLowerCase());
+        // Match role: check if employee title contains the role filter word
+        const matchesRole = roleFilter === "all" || 
+          emp.title?.toLowerCase().includes(roleFilter.toLowerCase()) ||
+          emp.performance?.toLowerCase().includes(roleFilter.toLowerCase());
+        return matchesSearch && matchesRole;
+      })
+      .slice(0, 10);
+  }, [data?.employees, searchTerm, data?.isPersonalView, currentUserStats, roleFilter]);
 
   if (status === "loading") {
     return (
@@ -204,21 +213,41 @@ export default function DashboardPageClient() {
                 />
               </PopoverContent>
             </Popover>
-            <div className={cn(
-              "bg-white/[0.02] border border-white/5 p-4 rounded-2xl flex items-center justify-between",
-              !canManage && "opacity-40 pointer-events-none grayscale"
-            )}>
-              <div className="flex items-center gap-4">
-                <div className="h-10 w-10 rounded-xl bg-teal-500/10 flex items-center justify-center border border-teal-500/20">
-                  <Users className="h-5 w-5 text-teal-400" />
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className={cn(
+                  "bg-white/[0.02] border border-white/5 p-4 rounded-2xl flex items-center justify-between text-left hover:bg-white/[0.04] transition-all hover:border-white/10 w-full",
+                  !canManage && "opacity-40 pointer-events-none grayscale"
+                )}>
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-xl bg-teal-500/10 flex items-center justify-center border border-teal-500/20">
+                      <Users className="h-5 w-5 text-teal-400" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase text-white/30 font-bold tracking-[0.1em]">Role Selection</p>
+                      <p className="text-xs font-bold text-white/90 capitalize">{roleFilter === "all" ? "All Roles" : roleFilter}</p>
+                    </div>
+                  </div>
+                  {canManage && <ChevronRight className="h-4 w-4 text-white/20" />}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-2 bg-[#090a11] border-white/10" align="start">
+                <div className="space-y-1">
+                  {["all", "Admin", "Manager", "Team Member", "Viewer"].map((role) => (
+                    <button
+                      key={role}
+                      onClick={() => setRoleFilter(role)}
+                      className={cn(
+                        "w-full text-left px-3 py-2 text-sm rounded-lg transition-colors capitalize",
+                        roleFilter === role ? "bg-teal-500/20 text-teal-400" : "text-white/60 hover:bg-white/5 hover:text-white"
+                      )}
+                    >
+                      {role === "all" ? "All Roles" : role}
+                    </button>
+                  ))}
                 </div>
-                <div>
-                  <p className="text-[10px] uppercase text-white/30 font-bold tracking-[0.1em]">Role Selection</p>
-                  <p className="text-xs font-bold text-white/90">Active Only</p>
-                </div>
-              </div>
-              {canManage && <Plus className="h-4 w-4 text-white/20" />}
-            </div>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-8 relative overflow-hidden group">
