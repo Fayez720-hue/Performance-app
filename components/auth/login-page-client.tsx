@@ -9,6 +9,40 @@ import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { PushNotifications } from '@capacitor/push-notifications'
+
+async function registerPushNotifications() {
+  try {
+    const isCapacitor = typeof window !== 'undefined' && (window as any).Capacitor !== undefined
+    if (!isCapacitor) return
+
+    const status = await PushNotifications.checkPermissions()
+    if (status.receive !== 'granted') {
+      const result = await PushNotifications.requestPermissions()
+      if (result.receive !== 'granted') return
+    }
+
+    await PushNotifications.register()
+
+    PushNotifications.addListener('registration', async (token) => {
+      await fetch('/api/users/push-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: token.value }),
+      })
+    })
+
+    PushNotifications.addListener('pushNotificationReceived', (notification) => {
+      console.log('Push received:', notification)
+    })
+
+    PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+      console.log('Push tapped:', notification)
+    })
+  } catch (error) {
+    console.error('Push registration error:', error)
+  }
+}
 
 export default function LoginPageClient() {
   const [isLoading, setIsLoading] = useState(false)
@@ -29,6 +63,7 @@ export default function LoginPageClient() {
       if (result?.error) {
         toast.error("Invalid email or password")
       } else {
+        await registerPushNotifications()
         router.push("/dashboard")
       }
     } catch (error) {
