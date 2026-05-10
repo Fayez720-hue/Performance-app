@@ -29,6 +29,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const existingTask = await getTaskById(taskId)
     if (!existingTask) return NextResponse.json({ error: "Task not found" }, { status: 404 })
 
+    console.log("PUT TASK DATA:", { deadline: data.deadline, existingDeadline: existingTask.deadline })
+
     const now = new Date()
 
     // 1. Accumulate Time Taken
@@ -49,9 +51,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
             const m = totalMins % 60
             totalTimeTakenStr = `${h}h ${m}m`
           }
-        } catch (e) {
-          console.error("Accumulation error:", e)
-        }
+        } catch (e) { console.error("Accumulation error:", e) }
       }
     }
 
@@ -61,7 +61,6 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       taskStartingDate = now.toISOString()
     }
 
-    // Initialize updateData
     let updateData: any = {
       ...existingTask,
       ...data,
@@ -73,9 +72,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       submissionDate: existingTask.submissionDate || "",
     }
 
-    // 3. Handle Submission (Review/Completed)
+    // 3. Handle Submission
     const isStatusTransitionToFinished = (data.progress === "Review" || data.progress === "Completed") &&
-                                         (existingTask.progress !== "Review" && existingTask.progress !== "Completed")
+      (existingTask.progress !== "Review" && existingTask.progress !== "Completed")
     const isSubmissionUpdate = (data.submissionLink && data.submissionLink !== existingTask.submissionLink) || isStatusTransitionToFinished
 
     let performanceHistory = existingTask.performanceHistory || ""
@@ -83,55 +82,43 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     if (isSubmissionUpdate) {
       updateData.submissionDate = now.toISOString()
 
-      // Calculate adherence: 100% on time, 90% if late
       let adherence = existingTask.deadlineAdherence || "Pending"
       if (!existingTask.deadlineAdherence || existingTask.deadlineAdherence === "Pending" || existingTask.deadlineAdherence === "0%") {
-        if (data.deadline || existingTask.deadline) {
+        const deadlineRaw = data.deadline || existingTask.deadline
+        if (deadlineRaw) {
           try {
-            const deadlineRaw = data.deadline || existingTask.deadline
-const deadDate = deadlineRaw ? new Date(deadlineRaw + "Z") : null
+            const deadDate = new Date(deadlineRaw.endsWith("Z") ? deadlineRaw : deadlineRaw + "Z")
             if (!isNaN(deadDate.getTime())) {
               const submissionTime = now.getTime()
               const deadlineTime = deadDate.getTime()
-
-              if (submissionTime <= deadlineTime) {
-                adherence = "100%"
-              } else {
-                adherence = "90%"
-              }
+              console.log("ADHERENCE:", { submissionTime, deadlineTime, isLate: submissionTime > deadlineTime })
+              adherence = submissionTime <= deadlineTime ? "100%" : "90%"
             }
-          } catch (e) {
-            adherence = "Pending"
-          }
+          } catch (e) { adherence = "Pending" }
         }
         updateData.deadlineAdherence = adherence
       }
 
-      // Add to History
       const timestamp = now.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
       const newEntry = `[${timestamp}] Submitted (${data.progress || existingTask.progress}) - Adh: ${adherence}`
       performanceHistory = performanceHistory ? `${performanceHistory} | ${newEntry}` : newEntry
       updateData.performanceHistory = performanceHistory
     }
 
-    // 4. Handle Edits Requested (Manager feedback)
-        if ((data.userRole === "Admin" || data.userRole === "Manager") && data.edits && data.edits !== existingTask.edits) {
+    // 4. Handle Edits
+    if ((data.userRole === "Admin" || data.userRole === "Manager") && data.edits && data.edits !== existingTask.edits) {
       updateData.noOfEdits = (Number(existingTask.noOfEdits) || 0) + 1
-
       const timestamp = now.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
       const newEntry = `[${timestamp}] Revision Requested #${updateData.noOfEdits}`
       performanceHistory = performanceHistory ? `${performanceHistory} | ${newEntry}` : newEntry
       updateData.performanceHistory = performanceHistory
-
-      // Always switch back to To-do when manager/admin adds edits
       updateData.progress = "To-do"
     }
 
-  
-            // 5. Preserve progress (but don't override To-do from edits)
-    if (updateData.progress === "To-do" && existingTask.progress !== "To-do" && 
-        (data.userRole === "Admin" || data.userRole === "Manager") && data.edits && data.edits !== existingTask.edits) {
-      // Keep "To-do" set by edits handler — don't override
+    // 5. Preserve progress
+    if (updateData.progress === "To-do" && existingTask.progress !== "To-do" &&
+      (data.userRole === "Admin" || data.userRole === "Manager") && data.edits && data.edits !== existingTask.edits) {
+      // Keep To-do from edits
     } else if (existingTask.progress === "Completed" && !data.progress) {
       updateData.progress = "Completed"
     } else if (data.progress) {
@@ -139,24 +126,19 @@ const deadDate = deadlineRaw ? new Date(deadlineRaw + "Z") : null
     } else {
       updateData.progress = existingTask.progress
     }
-    
+
     // 6. Calculate Overall Score
     if (data.grading) {
       let rawGrade = parseFloat(String(data.grading).replace(/%/g, "")) || 0
       updateData.grading = `${rawGrade}%`
-      
       let score = rawGrade
       const adherenceValue = parseFloat(updateData.deadlineAdherence?.replace(/%/g, "") || "100")
-      if (adherenceValue < 100) {
-        score = score * 0.9
-      }
+      if (adherenceValue < 100) score = score * 0.9
       updateData.overallScore = `${score.toFixed(1)}%`
     }
 
-    // Save
     await updateTask(taskId, updateData)
 
-    // Notifications
     const updatedTask = await getTaskById(taskId)
     if (updatedTask && session.user?.email) {
       if (data.name && data.name !== existingTask.name) {
