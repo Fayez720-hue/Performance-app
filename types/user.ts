@@ -48,7 +48,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     canCreateTasks: true,
     canEditAllTasks: true,
     canEditOwnTasks: true,
-    canDeleteTasks: false,
+    canDeleteTasks: true,
     canManageUsers: false,
     canViewAllTasks: true,
     canReview: true,
