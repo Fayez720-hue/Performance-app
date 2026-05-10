@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
-import { getNotifications, markAllNotificationsAsRead } from "@/lib/google-sheets"
+import { getNotifications, markAllNotificationsAsRead } from "@/lib/db-queries"
 
 import { authOptions } from "@/lib/auth"
 

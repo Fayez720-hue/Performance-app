@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
-import { getDashboardStats } from "@/lib/google-sheets"
+import { getDashboardStats } from "@/lib/db-queries"
 
 import { authOptions } from "@/lib/auth"
 

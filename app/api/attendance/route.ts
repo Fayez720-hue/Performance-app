@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
-import { getAttendance, clockIn, clockOut, getUserByEmail } from "@/lib/google-sheets"
+import { getAttendance, clockIn, clockOut, getUserByEmail } from "@/lib/db-queries"
 
 export async function GET() {
   try {

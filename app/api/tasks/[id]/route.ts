@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
-import { getTaskById, updateTask, deleteTask } from "@/lib/google-sheets"
+import { getTaskById, updateTask, deleteTask } from "@/lib/db-queries"
 import { notifyProgressUpdate, notifyRevisionsRequested, notifyTaskAssigned } from "@/lib/notifications"
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
-import { getUsers, addUser, updateUser, deleteUserByEmail } from "@/lib/google-sheets"
+import { getUsers, addUser, updateUser, deleteUserByEmail } from "@/lib/db-queries"
 
 export async function GET() {
   try {

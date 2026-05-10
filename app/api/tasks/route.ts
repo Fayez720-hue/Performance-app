@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
-import { getTasks, createTask, getUserByEmail, getTaskById } from "@/lib/google-sheets"
+import { getTasks, createTask, getUserByEmail, getTaskById } from "@/lib/db-queries"
 import { ROLE_PERMISSIONS } from "@/types/user"
 import type { UserRole } from "@/types/user"
 import { notifyTaskAssigned } from "@/lib/notifications"

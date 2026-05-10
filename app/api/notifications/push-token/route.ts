@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
-import { savePushToken } from "@/lib/google-sheets"
+import { savePushToken } from "@/lib/db-queries"
 
 export async function POST(req: Request) {
   try {

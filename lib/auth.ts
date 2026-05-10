@@ -2,7 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { OAuth2Client } from "google-auth-library";
-import { getUserByEmail, addUser } from "@/lib/google-sheets";
+import { getUserByEmail, addUser } from "@/lib/db-queries";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
