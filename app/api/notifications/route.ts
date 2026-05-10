@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { getNotifications, markAllNotificationsAsRead } from "@/lib/db-queries"
-
 import { authOptions } from "@/lib/auth"
 
 export async function GET() {
@@ -23,7 +22,6 @@ export async function PUT() {
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     await markAllNotificationsAsRead(session.user.email)
-
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Notifications Mark Read Error:", error)

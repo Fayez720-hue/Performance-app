@@ -290,7 +290,12 @@ export async function markNotificationAsRead(email: string, timestamp: string): 
       )
     )
 }
-
+export async function markAllNotificationsAsRead(email: string): Promise<void> {
+  await db
+    .update(notifications)
+    .set({ read: true })
+    .where(eq(notifications.userEmail, email.toLowerCase()))
+}
 // ============ DASHBOARD STATS ============
 
 export async function getDashboardStats(startDate?: string, endDate?: string, userEmail?: string, userRole?: string) {
