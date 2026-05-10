@@ -33,16 +33,17 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   }
 }
 
-export async function addUser(data: { email: string; name: string; role: UserRole; title?: string }): Promise<void> {
-  const existing = await getUserByEmail(data.email)
-  if (existing) throw new Error("User already exists")
-
-  await db.insert(employees).values({
-    email: data.email.toLowerCase(),
-    name: data.name,
-    role: data.role,
-    title: data.title || "",
-  })
+export async function getUserByEmailAndPassword(email: string, password: string): Promise<User | null> {
+  const { neon } = await import("@neondatabase/serverless")
+  const sql = neon(process.env.DATABASE_URL!)
+  
+  const rows = await sql`SELECT * FROM employees WHERE LOWER(email) = ${email.toLowerCase()} AND password = ${password} LIMIT 1`
+  
+  console.log("DIRECT SQL RESULT:", rows)
+  
+  if (rows.length === 0) return null
+  const row = rows[0]
+  return { email: row.email as string, name: row.name as string, role: row.role as UserRole, title: row.title as string || undefined }
 }
 
 export async function updateUser(email: string, data: Partial<User>, oldEmail?: string): Promise<void> {
@@ -388,13 +389,4 @@ export async function getDashboardStats(startDate?: string, endDate?: string, us
     scoreDistribution: distribution,
     shiftTrend: trend,
   }
-}
-
-export async function getUserByEmailAndPassword(email: string, password: string): Promise<User | null> {
-  const rows = await db.select().from(employees).where(
-    and(eq(employees.email, email.toLowerCase()), eq(employees.password, password))
-  ).limit(1)
-  if (rows.length === 0) return null
-  const row = rows[0]
-  return { email: row.email, name: row.name, role: row.role as UserRole, title: row.title || undefined }
 }

@@ -2,7 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { OAuth2Client } from "google-auth-library";
-import { getUserByEmail, addUser } from "@/lib/db-queries";
+import { getUserByEmail, addUser, getUserByEmailAndPassword } from "@/lib/db-queries";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -17,8 +17,10 @@ export const authOptions: NextAuthOptions = {
         },
       },
     }),
+    // Native app Google Sign-In (uses id_token from Capacitor plugin)
     CredentialsProvider({
-      name: "credentials",
+      id: "google-credentials",
+      name: "Google Credentials",
       credentials: { id_token: { type: "text" } },
       async authorize(credentials) {
         if (!credentials?.id_token) return null;
@@ -50,6 +52,35 @@ export const authOptions: NextAuthOptions = {
         }
       },
     }),
+    // Email/Password Login
+    CredentialsProvider({
+      id: "credentials",
+      name: "Email & Password",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        console.log("EMAIL LOGIN ATTEMPT:", credentials?.email);
+        
+        if (!credentials?.email || !credentials?.password) {
+          console.log("Missing email or password");
+          return null;
+        }
+        
+        const user = await getUserByEmailAndPassword(credentials.email, credentials.password);
+        console.log("USER FOUND:", user);
+        
+        if (!user) return null;
+        
+        return {
+          id: user.email,
+          email: user.email,
+          name: user.name,
+          role: user.role || "Team Member",
+        };
+      },
+    }),
   ],
   
   debug: process.env.NODE_ENV === "development",
@@ -79,36 +110,26 @@ export const authOptions: NextAuthOptions = {
         token.name = user.name;
 
         const email = user.email?.toLowerCase() || "";
-        console.log(`[NextAuth] Syncing role for ${email}...`);
-
         const adminEmails = (process.env.ADMIN_EMAILS || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean);
         const managerEmails = (process.env.MANAGER_EMAILS || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean);
 
-        // 1. Check Environment Variables first (Master Override)
         if (adminEmails.includes(email)) {
           token.role = "Admin";
         } else if (managerEmails.includes(email)) {
           token.role = "Manager";
         } else {
-          // 2. Fallback to Spreadsheet lookup
           try {
             const dbUser = await getUserByEmail(email);
             if (dbUser) {
-              const role = dbUser.role?.trim() || "";
-              if (/admin/i.test(role)) token.role = "Admin";
-              else if (/manager/i.test(role)) token.role = "Manager";
-              else if (/viewer/i.test(role)) token.role = "Viewer";
-              else token.role = "Team Member";
+              token.role = dbUser.role || "Team Member";
               token.name = dbUser.name;
             } else {
               token.role = "Team Member";
             }
           } catch (error) {
-            console.error(`[NextAuth] Role sync failed for ${email}:`, error);
             token.role = "Team Member";
           }
         }
-        console.log(`[NextAuth] Final role for ${email}: ${token.role}`);
       }
       return token;
     },
