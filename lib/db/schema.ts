@@ -18,6 +18,7 @@ export const employees = pgTable("employees", {
   name: text("name").notNull(),
   role: userRoleEnum("role").notNull().default("Team Member"),
   title: text("title"),
+  password: text("password"),
   pushToken: text("push_token"),
   image: text("image"),
   // Stats columns from old Employees sheet

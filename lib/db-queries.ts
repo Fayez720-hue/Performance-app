@@ -374,7 +374,7 @@ export async function getDashboardStats(startDate?: string, endDate?: string, us
     { week: "Week 4", adherence: avgAdherence },
   ]
 
-  return {
+    return {
     totalEmployees: relevantEmployees.length,
     avgScore: topPerformer?.overallScore || 0,
     completionRate,
@@ -388,4 +388,13 @@ export async function getDashboardStats(startDate?: string, endDate?: string, us
     scoreDistribution: distribution,
     shiftTrend: trend,
   }
+}
+
+export async function getUserByEmailAndPassword(email: string, password: string): Promise<User | null> {
+  const rows = await db.select().from(employees).where(
+    and(eq(employees.email, email.toLowerCase()), eq(employees.password, password))
+  ).limit(1)
+  if (rows.length === 0) return null
+  const row = rows[0]
+  return { email: row.email, name: row.name, role: row.role as UserRole, title: row.title || undefined }
 }
