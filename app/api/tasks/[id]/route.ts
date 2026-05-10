@@ -114,7 +114,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 
     // 4. Handle Edits Requested (Manager feedback)
-    if ((data.userRole === "Admin" || data.userRole === "Manager") && data.edits && data.edits !== existingTask.edits) {
+        if ((data.userRole === "Admin" || data.userRole === "Manager") && data.edits && data.edits !== existingTask.edits) {
       updateData.noOfEdits = (Number(existingTask.noOfEdits) || 0) + 1
 
       const timestamp = now.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
@@ -122,20 +122,23 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       performanceHistory = performanceHistory ? `${performanceHistory} | ${newEntry}` : newEntry
       updateData.performanceHistory = performanceHistory
 
-      if (existingTask.progress === "Review") {
-        updateData.progress = "To-do"
-      }
+      // Always switch back to To-do when manager/admin adds edits
+      updateData.progress = "To-do"
     }
 
-    // 5. Preserve progress
-    if (existingTask.progress === "Completed" && !data.progress) {
+  
+            // 5. Preserve progress (but don't override To-do from edits)
+    if (updateData.progress === "To-do" && existingTask.progress !== "To-do" && 
+        (data.userRole === "Admin" || data.userRole === "Manager") && data.edits && data.edits !== existingTask.edits) {
+      // Keep "To-do" set by edits handler — don't override
+    } else if (existingTask.progress === "Completed" && !data.progress) {
       updateData.progress = "Completed"
     } else if (data.progress) {
       updateData.progress = data.progress
     } else {
       updateData.progress = existingTask.progress
     }
-
+    
     // 6. Calculate Overall Score
     if (data.grading) {
       let rawGrade = parseFloat(String(data.grading).replace(/%/g, "")) || 0
