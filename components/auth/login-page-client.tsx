@@ -8,13 +8,14 @@ import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { PushNotifications } from '@capacitor/push-notifications'
+
 
 async function registerPushNotifications() {
   try {
     const isCapacitor = typeof window !== 'undefined' && (window as any).Capacitor !== undefined
     if (!isCapacitor) return
+
+    const { PushNotifications } = await import('@capacitor/push-notifications')
 
     const status = await PushNotifications.checkPermissions()
     if (status.receive !== 'granted') {
