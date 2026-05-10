@@ -1,5 +1,5 @@
 import { Resend } from "resend"
-import { createNotification, getUserByEmail, getUsers } from "./google-sheets"
+import { createNotification, getUserByEmail, getUsers } from "./db-queries"
 import type { NotificationType } from "@/types/user"
 import type { Task } from "@/types/task"
 
