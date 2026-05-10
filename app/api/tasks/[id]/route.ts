@@ -88,7 +88,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       if (!existingTask.deadlineAdherence || existingTask.deadlineAdherence === "Pending" || existingTask.deadlineAdherence === "0%") {
         if (data.deadline || existingTask.deadline) {
           try {
-            const deadDate = new Date(data.deadline || existingTask.deadline)
+            const deadlineRaw = data.deadline || existingTask.deadline
+const deadDate = deadlineRaw ? new Date(deadlineRaw + "Z") : null
             if (!isNaN(deadDate.getTime())) {
               const submissionTime = now.getTime()
               const deadlineTime = deadDate.getTime()

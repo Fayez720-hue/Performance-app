@@ -127,9 +127,9 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
       // Include change detection for notifications
       const payload = {
         ...values,
-        // Convert to ISO for reliable server-side comparison
-        deadline: values.deadline ? new Date(values.deadline).toISOString() : values.deadline,
-        taskStartingDate: values.taskStartingDate ? new Date(values.taskStartingDate).toISOString() : values.taskStartingDate,
+        // Send as local ISO string (preserve the exact local time the user picked)
+        deadline: values.deadline ? new Date(values.deadline + ":00.000Z").toISOString().replace("Z", "") : values.deadline,
+        taskStartingDate: values.taskStartingDate ? new Date(values.taskStartingDate + ":00.000Z").toISOString().replace("Z", "") : values.taskStartingDate,
         previousProgress: task?.progress,
         updatedBy: userName,
         userRole: userRole
