@@ -190,12 +190,11 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
                     {employees && employees.length > 0 ? (
                       employees.map((emp) => {
                         const name = typeof emp === 'string' ? emp : emp.name;
-                        const email = typeof emp === 'string' ? null : emp.email;
                         const value = typeof emp === 'string' ? emp : emp.name;
 
                         return (
-                          <SelectItem key={email || name} value={value}>
-                            {name} {email ? `(${email})` : ''}
+                          <SelectItem key={name} value={value}>
+                            {name}
                           </SelectItem>
                         );
                       })
