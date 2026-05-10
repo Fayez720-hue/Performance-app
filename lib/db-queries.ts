@@ -407,3 +407,10 @@ export async function getDashboardStats(startDate?: string, endDate?: string, us
     shiftTrend: trend,
   }
 }
+
+export async function savePushToken(email: string, token: string): Promise<void> {
+  await db
+    .update(employees)
+    .set({ pushToken: token })
+    .where(eq(employees.email, email.toLowerCase()))
+}
