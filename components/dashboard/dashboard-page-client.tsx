@@ -68,7 +68,8 @@ export default function DashboardPageClient() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [titleFilter, setTitleFilter] = useState<string>("all");
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [dateRange, setDateRange] = useState<{
     from: Date;
     to: Date;
@@ -117,7 +118,21 @@ export default function DashboardPageClient() {
     return null;
   }, [data?.employees, data?.isPersonalView, session?.user?.name]);
 
-      const filteredEmployees = useMemo(() => {
+  const searchSuggestions = useMemo(() => {
+    if (!searchTerm || !data?.employees) return [];
+    const term = searchTerm.toLowerCase();
+    return data.employees
+      .filter(emp => emp.name.toLowerCase().includes(term))
+      .slice(0, 5)
+      .map(emp => emp.name);
+  }, [searchTerm, data?.employees]);
+
+  const titles = useMemo(() => {
+    if (!data?.employees) return [];
+    return [...new Set(data.employees.map(e => e.title).filter(Boolean))].sort();
+  }, [data?.employees]);
+
+  const filteredEmployees = useMemo(() => {
     if (!data?.employees) return [];
     if (data.isPersonalView) {
       return currentUserStats ? [currentUserStats] : [];
@@ -125,14 +140,11 @@ export default function DashboardPageClient() {
     return data.employees
       .filter(emp => {
         const matchesSearch = emp.name.toLowerCase().includes(searchTerm.toLowerCase());
-        // Match role: check if employee title contains the role filter word
-        const matchesRole = roleFilter === "all" || 
-          emp.title?.toLowerCase().includes(roleFilter.toLowerCase()) ||
-          emp.performance?.toLowerCase().includes(roleFilter.toLowerCase());
-        return matchesSearch && matchesRole;
+        const matchesTitle = titleFilter === "all" || emp.title?.toLowerCase().includes(titleFilter.toLowerCase());
+        return matchesSearch && matchesTitle;
       })
       .slice(0, 10);
-  }, [data?.employees, searchTerm, data?.isPersonalView, currentUserStats, roleFilter]);
+  }, [data?.employees, searchTerm, data?.isPersonalView, currentUserStats, titleFilter]);
 
   if (status === "loading") {
     return (
@@ -168,14 +180,33 @@ export default function DashboardPageClient() {
 
           {canManage && (
             <div className="relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />
               <input
                 type="text"
                 placeholder="Search employee name..."
                 className="w-full bg-card border border-border rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-primary/50 transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
               />
+              {showSuggestions && searchSuggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl overflow-hidden z-20 shadow-lg">
+                  {searchSuggestions.map((name) => (
+                    <button
+                      key={name}
+                      type="button"
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors text-white/80 hover:text-white"
+                      onMouseDown={() => {
+                        setSearchTerm(name);
+                        setShowSuggestions(false);
+                      }}
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -224,28 +255,35 @@ export default function DashboardPageClient() {
                       <Users className="h-5 w-5 text-teal-400" />
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase text-white/30 font-bold tracking-[0.1em]">Role Selection</p>
-                      <p className="text-xs font-bold text-white/90 capitalize">{roleFilter === "all" ? "All Roles" : roleFilter}</p>
+                      <p className="text-[10px] uppercase text-white/30 font-bold tracking-[0.1em]">Title Selection</p>
+                      <p className="text-xs font-bold text-white/90">{titleFilter === "all" ? "All Titles" : titleFilter}</p>
                     </div>
                   </div>
                   {canManage && <ChevronRight className="h-4 w-4 text-white/20" />}
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-48 p-2 bg-[#090a11] border-white/10" align="start">
-                <div className="space-y-1">
-                  {["all", "Admin", "Manager", "Team Member", "Viewer"].map((role) => (
-                    <button
-                      key={role}
-                      onClick={() => setRoleFilter(role)}
-                      className={cn(
-                        "w-full text-left px-3 py-2 text-sm rounded-lg transition-colors capitalize",
-                        roleFilter === role ? "bg-teal-500/20 text-teal-400" : "text-white/60 hover:bg-white/5 hover:text-white"
-                      )}
-                    >
-                      {role === "all" ? "All Roles" : role}
-                    </button>
-                  ))}
-                </div>
+              <PopoverContent className="w-48 p-2 bg-[#090a11] border-white/10 max-h-60 overflow-y-auto" align="start">
+                <button
+                  onClick={() => setTitleFilter("all")}
+                  className={cn(
+                    "w-full text-left px-3 py-2 text-sm rounded-lg transition-colors",
+                    titleFilter === "all" ? "bg-teal-500/20 text-teal-400" : "text-white/60 hover:bg-white/5 hover:text-white"
+                  )}
+                >
+                  All Titles
+                </button>
+                {titles.map((title) => (
+                  <button
+                    key={title}
+                    onClick={() => setTitleFilter(title)}
+                    className={cn(
+                      "w-full text-left px-3 py-2 text-sm rounded-lg transition-colors",
+                      titleFilter === title ? "bg-teal-500/20 text-teal-400" : "text-white/60 hover:bg-white/5 hover:text-white"
+                    )}
+                  >
+                    {title}
+                  </button>
+                ))}
               </PopoverContent>
             </Popover>
           </div>
@@ -270,7 +308,6 @@ export default function DashboardPageClient() {
                         key={`cell-${index}`}
                         fill={index === 3 || data?.isPersonalView ? '#2dd4bf' : 'rgba(255,255,255,0.05)'}
                         fillOpacity={0.9}
-                        className="transition-all duration-500 hover:fill-teal-300"
                       />
                     ))}
                   </Bar>
