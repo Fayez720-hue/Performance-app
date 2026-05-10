@@ -40,46 +40,41 @@ export function TaskDeck({ user }: TaskDeckProps) {
   const [highlightedTaskId, setHighlightedTaskId] = useState<number | null>(null);
 
   const searchParams = useSearchParams();
-  const taskIdParam = searchParams.get("taskId");
 
-  // Handle auto-opening and clean URL
+    // Handle auto-opening from notifications
   useEffect(() => {
+    const taskIdParam = searchParams.get("taskId");
+    const timestamp = searchParams.get("t");
+    
     if (taskIdParam) {
       const id = parseInt(taskIdParam, 10);
-      setHighlightedTaskId(id);
-
+      
       // Clear filters so the task is visible
       setSearch("");
       setProgressFilter("all");
       setAssigneeFilter("all");
 
-      // Remove the query parameters from the URL without reload
-      const url = new URL(window.location.href);
-      url.searchParams.delete("taskId");
-      url.searchParams.delete("t");
-      window.history.replaceState({}, "", url.toString());
-
-      // Reset highlight state after a delay so it can be re-triggered
-      const timeoutId = setTimeout(() => {
-        setHighlightedTaskId(null);
-      }, 500);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [taskIdParam]);
-
-  // Auto‑scroll to the task when tasks are loaded
-  useEffect(() => {
-    if (taskIdParam && !isLoading && Array.isArray(tasks) && tasks.length > 0) {
-      const id = parseInt(taskIdParam, 10);
+      // Scroll to and highlight the task
       setTimeout(() => {
+        setHighlightedTaskId(id);
         const element = document.getElementById(`task-${id}`);
         if (element) {
           element.scrollIntoView({ behavior: "smooth", block: "center" });
         }
       }, 300);
+
+      // Reset highlight after delay
+      setTimeout(() => {
+        setHighlightedTaskId(null);
+      }, 3000);
+
+      // Clean URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete("taskId");
+      url.searchParams.delete("t");
+      window.history.replaceState({}, "", url.toString());
     }
-  }, [taskIdParam, isLoading, tasks]);
+  }, [searchParams]); // Re-run whenever searchParams changes
 
   const permissions = ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS.Viewer;
 
