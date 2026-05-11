@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { LogOut, User, Shield, Moon, Sun, Monitor, Loader2 } from "lucide-react"
 import { useTheme } from "next-themes"
-import { Label } from "@/components/ui/label"
 import { useEffect, useState } from "react"
 
 export default function SettingsPageClient() {
@@ -81,7 +80,7 @@ export default function SettingsPageClient() {
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label className="text-base">Theme</Label>
+                  <label className="text-base">Theme</label>
                   <p className="text-sm text-muted-foreground">Choose between light, dark, or system theme</p>
                 </div>
                 <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
