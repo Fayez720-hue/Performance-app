@@ -21,6 +21,7 @@ export interface Task {
   edits: string
   noOfEdits: number
   performanceHistory?: string
+  projectId?: number
 }
 
 export interface TaskFormData {

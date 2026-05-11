@@ -128,6 +128,7 @@ export async function getTaskById(id: number): Promise<Task | null> {
     edits: row.edits,
     noOfEdits: row.noOfEdits,
     performanceHistory: row.performanceHistory || undefined,
+    projectId: row.projectId,
   }
 }
 
