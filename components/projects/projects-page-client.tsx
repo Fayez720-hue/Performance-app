@@ -9,6 +9,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { Loader2, Plus, FolderKanban, Trash2 } from "lucide-react"
+import { MediaUpload } from "@/components/tasks/media-upload"
+import { MediaRenderer } from "@/components/tasks/media-renderer"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export default function ProjectsPageClient() {
   const { data: session, status } = useSession()
@@ -19,9 +29,18 @@ export default function ProjectsPageClient() {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [creating, setCreating] = useState(false)
-
+  const [references, setReferences] = useState("")
+  const [assignedTo, setAssignedTo] = useState("")
+  const [employees, setEmployees] = useState<any[]>([])
   const userRole = (session?.user as any)?.role
   const canManage = userRole === "Admin" || userRole === "Manager"
+
+    useEffect(() => {
+    fetch("/api/users")
+      .then(res => res.json())
+      .then(data => setEmployees(Array.isArray(data) ? data : []))
+      .catch(() => setEmployees([]))
+  }, [])
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -70,12 +89,14 @@ export default function ProjectsPageClient() {
       const res = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, description }),
+        body: JSON.stringify({ name, description, references, assignedTo }),
       })
       if (res.ok) {
         toast.success("Project created")
         setName("")
         setDescription("")
+        setReferences("")
+        setAssignedTo("")
         setShowCreate(false)
         fetchProjects()
       } else {
@@ -115,23 +136,60 @@ export default function ProjectsPageClient() {
 
         {showCreate && (
           <Card className="mb-8 border-border">
-           <CardHeader>
-  <CardTitle>Create New Project</CardTitle>
-  <CardDescription>Projects group related tasks together</CardDescription>
-</CardHeader>
+            <CardHeader>
+              <CardTitle>Create New Project</CardTitle>
+              <CardDescription>Projects group related tasks together</CardDescription>
+            </CardHeader>
             <CardContent>
               <form onSubmit={handleCreate} className="space-y-4">
-                <Input
-                  placeholder="Project name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-                <Input
-                  placeholder="Description (optional)"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Project Name</label>
+                    <Input
+                      placeholder="Project name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Assigned To</label>
+                    <Select value={assignedTo} onValueChange={setAssignedTo}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select employee" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        {employees.map((emp) => (
+                          <SelectItem key={emp.email} value={emp.name}>
+                            {emp.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Description</label>
+                  <Input
+                    placeholder="Description (optional)"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">References</label>
+                  <Textarea
+                    placeholder="Add any references or links..."
+                    className="min-h-[80px] resize-none"
+                    value={references}
+                    onChange={(e) => setReferences(e.target.value)}
+                  />
+                  <MediaUpload
+                    onUpload={(attachment) => setReferences(prev => `${prev}${prev ? '\n' : ''}${attachment}`)}
+                  />
+                  <MediaRenderer text={references} />
+                </div>
                 <div className="flex gap-2">
                   <Button type="submit" disabled={creating}>
                     {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -142,8 +200,6 @@ export default function ProjectsPageClient() {
                   </Button>
                 </div>
               </form>
-            </CardContent>
-          </Card>
         )}
 
         {projects.length === 0 ? (
