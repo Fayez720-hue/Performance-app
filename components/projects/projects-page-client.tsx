@@ -232,7 +232,7 @@ export default function ProjectsPageClient() {
             </CardContent>
           </Card>
         )}
-        {editingProject && (
+                {editingProject && (
           <Card className="mb-8 border-border">
             <CardHeader>
               <CardTitle>Edit Project</CardTitle>
@@ -240,13 +240,34 @@ export default function ProjectsPageClient() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleUpdate} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Project Name</label>
-                  <Input
-                    value={editingProject.name}
-                    onChange={(e) => setEditingProject({ ...editingProject, name: e.target.value })}
-                    required
-                  />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Project Name</label>
+                    <Input
+                      value={editingProject.name}
+                      onChange={(e) => setEditingProject({ ...editingProject, name: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Assigned To</label>
+                    <Select
+                      value={editingProject.assignedTo || ""}
+                      onValueChange={(val) => setEditingProject({ ...editingProject, assignedTo: val })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select employee" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {employees.map((emp) => (
+                          <SelectItem key={emp.email} value={emp.name}>
+                            {emp.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Description</label>
@@ -254,6 +275,18 @@ export default function ProjectsPageClient() {
                     value={editingProject.description || ""}
                     onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
                   />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">References</label>
+                  <Textarea
+                    className="min-h-[80px] resize-none"
+                    value={editingProject.references || ""}
+                    onChange={(e) => setEditingProject({ ...editingProject, references: e.target.value })}
+                  />
+                  <MediaUpload
+                    onUpload={(attachment) => setEditingProject(prev => ({ ...prev, references: `${prev.references || ''}${prev.references ? '\n' : ''}${attachment}` }))}
+                  />
+                  <MediaRenderer text={editingProject.references || ""} />
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" disabled={creating}>Save Changes</Button>
