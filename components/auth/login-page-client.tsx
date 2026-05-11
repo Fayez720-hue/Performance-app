@@ -96,9 +96,9 @@ export default function LoginPageClient() {
         <CardContent className="space-y-6 pb-10 px-8">
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-white/70 text-sm font-medium">
+              <label htmlFor="email" className="text-white/70 text-sm font-medium">
                 Email Address
-              </Label>
+              </label>
               <Input
                 id="email"
                 type="email"
@@ -111,9 +111,9 @@ export default function LoginPageClient() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-white/70 text-sm font-medium">
+              <label htmlFor="password" className="text-white/70 text-sm font-medium">
                 Password
-              </Label>
+              </label>
               <Input
                 id="password"
                 type="password"
