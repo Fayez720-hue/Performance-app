@@ -59,6 +59,7 @@ export const tasks = pgTable("tasks", {
   createdBy: text("created_by"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  projectId: integer("project_id").references(() => projects.id, { onDelete: "set null" }),
 })
 
 // ============ NOTIFICATIONS TABLE ============
@@ -85,4 +86,12 @@ export const attendance = pgTable("attendance", {
   clockIn: text("clock_in").notNull(),
   clockOut: text("clock_out").default(""),
   createdAt: timestamp("created_at").defaultNow(),
+})
+export const projects = pgTable("projects", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").default(""),
+  createdBy: text("created_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 })

@@ -22,15 +22,22 @@ import { ROLE_PERMISSIONS } from "@/types/user";
 
 interface TaskDeckProps {
   user: User;
+  projectId?: number;
 }
 
-export function TaskDeck({ user }: TaskDeckProps) {
+export function TaskDeck({ user, projectId }: TaskDeckProps) {
   const userRole = user.role || "Team Member";
   const userName = user.name || "Guest";
 
-  const { data: tasks, error, isLoading, mutate } = useSWR<Task[]>("/api/tasks", fetcher, {
-    refreshInterval: 30000,
-  });
+    const { data: tasks, error, isLoading, mutate } = useSWR<Task[]>(
+    projectId ? `/api/projects/${projectId}` : "/api/tasks",
+    async (url: string) => {
+      const res = await fetch(url);
+      const data = await res.json();
+      return projectId ? data.tasks : data;
+    },
+    { refreshInterval: 30000 }
+  );
 
   const { data: users } = useSWR<User[]>("/api/users", fetcher);
 
@@ -103,7 +110,7 @@ export function TaskDeck({ user }: TaskDeckProps) {
 
       return matchesSearch && matchesProgress && matchesAssignee;
     });
-  }, [tasks, search, progressFilter, assigneeFilter]);
+    }, [tasks, search, progressFilter, assigneeFilter, projectId]);
 
   // Group tasks by progress
   const groupedTasks = useMemo(() => {

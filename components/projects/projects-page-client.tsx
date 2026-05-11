@@ -1,0 +1,177 @@
+"use client"
+
+import { useSession } from '@/components/providers/session-provider'
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { Header } from "@/components/layout/header"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Loader2, Plus, FolderKanban } from "lucide-react"
+import { toast } from "sonner"
+
+export default function ProjectsPageClient() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const [projects, setProjects] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showCreate, setShowCreate] = useState(false)
+  const [name, setName] = useState("")
+  const [description, setDescription] = useState("")
+  const [creating, setCreating] = useState(false)
+
+  const userRole = (session?.user as any)?.role
+  const canManage = userRole === "Admin" || userRole === "Manager"
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login")
+    } else if (status === "authenticated" && canManage) {
+      fetchProjects()
+    } else if (status === "authenticated" && !canManage) {
+      router.push("/dashboard")
+    }
+  }, [status])
+
+  const fetchProjects = async () => {
+    try {
+      const res = await fetch("/api/projects")
+      if (res.ok) {
+        const data = await res.json()
+        setProjects(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch projects:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name.trim()) return
+    setCreating(true)
+    try {
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, description }),
+      })
+      if (res.ok) {
+        toast.success("Project created")
+        setName("")
+        setDescription("")
+        setShowCreate(false)
+        fetchProjects()
+      } else {
+        toast.error("Failed to create project")
+      }
+    } catch (error) {
+      toast.error("Error creating project")
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  if (status === "loading" || loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex-1 flex flex-col">
+      <Header />
+      <main className="flex-1 container mx-auto px-4 py-8 max-w-6xl">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Projects</h1>
+            <p className="text-muted-foreground text-sm">Manage project-based tasks</p>
+          </div>
+          {canManage && (
+            <Button onClick={() => setShowCreate(!showCreate)}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Project
+            </Button>
+          )}
+        </div>
+
+        {showCreate && (
+          <Card className="mb-8 border-border">
+            <CardHeader>
+              <CardTitle>Create New Project</CardTitle>
+              <CardDescription>Projects group related tasks together</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreate} className="space-y-4">
+                <Input
+                  placeholder="Project name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+                <Input
+                  placeholder="Description (optional)"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={creating}>
+                    {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Create Project
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {projects.length === 0 ? (
+          <div className="text-center py-20">
+            <FolderKanban className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium text-muted-foreground">No projects yet</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {canManage ? "Create your first project to get started" : "No projects available"}
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {projects.map((project) => (
+              <Card
+                key={project.id}
+                className="border-border hover:border-primary/50 cursor-pointer transition-all"
+                onClick={() => router.push(`/projects/${project.id}`)}
+              >
+                <CardHeader>
+                  <CardTitle className="text-lg">{project.name}</CardTitle>
+                  {project.description && (
+                    <CardDescription>{project.description}</CardDescription>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Progress</span>
+                      <span className="font-medium">{project.progress || 0}%</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div
+                        className="bg-primary h-2 rounded-full transition-all"
+                        style={{ width: `${project.progress || 0}%` }}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  )
+}

@@ -1,5 +1,5 @@
 import { db } from "@/lib/db"
-import { employees, tasks, notifications, attendance } from "@/lib/db/schema"
+import { employees, tasks, notifications, attendance, projects } from "@/lib/db/schema"
 import { eq, and, desc, sql, inArray } from "drizzle-orm"
 import { format } from "date-fns"
 import type { Task, TaskFormData } from "@/types/task"
@@ -155,6 +155,7 @@ export async function createTask(data: any): Promise<number> {
     noOfEdits: 0,
     performanceHistory: `Created: ${new Date().toLocaleString()}`,
     createdBy: data.createdBy || null,
+    projectId: data.projectId || null,
   }).returning({ id: tasks.id })
 
   return result[0].id
@@ -181,7 +182,7 @@ export async function updateTask(id: number, data: any): Promise<void> {
   if (data.edits !== undefined) updateData.edits = data.edits
   if (data.noOfEdits !== undefined) updateData.noOfEdits = data.noOfEdits
   if (data.performanceHistory !== undefined) updateData.performanceHistory = data.performanceHistory
-
+  if (data.projectId !== undefined) updateData.projectId = data.projectId
   updateData.updatedAt = new Date()
 
   await db.update(tasks).set(updateData).where(eq(tasks.id, id))
@@ -413,4 +414,65 @@ export async function savePushToken(email: string, token: string): Promise<void>
     .update(employees)
     .set({ pushToken: token })
     .where(eq(employees.email, email.toLowerCase()))
+}
+export async function getProjects(): Promise<any[]> {
+  const rows = await db.select().from(projects).orderBy(desc(projects.createdAt))
+  return rows
+}
+
+export async function getProjectById(id: number): Promise<any | null> {
+  const rows = await db.select().from(projects).where(eq(projects.id, id)).limit(1)
+  return rows.length > 0 ? rows[0] : null
+}
+
+export async function createProject(data: { name: string; description?: string; createdBy?: string }): Promise<number> {
+  const result = await db.insert(projects).values({
+    name: data.name,
+    description: data.description || "",
+    createdBy: data.createdBy || null,
+  }).returning({ id: projects.id })
+  return result[0].id
+}
+
+export async function getTasksByProject(projectId: number): Promise<Task[]> {
+  const rows = await db.select().from(tasks).where(eq(tasks.projectId, projectId)).orderBy(desc(tasks.id))
+  return rows.map(row => ({
+    id: row.id,
+    name: row.name,
+    date: row.date,
+    task: row.task,
+    references: row.references,
+    comments: row.comments,
+    progress: row.progress as Task["progress"],
+    taskStartingDate: row.taskStartingDate,
+    deadline: row.deadline,
+    taskEstimatedTime: row.taskEstimatedTime,
+    taskTimeTaken: row.taskTimeTaken,
+    submissionLink: row.submissionLink,
+    submissionDate: row.submissionDate,
+    deadlineAdherence: row.deadlineAdherence,
+    grading: row.grading,
+    overallScore: row.overallScore,
+    taskTimeStamp: row.taskTimeStamp,
+    edits: row.edits,
+    noOfEdits: row.noOfEdits,
+    performanceHistory: row.performanceHistory || undefined,
+    projectId: row.projectId,
+  }))
+}
+
+export async function getProjectProgress(projectId: number): Promise<number> {
+  const rows = await db.select({ progress: tasks.progress }).from(tasks).where(eq(tasks.projectId, projectId))
+  if (rows.length === 0) return 0
+
+  let totalScore = 0
+  rows.forEach(row => {
+    switch (row.progress) {
+      case "Completed": totalScore += 100; break
+      case "Review": totalScore += 75; break
+      case "In Progress": totalScore += 50; break
+      default: totalScore += 0
+    }
+  })
+  return Math.round(totalScore / rows.length)
 }
