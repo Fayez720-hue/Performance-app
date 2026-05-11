@@ -73,7 +73,7 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
   const canEditAllFields = userRole === "Admin" || userRole === "Manager"
   const isTeamMember = userRole === "Team Member"
   const [projects, setProjects] = useState<any[]>([])
-  const [selectedProject, setSelectedProject] = useState<string>(task?.projectId?.toString() || "")
+  const [selectedProject, setSelectedProject] = useState<string>(task?.projectId?.toString() || "none")
 
   useEffect(() => {
     fetch("/api/projects")
@@ -135,7 +135,7 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
       // Include change detection for notifications
       const payload = {
         ...values,
-         projectId: selectedProject || null,
+        projectId: selectedProject === "none" ? null : selectedProject,
         // Send as local ISO string (preserve the exact local time the user picked)
         deadline: values.deadline ? new Date(values.deadline).toISOString() : values.deadline,
         taskStartingDate: values.taskStartingDate ? new Date(values.taskStartingDate + ":00.000Z").toISOString().replace("Z", "") : values.taskStartingDate,
@@ -249,7 +249,7 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">No project (standalone)</SelectItem>
+                  <SelectItem value="none">No project (standalone)</SelectItem>
                   {projects.map((project) => (
                     <SelectItem key={project.id} value={project.id.toString()}>
                       {project.name}
