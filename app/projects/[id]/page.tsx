@@ -94,12 +94,6 @@ export default function ProjectDetailPage() {
              {user && <TaskDeck user={user} projectId={parseInt(params.id as string)} />}
       </main>
 
-      {/* DEBUG */}
-      <p className="fixed bottom-2 left-2 text-xs text-white bg-black p-1 z-50">
-        canManage: {String(canManage)} | role: {userRole}
-      </p>
-
-
       {canManage && (
         <button
           onClick={() => router.push(`/tasks/new?projectId=${params.id}`)}
