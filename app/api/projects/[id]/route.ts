@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth"
 import { getProjectById, getTasksByProject, getProjectProgress, deleteProject, updateProject } from "@/lib/db-queries"
 
 
