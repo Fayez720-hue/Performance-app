@@ -7,8 +7,8 @@ import { Header } from "@/components/layout/header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, Plus, FolderKanban } from "lucide-react"
 import { toast } from "sonner"
+import { Loader2, Plus, FolderKanban, Trash2 } from "lucide-react"
 
 export default function ProjectsPageClient() {
   const { data: session, status } = useSession()
@@ -32,6 +32,21 @@ export default function ProjectsPageClient() {
       router.push("/dashboard")
     }
   }, [status])
+
+    const handleDelete = async (id: number, name: string) => {
+    if (!confirm(`Delete project "${name}"? Tasks will not be deleted, just unlinked.`)) return
+    try {
+      const res = await fetch(`/api/projects/${id}`, { method: "DELETE" })
+      if (res.ok) {
+        toast.success("Project deleted")
+        fetchProjects()
+      } else {
+        toast.error("Failed to delete project")
+      }
+    } catch (error) {
+      toast.error("Error deleting project")
+    }
+  }
 
   const fetchProjects = async () => {
     try {
@@ -100,10 +115,10 @@ export default function ProjectsPageClient() {
 
         {showCreate && (
           <Card className="mb-8 border-border">
-            <CardHeader>
-              <CardTitle>Create New Project</CardTitle>
-              <CardDescription>Projects group related tasks together</CardDescription>
-            </CardHeader>
+           <CardHeader>
+  <CardTitle>Create New Project</CardTitle>
+  <CardDescription>Projects group related tasks together</CardDescription>
+</CardHeader>
             <CardContent>
               <form onSubmit={handleCreate} className="space-y-4">
                 <Input
@@ -147,11 +162,25 @@ export default function ProjectsPageClient() {
                 className="border-border hover:border-primary/50 cursor-pointer transition-all"
                 onClick={() => router.push(`/projects/${project.id}`)}
               >
-                <CardHeader>
-                  <CardTitle className="text-lg">{project.name}</CardTitle>
-                  {project.description && (
-                    <CardDescription>{project.description}</CardDescription>
-                  )}
+                
+                <CardHeader className="flex flex-row items-start justify-between pb-2">
+                  <div>
+                    <CardTitle className="text-lg">{project.name}</CardTitle>
+                    {project.description && (
+                      <CardDescription>{project.description}</CardDescription>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive -mt-1 -mr-2"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDelete(project.id, project.name)
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">

@@ -433,6 +433,12 @@ export async function createProject(data: { name: string; description?: string; 
   }).returning({ id: projects.id })
   return result[0].id
 }
+export async function deleteProject(id: number): Promise<void> {
+  // First unlink all tasks from this project
+  await db.update(tasks).set({ projectId: null }).where(eq(tasks.projectId, id))
+  // Then delete the project
+  await db.delete(projects).where(eq(projects.id, id))
+}
 
 export async function getTasksByProject(projectId: number): Promise<Task[]> {
   const rows = await db.select().from(tasks).where(eq(tasks.projectId, projectId)).orderBy(desc(tasks.id))
