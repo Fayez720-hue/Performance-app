@@ -12,6 +12,7 @@ import {
   LogOut,
   ChevronRight,
   ClipboardList,
+  FolderKanban,
 } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -59,6 +60,11 @@ export function AppSidebar() {
       icon: CheckSquare,
       url: '/tasks',
     },
+    ...(isAdminOrManager ? [{
+      title: 'Projects',
+      icon: FolderKanban,
+      url: '/projects',
+    }] : []),
     ...(isAdminOrManager ? [{
       title: 'Reports',
       icon: BarChart3,
