@@ -199,7 +199,9 @@ export default function ProjectsPageClient() {
                     Cancel
                   </Button>
                 </div>
-              </form>
+               </form>
+            </CardContent>
+          </Card>
         )}
 
         {projects.length === 0 ? (
