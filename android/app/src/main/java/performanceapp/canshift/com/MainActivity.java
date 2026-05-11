@@ -1,4 +1,4 @@
-package com.canshift.performanceapp;
+package performanceapp.canshift.com;
 
 import com.getcapacitor.BridgeActivity;
 
