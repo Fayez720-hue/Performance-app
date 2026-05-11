@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
-import { getProjectById, getTasksByProject, getProjectProgress, deleteProject } from "@/lib/db-queries"
+import { getProjectById, getTasksByProject, getProjectProgress, deleteProject, updateProject } from "@/lib/db-queries"
+
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   try {
@@ -34,5 +34,23 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     return NextResponse.json({ success: true })
   } catch (error) {
     return NextResponse.json({ error: "Failed to delete project" }, { status: 500 })
+  }
+}
+
+export async function PUT(req: Request, { params }: { params: { id: string } }) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    const userRole = (session.user as any)?.role
+    if (userRole !== "Admin" && userRole !== "Manager") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const data = await req.json()
+    await updateProject(parseInt(params.id), data)
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to update project" }, { status: 500 })
   }
 }
