@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, ArrowLeft, Plus } from "lucide-react"
 import type { User } from "@/types/user"
+import { MediaRenderer } from "@/components/tasks/media-renderer"
 
 export default function ProjectDetailPage() {
   const { data: session, status } = useSession()
@@ -64,7 +65,7 @@ export default function ProjectDetailPage() {
     )
   }
 
-  return (
+    return (
     <div className="flex-1 flex flex-col">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8 max-w-7xl">
@@ -76,6 +77,12 @@ export default function ProjectDetailPage() {
             <h1 className="text-2xl font-bold">{project?.name}</h1>
             {project?.description && (
               <p className="text-muted-foreground text-sm">{project.description}</p>
+            )}
+            {project?.references && (
+              <div className="mt-4 p-4 rounded-lg bg-muted/30 border border-border">
+                <h3 className="text-sm font-medium text-muted-foreground mb-2">References</h3>
+                <MediaRenderer text={project.references} />
+              </div>
             )}
           </div>
           <div className="text-right">
@@ -91,7 +98,7 @@ export default function ProjectDetailPage() {
           />
         </div>
 
-             {user && <TaskDeck user={user} projectId={parseInt(params.id as string)} />}
+        {user && <TaskDeck user={user} projectId={parseInt(params.id as string)} />}
       </main>
 
       {canManage && (
