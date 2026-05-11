@@ -81,6 +81,16 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
       .then(data => setProjects(Array.isArray(data) ? data : []))
       .catch(() => setProjects([]))
   }, [])
+    // Auto-select project from URL params
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const projectIdParam = params.get("projectId")
+      if (projectIdParam && projects.length > 0) {
+        setSelectedProject(projectIdParam)
+      }
+    }
+  }, [projects])
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
     defaultValues: {
