@@ -89,7 +89,7 @@ export default function ProjectsPageClient() {
       const res = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, description, references, assignedTo }),
+        body: JSON.stringify({ name, description, references, assignedTo: assignedTo === "none" ? "" : assignedTo }),
       })
       if (res.ok) {
         toast.success("Project created")
@@ -159,7 +159,7 @@ export default function ProjectsPageClient() {
                         <SelectValue placeholder="Select employee" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {employees.map((emp) => (
                           <SelectItem key={emp.email} value={emp.name}>
                             {emp.name}
