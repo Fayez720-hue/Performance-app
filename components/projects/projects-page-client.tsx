@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
-import { Loader2, Plus, FolderKanban, Trash2 } from "lucide-react"
+import { Loader2, Plus, FolderKanban, Trash2, Pencil } from "lucide-react"
 import { MediaUpload } from "@/components/tasks/media-upload"
 import { MediaRenderer } from "@/components/tasks/media-renderer"
 import { Textarea } from "@/components/ui/textarea"
@@ -31,6 +31,7 @@ export default function ProjectsPageClient() {
   const [creating, setCreating] = useState(false)
   const [references, setReferences] = useState("")
   const [assignedTo, setAssignedTo] = useState("")
+  const [editingProject, setEditingProject] = useState<any>(null)
   const [employees, setEmployees] = useState<any[]>([])
   const userRole = (session?.user as any)?.role
   const canManage = userRole === "Admin" || userRole === "Manager"
@@ -66,6 +67,34 @@ export default function ProjectsPageClient() {
       toast.error("Error deleting project")
     }
   }
+  const handleUpdate = async (e: React.FormEvent) => {
+  e.preventDefault()
+  if (!editingProject) return
+  setCreating(true)
+  try {
+    const res = await fetch(`/api/projects/${editingProject.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        name: editingProject.name, 
+        description: editingProject.description,
+        references: editingProject.references,
+        assignedTo: editingProject.assignedTo 
+      }),
+    })
+    if (res.ok) {
+      toast.success("Project updated")
+      setEditingProject(null)
+      fetchProjects()
+    } else {
+      toast.error("Failed to update project")
+    }
+  } catch (error) {
+    toast.error("Error updating project")
+  } finally {
+    setCreating(false)
+  }
+}
 
   const fetchProjects = async () => {
     try {
@@ -203,8 +232,38 @@ export default function ProjectsPageClient() {
             </CardContent>
           </Card>
         )}
-
-        {projects.length === 0 ? (
+        {editingProject && (
+          <Card className="mb-8 border-border">
+            <CardHeader>
+              <CardTitle>Edit Project</CardTitle>
+              <CardDescription>Update project details</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleUpdate} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Project Name</label>
+                  <Input
+                    value={editingProject.name}
+                    onChange={(e) => setEditingProject({ ...editingProject, name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Description</label>
+                  <Input
+                    value={editingProject.description || ""}
+                    onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={creating}>Save Changes</Button>
+                  <Button type="button" variant="outline" onClick={() => setEditingProject(null)}>Cancel</Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+         {projects.length === 0 ? (
           <div className="text-center py-20">
             <FolderKanban className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium text-muted-foreground">No projects yet</h3>
@@ -220,25 +279,37 @@ export default function ProjectsPageClient() {
                 className="border-border hover:border-primary/50 cursor-pointer transition-all"
                 onClick={() => router.push(`/projects/${project.id}`)}
               >
-                
                 <CardHeader className="flex flex-row items-start justify-between pb-2">
-                  <div>
-                    <CardTitle className="text-lg">{project.name}</CardTitle>
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-lg truncate">{project.name}</CardTitle>
                     {project.description && (
-                      <CardDescription>{project.description}</CardDescription>
+                      <CardDescription className="truncate">{project.description}</CardDescription>
                     )}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive -mt-1 -mr-2"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDelete(project.id, project.name)
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-1 flex-shrink-0 ml-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-primary"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setEditingProject(project)
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDelete(project.id, project.name)
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">

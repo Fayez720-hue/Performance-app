@@ -436,6 +436,15 @@ export async function createProject(data: { name: string; description?: string; 
   }).returning({ id: projects.id })
   return result[0].id
 }
+export async function updateProject(id: number, data: { name?: string; description?: string; references?: string; assignedTo?: string }): Promise<void> {
+  const updateData: any = {}
+  if (data.name !== undefined) updateData.name = data.name
+  if (data.description !== undefined) updateData.description = data.description
+  if (data.references !== undefined) updateData.references = data.references
+  if (data.assignedTo !== undefined) updateData.assignedTo = data.assignedTo
+  updateData.updatedAt = new Date()
+  await db.update(projects).set(updateData).where(eq(projects.id, id))
+}
 export async function deleteProject(id: number): Promise<void> {
   // First unlink all tasks from this project
   await db.update(tasks).set({ projectId: null }).where(eq(tasks.projectId, id))
