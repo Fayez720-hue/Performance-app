@@ -115,8 +115,20 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
   const submissionLink = form.watch("submissionLink")
   const [lastLink, setLastLink] = useState(task?.submissionLink || "")
 
+    // Auto-select project from URL params (create mode only)
   useEffect(() => {
-    // Only auto-switch to "Review" if the link has actually CHANGED and is a Google link
+    if (mode !== "create") return
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const projectIdParam = params.get("projectId")
+      if (projectIdParam && projects.length > 0) {
+        setSelectedProject(projectIdParam)
+      }
+    }
+  }, [projects, mode])
+
+  // Watch submission link for automatic progress update
+  useEffect(() => {
     if (submissionLink && submissionLink !== lastLink) {
       const isGoogleDriveLink =
         submissionLink.includes("drive.google.com") ||
