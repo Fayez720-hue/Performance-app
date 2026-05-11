@@ -139,7 +139,7 @@ export async function createTask(data: any): Promise<number> {
     name: data.name,
     date: data.date || currentTimestamp,
     task: data.task,
-    references: data.references || "",
+    refs: data.references || "",
     comments: data.comments || "",
     progress: data.progress || "To-do",
     taskStartingDate: data.taskStartingDate || "",
@@ -168,7 +168,7 @@ export async function updateTask(id: number, data: any): Promise<void> {
   if (data.name !== undefined) updateData.name = data.name
   if (data.date !== undefined) updateData.date = data.date
   if (data.task !== undefined) updateData.task = data.task
-  if (data.references !== undefined) updateData.references = data.references
+  if (data.references !== undefined) updateData.refs = data.references
   if (data.comments !== undefined) updateData.comments = data.comments
   if (data.progress !== undefined) updateData.progress = data.progress
   if (data.taskStartingDate !== undefined) updateData.taskStartingDate = data.taskStartingDate
