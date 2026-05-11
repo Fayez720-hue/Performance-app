@@ -91,8 +91,23 @@ export default function ProjectDetailPage() {
           />
         </div>
 
-        {user && <TaskDeck user={user} projectId={parseInt(params.id as string)} />}
+             {user && <TaskDeck user={user} projectId={parseInt(params.id as string)} />}
       </main>
+
+      {/* DEBUG */}
+      <p className="fixed bottom-2 left-2 text-xs text-white bg-black p-1 z-50">
+        canManage: {String(canManage)} | role: {userRole}
+      </p>
+
+
+      {canManage && (
+        <button
+          onClick={() => router.push(`/tasks/new?projectId=${params.id}`)}
+          className="fixed bottom-8 right-8 h-14 w-14 bg-teal-500 rounded-2xl shadow-[0_10px_30px_rgba(20,184,166,0.3)] flex items-center justify-center group active:scale-90 transition-all z-40 border border-teal-400/20"
+        >
+          <Plus className="text-white h-7 w-7 group-hover:rotate-90 transition-transform duration-500" />
+        </button>
+      )}
     </div>
   )
 }
