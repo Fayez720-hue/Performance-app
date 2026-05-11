@@ -194,8 +194,9 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
     } finally {
       setIsSubmitting(false)
     }
-  }
 
+  }
+  console.log("selectedProject:", selectedProject, "task.projectId:", task?.projectId, "projects:", projects.map(p => p.id))
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
