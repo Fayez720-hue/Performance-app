@@ -72,7 +72,15 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
 
   const canEditAllFields = userRole === "Admin" || userRole === "Manager"
   const isTeamMember = userRole === "Team Member"
+  const [projects, setProjects] = useState<any[]>([])
+  const [selectedProject, setSelectedProject] = useState<string>(task?.projectId?.toString() || "")
 
+  useEffect(() => {
+    fetch("/api/projects")
+      .then(res => res.json())
+      .then(data => setProjects(Array.isArray(data) ? data : []))
+      .catch(() => setProjects([]))
+  }, [])
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
     defaultValues: {
@@ -127,6 +135,7 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
       // Include change detection for notifications
       const payload = {
         ...values,
+         projectId: selectedProject || null,
         // Send as local ISO string (preserve the exact local time the user picked)
         deadline: values.deadline ? new Date(values.deadline).toISOString() : values.deadline,
         taskStartingDate: values.taskStartingDate ? new Date(values.taskStartingDate + ":00.000Z").toISOString().replace("Z", "") : values.taskStartingDate,
@@ -228,7 +237,30 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
             )}
           />
         </div>
-
+        {/* Project Selection */}
+        {canEditAllFields && (
+          <div className="grid gap-6 md:grid-cols-2">
+            <FormItem>
+              <FormLabel>Project</FormLabel>
+              <Select value={selectedProject} onValueChange={setSelectedProject}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="No project (standalone task)" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="">No project (standalone)</SelectItem>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id.toString()}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormItem>
+            <div />
+          </div>
+        )}
         {/* Task Description */}
         <FormField
           control={form.control}
