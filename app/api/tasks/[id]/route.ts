@@ -64,6 +64,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     let updateData: any = {
       ...existingTask,
       ...data,
+      projectId: data.projectId !== undefined ? data.projectId : existingTask.projectId,
       taskStartingDate,
       taskTimeTaken: totalTimeTakenStr,
       noOfEdits: Number(existingTask.noOfEdits) || 0,
