@@ -51,7 +51,7 @@ export function MediaRenderer({ text }: MediaRendererProps) {
                 {isUrl && (
                   <div className="flex items-center gap-1">
                     <Button variant="ghost" size="icon" className="h-6 w-6" asChild title="Open link">
-                      <a href={content} target="_blank" rel="noopener noreferrer">
+                      <a href={content} target="_self" rel="noopener noreferrer">
                         <ExternalLink className="h-3 w-3" />
                       </a>
                     </Button>
