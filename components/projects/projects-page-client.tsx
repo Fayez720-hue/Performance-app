@@ -29,7 +29,7 @@ export default function ProjectsPageClient() {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [creating, setCreating] = useState(false)
-  const [references, setReferences] = useState("")
+  const [attachments, setAttachments] = useState("")
   const [assignedTo, setAssignedTo] = useState("")
   const [editingProject, setEditingProject] = useState<any>(null)
   const [employees, setEmployees] = useState<any[]>([])
@@ -78,7 +78,7 @@ export default function ProjectsPageClient() {
       body: JSON.stringify({ 
         name: editingProject.name, 
         description: editingProject.description,
-        references: editingProject.references,
+        attachments: editingProject.attachments,
         assignedTo: editingProject.assignedTo 
       }),
     })
@@ -118,13 +118,13 @@ export default function ProjectsPageClient() {
       const res = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, description, references, assignedTo: assignedTo === "none" ? "" : assignedTo }),
+        body: JSON.stringify({ name, description, attachments, assignedTo: assignedTo === "none" ? "" : assignedTo }),
       })
       if (res.ok) {
         toast.success("Project created")
         setName("")
         setDescription("")
-        setReferences("")
+        setAttachments("")
         setAssignedTo("")
         setShowCreate(false)
         fetchProjects()
@@ -207,17 +207,17 @@ export default function ProjectsPageClient() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">References</label>
+                  <label className="text-sm font-medium">attachments</label>
                   <Textarea
                     placeholder="Add any references or links..."
                     className="min-h-[80px] resize-none"
-                    value={references}
-                    onChange={(e) => setReferences(e.target.value)}
+                    value={attachments}
+                    onChange={(e) => setAttachments(e.target.value)}
                   />
                   <MediaUpload
-                    onUpload={(attachment) => setReferences(prev => `${prev}${prev ? '\n' : ''}${attachment}`)}
+                    onUpload={(attachment) => setAttachments(prev => `${prev}${prev ? '\n' : ''}${attachment}`)}
                   />
-                  <MediaRenderer text={references} />
+                  <MediaRenderer text={attachments} />
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" disabled={creating}>
@@ -277,16 +277,16 @@ export default function ProjectsPageClient() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">References</label>
+                  <label className="text-sm font-medium">Attachments</label>
                   <Textarea
                     className="min-h-[80px] resize-none"
-                    value={editingProject.references || ""}
-                    onChange={(e) => setEditingProject({ ...editingProject, references: e.target.value })}
+                    value={editingProject.attachments || ""}
+                    onChange={(e) => setEditingProject({ ...editingProject, attachments: e.target.value })}
                   />
                   <MediaUpload
-                    onUpload={(attachment) => setEditingProject(prev => ({ ...prev, references: `${prev.references || ''}${prev.references ? '\n' : ''}${attachment}` }))}
+                    onUpload={(attachment) => setEditingProject(prev => ({ ...prev, attachments: `${prev.attachments || ''}${prev.attachments ? '\n' : ''}${attachment}` }))}
                   />
-                  <MediaRenderer text={editingProject.references || ""} />
+                  <MediaRenderer text={editingProject.attachments || ""} />
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" disabled={creating}>Save Changes</Button>

@@ -430,7 +430,7 @@ export async function createProject(data: { name: string; description?: string; 
   const result = await db.insert(projects).values({
     name: data.name,
     description: data.description || "",
-    references: data.references || "",
+    attachments: data.references || "",
     assignedTo: data.assignedTo || "",
     createdBy: data.createdBy || null,
   }).returning({ id: projects.id })
@@ -440,7 +440,7 @@ export async function updateProject(id: number, data: { name?: string; descripti
   const updateData: any = {}
   if (data.name !== undefined) updateData.name = data.name
   if (data.description !== undefined) updateData.description = data.description
-  if (data.references !== undefined) updateData.references = data.references
+      if (data.references !== undefined) updateData.attachments = data.references
   if (data.assignedTo !== undefined) updateData.assignedTo = data.assignedTo
   updateData.updatedAt = new Date()
   await db.update(projects).set(updateData).where(eq(projects.id, id))

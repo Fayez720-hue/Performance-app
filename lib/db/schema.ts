@@ -91,7 +91,7 @@ export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description").default(""),
-  refs: text("refs").default(""),
+  attachments: text("attachments").default(""),
   assignedTo: text("assigned_to").default(""),
   createdBy: text("created_by"),
   createdAt: timestamp("created_at").defaultNow(),

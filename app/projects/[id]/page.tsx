@@ -78,10 +78,10 @@ export default function ProjectDetailPage() {
             {project?.description && (
               <p className="text-muted-foreground text-sm">{project.description}</p>
             )}
-            {project?.references && (
+            {project?.attachments && (
               <div className="mt-4 p-4 rounded-lg bg-muted/30 border border-border">
-                <h3 className="text-sm font-medium text-muted-foreground mb-2">References</h3>
-                <MediaRenderer text={project.references} />
+                <h3 className="text-sm font-medium text-muted-foreground mb-2">Attachments</h3>
+                <MediaRenderer text={project.attachments} />
               </div>
             )}
           </div>
