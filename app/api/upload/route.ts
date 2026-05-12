@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     }
 
     const blob = await put(fileName, fileBuffer, {
-      
+      addRandomSuffix: true,
         access: 'private',
     token: process.env.BLOB_READ_WRITE_TOKEN,
 });
