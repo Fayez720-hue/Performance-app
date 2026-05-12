@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { put } from '@vercel/blob';
 
 export async function POST(request: Request) {
   try {
@@ -10,10 +11,8 @@ export async function POST(request: Request) {
     }
 
     const contentType = request.headers.get('content-type') || '';
-
-    let fileBuffer: Buffer;
     let fileName: string;
-    let fileType: string;
+    let fileBuffer: Buffer;
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
@@ -23,7 +22,6 @@ export async function POST(request: Request) {
       }
       fileBuffer = Buffer.from(await file.arrayBuffer());
       fileName = file.name;
-      fileType = file.type;
     } else {
       const json = await request.json();
       if (!json.file) {
@@ -31,24 +29,13 @@ export async function POST(request: Request) {
       }
       fileBuffer = Buffer.from(json.file, 'base64');
       fileName = json.name || `upload_${Date.now()}`;
-      fileType = json.type || 'image/jpeg';
     }
 
-    const uploadFormData = new FormData();
-    const blob = new Blob([fileBuffer], { type: fileType });
-    uploadFormData.append('file', blob, fileName);
-
-    const response = await fetch('https://0x0.st', {
-      method: 'POST',
-      body: uploadFormData,
+    const blob = await put(fileName, fileBuffer, {
+      access: 'public',
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to upload');
-    }
-
-    const url = await response.text();
-    return NextResponse.json({ url: url.trim() });
+    return NextResponse.json({ url: blob.url });
   } catch (error) {
     console.error('Upload API Error:', error);
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
