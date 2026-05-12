@@ -36,7 +36,6 @@ export async function POST(req: Request) {
     const data = await req.json()
     const id = await createProject({ ...data, createdBy: session.user?.email || "" })
 
-    // Notify assigned person and all managers/admins
     const users = await getUsers()
     const recipients = new Set<string>()
 
