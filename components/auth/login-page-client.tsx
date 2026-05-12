@@ -23,7 +23,20 @@ async function registerPushNotifications() {
       if (result.receive !== 'granted') return
     }
 
-    await PushNotifications.register()
+      await PushNotifications.register()
+    
+    // Add notification channel for Android
+    try {
+      await PushNotifications.createChannel({
+        id: 'default',
+        name: 'Notifications',
+        importance: 5,
+        visibility: 1,
+        sound: 'default',
+      })
+    } catch (e) {
+      console.log('Channel might already exist:', e)
+    }
 
     PushNotifications.addListener('registration', async (token) => {
       await fetch('/api/users/push-token', {
