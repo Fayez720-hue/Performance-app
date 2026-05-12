@@ -32,11 +32,12 @@ export async function POST(request: Request) {
     }
 
     const blob = await put(fileName, fileBuffer, {
+      
         access: 'private',
     token: process.env.BLOB_READ_WRITE_TOKEN,
 });
-
-    return NextResponse.json({ Aurl: blob.url });
+    console.log("BLOB RESPONSE:", blob);
+    return NextResponse.json({ url: blob.url });
   } catch (error) {
     console.error('Upload API Error:', error);
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
