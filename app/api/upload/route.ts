@@ -38,17 +38,17 @@ export async function POST(request: Request) {
     const blob = new Blob([fileBuffer], { type: fileType });
     uploadFormData.append('file', blob, fileName);
 
-    const response = await fetch('https://file.io', {
+    const response = await fetch('https://0x0.st', {
       method: 'POST',
       body: uploadFormData,
     });
 
     if (!response.ok) {
-      throw new Error('Failed to upload to temporary storage');
+      throw new Error('Failed to upload');
     }
 
-    const data = await response.json();
-    return NextResponse.json({ url: data.link });
+    const url = await response.text();
+    return NextResponse.json({ url: url.trim() });
   } catch (error) {
     console.error('Upload API Error:', error);
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
