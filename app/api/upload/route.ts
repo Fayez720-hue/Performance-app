@@ -32,8 +32,8 @@ export async function POST(request: Request) {
     }
 
     const blob = await put(fileName, fileBuffer, {
-    token: process.env.BLOB_READ_WRITE_TOKEN,
-});
+      addRandomSuffix: true,
+    });
 
     return NextResponse.json({ url: blob.url });
   } catch (error) {
