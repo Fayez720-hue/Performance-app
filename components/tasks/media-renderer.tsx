@@ -25,19 +25,19 @@ export function MediaRenderer({ text }: MediaRendererProps) {
         let lastMatchEnd = 0;
 
         lineMatches.forEach((m, j) => {
-          // Push text before match
           if (m.index !== undefined && m.index > lastMatchEnd) {
             segments.push(line.substring(lastMatchEnd, m.index));
           }
 
-          const type = (m[2] || '').toLowerCase(); // image, video, etc
-          let content = m[3] || ''; // filename or URL
+          const type = (m[2] || '').toLowerCase();
+          let content = m[3] || '';
           
           if (content.startsWith('http://')) {
             content = content.replace('http://', 'https://');
           }
 
           const isUrl = content.startsWith('http') || content.startsWith('data:');
+          const isVercelBlob = content.includes('blob.vercel-storage.com');
 
           segments.push(
             <div key={`match-${j}`} className="my-2 flex flex-col gap-2 rounded-md border border-border bg-muted/50 p-2 max-w-sm">
@@ -64,16 +64,17 @@ export function MediaRenderer({ text }: MediaRendererProps) {
                 )}
               </div>
 
-              {isUrl && (type.includes('audio') || content.match(/\.(mp3|wav|ogg|m4a)/i)) && (
+              {/* Audio */}
+              {isUrl && (type.includes('audio') || content.match(/\.(mp3|wav|ogg|m4a|webm)/i)) && (
                 <div className="w-full bg-black/5 rounded p-1">
                   <audio controls className="w-full h-8 scale-90 origin-left">
                     <source src={content} />
-                    Your browser does not support the audio element.
                   </audio>
                 </div>
               )}
 
-              {isUrl && (type.includes('image') || content.match(/\.(jpg|jpeg|png|gif|webp)/i)) && (
+              {/* Image - including Vercel Blob URLs */}
+              {isUrl && (type.includes('image') || content.match(/\.(jpg|jpeg|png|gif|webp|svg)/i) || isVercelBlob) && (
                 <div className="relative aspect-video w-full overflow-hidden rounded-sm border border-border bg-black/20">
                   <img
                     src={content}
@@ -83,6 +84,15 @@ export function MediaRenderer({ text }: MediaRendererProps) {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
                   />
+                </div>
+              )}
+
+              {/* Video */}
+              {isUrl && (type.includes('video') || content.match(/\.(mp4|webm|mov|avi)/i)) && (
+                <div className="relative aspect-video w-full overflow-hidden rounded-sm border border-border bg-black/20">
+                  <video controls className="h-full w-full object-contain">
+                    <source src={content} />
+                  </video>
                 </div>
               )}
 

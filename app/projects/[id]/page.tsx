@@ -78,6 +78,11 @@ export default function ProjectDetailPage() {
             {project?.description && (
               <p className="text-muted-foreground text-sm">{project.description}</p>
             )}
+            {project?.assignedTo && (
+            <p className="text-sm text-muted-foreground mt-1">
+           👤 Assigned to: <span className="font-medium text-foreground">{project.assignedTo}</span>
+           </p>
+          )}
             {project?.attachments && (
               <div className="mt-4 p-4 rounded-lg bg-muted/30 border border-border">
                 <h3 className="text-sm font-medium text-muted-foreground mb-2">Attachments</h3>
