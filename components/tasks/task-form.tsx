@@ -186,7 +186,11 @@ export function TaskForm({ task, mode, userRole, userName, employees }: TaskForm
       }
 
       toast.success(mode === "create" ? "Task created successfully" : "Task updated successfully")
-      router.push("/tasks")
+      if (selectedProject && selectedProject !== "none") {
+  router.push(`/projects/${selectedProject}`)
+} else {
+  router.push("/tasks")
+}
       router.refresh()
     } catch (error) {
       console.error("Task Save Error:", error)
