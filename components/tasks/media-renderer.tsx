@@ -64,7 +64,7 @@ export function MediaRenderer({ text }: MediaRendererProps) {
                 )}
               </div>
 
-              {/* Audio */}
+              {/* Audio only */}
               {isUrl && (type.includes('audio') || content.match(/\.(mp3|wav|ogg|m4a|webm)/i)) && (
                 <div className="w-full bg-black/5 rounded p-1">
                   <audio controls className="w-full h-8 scale-90 origin-left">
@@ -73,8 +73,8 @@ export function MediaRenderer({ text }: MediaRendererProps) {
                 </div>
               )}
 
-              {/* Image - including Vercel Blob URLs */}
-              {isUrl && (type.includes('image') || content.match(/\.(jpg|jpeg|png|gif|webp|svg)/i) || isVercelBlob) && (
+              {/* Image - but NOT for audio/video types */}
+              {isUrl && (type.includes('image') || content.match(/\.(jpg|jpeg|png|gif|webp|svg)/i) || (isVercelBlob && !type.includes('audio') && !type.includes('video'))) && (
                 <div className="relative aspect-video w-full overflow-hidden rounded-sm border border-border bg-black/20">
                   <img
                     src={content}
@@ -87,7 +87,7 @@ export function MediaRenderer({ text }: MediaRendererProps) {
                 </div>
               )}
 
-              {/* Video */}
+              {/* Video only */}
               {isUrl && (type.includes('video') || content.match(/\.(mp4|webm|mov|avi)/i)) && (
                 <div className="relative aspect-video w-full overflow-hidden rounded-sm border border-border bg-black/20">
                   <video controls className="h-full w-full object-contain">
