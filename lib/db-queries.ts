@@ -426,11 +426,11 @@ export async function getProjectById(id: number): Promise<any | null> {
   return rows.length > 0 ? rows[0] : null
 }
 
-export async function createProject(data: { name: string; description?: string; references?: string; assignedTo?: string; createdBy?: string }): Promise<number> {
+export async function createProject(data: { name: string; description?: string; attachments?: string; references?: string; assignedTo?: string; createdBy?: string }): Promise<number> {
   const result = await db.insert(projects).values({
     name: data.name,
     description: data.description || "",
-    attachments: data.references || "",
+    attachments: data.attachments || data.references || "",
     assignedTo: data.assignedTo || "",
     createdBy: data.createdBy || null,
   }).returning({ id: projects.id })
