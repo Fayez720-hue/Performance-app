@@ -4,7 +4,10 @@ import type { NotificationType } from "@/types/user"
 import type { Task } from "@/types/task"
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
-
+  // 2. Send native push notification if user has a token
+  const recipient = await getUserByEmail(recipientEmail)
+  console.log("ATTEMPTING PUSH:", { recipientEmail, hasToken: !!recipient?.pushToken })
+  if (recipient?.pushToken) {
 // ============ FCM V1 Push Notification ============
 
 async function sendPushNotification(token: string, title: string, body: string, data: any = {}) {
