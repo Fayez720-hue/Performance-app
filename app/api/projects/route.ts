@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
-import { getProjects, createProject, getProjectProgress } from "@/lib/db-queries"
+import { createNotification, getProjects, createProject, getProjectProgress, getUsers } from "@/lib/db-queries"
 
 export async function GET() {
   try {
@@ -10,7 +10,6 @@ export async function GET() {
 
     const projects = await getProjects()
     
-    // Add progress to each project
     const projectsWithProgress = await Promise.all(
       projects.map(async (p) => ({
         ...p,
@@ -36,6 +35,31 @@ export async function POST(req: Request) {
 
     const data = await req.json()
     const id = await createProject({ ...data, createdBy: session.user?.email || "" })
+
+    // Notify assigned person and all managers/admins
+    const users = await getUsers()
+    const recipients = new Set<string>()
+
+    if (data.assignedTo) {
+      const assignee = users.find(u => u.name === data.assignedTo || u.email === data.assignedTo)
+      if (assignee) recipients.add(assignee.email)
+    }
+
+    users.filter(u => u.role === "Admin" || u.role === "Manager").forEach(u => {
+      if (u.email !== session.user?.email) recipients.add(u.email)
+    })
+
+    for (const email of recipients) {
+      await createNotification({
+        userEmail: email,
+        type: "task_assigned",
+        taskId: id,
+        message: `New project "${data.name}" has been created${data.assignedTo ? ` and assigned to ${data.assignedTo}` : ""} by ${session.user?.name || session.user?.email}`,
+        read: false,
+        timestamp: new Date().toISOString(),
+      })
+    }
+
     return NextResponse.json({ id })
   } catch (error) {
     return NextResponse.json({ error: "Failed to create project" }, { status: 500 })
