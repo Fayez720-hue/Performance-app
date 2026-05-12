@@ -66,6 +66,8 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
         if (u.email !== session.user?.email) recipients.add(u.email)
       })
 
+      const { sendNotification } = await import("@/lib/notifications")
+
       for (const email of recipients) {
         await createNotification({
           userEmail: email,
@@ -75,6 +77,17 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
           read: false,
           timestamp: new Date().toISOString(),
         })
+
+        try {
+          await sendNotification({
+            type: "task_assigned",
+            task: { id: projectId, task: project.name, name: project.assignedTo || "Unassigned", progress: "To-do", deadline: "" } as any,
+            recipientEmail: email,
+            senderName: session.user?.name || undefined,
+          })
+        } catch (e) {
+          console.error("Push notification failed:", e)
+        }
       }
     }
 

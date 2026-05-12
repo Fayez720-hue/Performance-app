@@ -48,6 +48,8 @@ export async function POST(req: Request) {
       if (u.email !== session.user?.email) recipients.add(u.email)
     })
 
+    const { sendNotification } = await import("@/lib/notifications")
+    
     for (const email of recipients) {
       await createNotification({
         userEmail: email,
@@ -57,6 +59,17 @@ export async function POST(req: Request) {
         read: false,
         timestamp: new Date().toISOString(),
       })
+      
+      try {
+        await sendNotification({
+          type: "task_assigned",
+          task: { id, task: data.name, name: data.assignedTo || "Unassigned", progress: "To-do", deadline: "" } as any,
+          recipientEmail: email,
+          senderName: session.user?.name || undefined,
+        })
+      } catch (e) {
+        console.error("Push notification failed:", e)
+      }
     }
 
     return NextResponse.json({ id })
