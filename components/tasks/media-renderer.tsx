@@ -1,6 +1,7 @@
 import React from 'react';
 import { ExternalLink, File, Image, Video, Music, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Browser } from '@capacitor/browser';
 
 interface MediaRendererProps {
   text: string;
@@ -51,9 +52,13 @@ export function MediaRenderer({ text }: MediaRendererProps) {
                 {isUrl && (
                   <div className="flex items-center gap-1">
   <Button variant="ghost" size="icon" className="h-6 w-6" title="Open link"
-  onClick={(e) => {
+  onClick={async (e) => {
     e.preventDefault();
-    window.open(content, '_system');
+    try {
+      await Browser.open({ url: content, toolbarColor: '#090a11' });
+    } catch {
+      window.open(content, '_blank');
+    }
   }}
 >
   <ExternalLink className="h-3 w-3" />
