@@ -16,8 +16,9 @@ import {
   FolderKanban,
 } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
+import { fetcher } from '@/lib/api';
 
 import {
   Sidebar,
@@ -42,9 +43,9 @@ export function AppSidebar() {
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { setOpen } = useSidebar();
   const [isTasksExpanded, setIsTasksExpanded] = React.useState(true);
-  const [reviewCount, setReviewCount] = React.useState(0);
 
   const userRole = (session?.user as any)?.role || 'Team Member';
   const isAdminOrManager = userRole === 'Admin' || userRole === 'Manager';
@@ -52,20 +53,13 @@ export function AppSidebar() {
   // Fetch tasks to get review count (only for Admin/Manager)
   const { data: tasks } = useSWR<Task[]>(
     isAdminOrManager && session?.user ? '/api/tasks' : null,
-    async (url: string) => {
-      const res = await fetch(url);
-      return res.json();
-    },
-    {
-      refreshInterval: 30000,
-      onSuccess: (data) => {
-        if (Array.isArray(data)) {
-          const count = data.filter((task: Task) => task.progress === 'Review').length;
-          setReviewCount(count);
-        }
-      }
-    }
+    fetcher,
+    { refreshInterval: 30000 }
   );
+
+  const reviewCount = React.useMemo(() => {
+    return tasks?.filter((task: Task) => task.progress === 'Review').length || 0;
+  }, [tasks]);
 
   const navigate = (url: string) => {
     router.push(url);
@@ -164,40 +158,54 @@ export function AppSidebar() {
                             )} />
                             <span className="text-base">{item.title}</span>
                           </div>
-                          {isTasksExpanded ? (
-                            <ChevronDown className="h-4 w-4 text-white/40" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4 text-white/40" />
-                          )}
+                          <div className="flex items-center gap-2">
+                            {!isTasksExpanded && isAdminOrManager && reviewCount > 0 && (
+                              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+                                {reviewCount > 99 ? '99+' : reviewCount}
+                              </span>
+                            )}
+                            {isTasksExpanded ? (
+                              <ChevronDown className="h-4 w-4 text-white/40" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-white/40" />
+                            )}
+                          </div>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                       
                       {/* Sub-items (All Tasks & Review) */}
                       {isTasksExpanded && item.subItems && (
                         <div className="ml-6 space-y-1">
-                          {item.subItems.map((subItem) => (
-                            <SidebarMenuItem key={subItem.title}>
-                              <SidebarMenuButton
-                                onClick={() => navigate(subItem.url)}
-                                className={cn(
-                                  "h-10 px-3 rounded-xl transition-all duration-200 group/btn w-full justify-between",
-                                  pathname === subItem.url.split('?')[0] && !subItem.url.includes('?') 
-                                    ? "bg-teal-500/10 text-teal-400 font-medium border border-teal-500/10"
-                                    : "hover:bg-white/5 text-white/50 hover:text-white"
-                                )}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <subItem.icon className="h-4 w-4" />
-                                  <span className="text-sm">{subItem.title}</span>
-                                </div>
-                                {subItem.badge !== undefined && subItem.badge > 0 && (
-                                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
-                                    {subItem.badge > 99 ? '99+' : subItem.badge}
-                                  </span>
-                                )}
-                              </SidebarMenuButton>
-                            </SidebarMenuItem>
-                          ))}
+                          {item.subItems.map((subItem) => {
+                            const isReview = subItem.url.includes('filter=review');
+                            const isActive = isReview
+                              ? searchParams?.get('filter') === 'review'
+                              : pathname === subItem.url && searchParams?.get('filter') !== 'review';
+
+                            return (
+                              <SidebarMenuItem key={subItem.title}>
+                                <SidebarMenuButton
+                                  onClick={() => navigate(subItem.url)}
+                                  className={cn(
+                                    "h-10 px-3 rounded-xl transition-all duration-200 group/btn w-full justify-between",
+                                    isActive
+                                      ? "bg-teal-500/10 text-teal-400 font-medium border border-teal-500/10"
+                                      : "hover:bg-white/5 text-white/50 hover:text-white"
+                                  )}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <subItem.icon className="h-4 w-4" />
+                                    <span className="text-sm">{subItem.title}</span>
+                                  </div>
+                                  {subItem.badge !== undefined && subItem.badge > 0 && (
+                                    <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+                                      {subItem.badge > 99 ? '99+' : subItem.badge}
+                                    </span>
+                                  )}
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            );
+                          })}
                         </div>
                       )}
                     </>
