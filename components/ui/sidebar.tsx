@@ -43,13 +43,17 @@ export function SidebarProvider({ children, defaultOpen = true }: SidebarProvide
 }
 
 // Sidebar Component
-export function Sidebar({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
+  collapsible?: "offcanvas" | "icon" | "none";
+}
+
+export function Sidebar({ className, children, collapsible = "offcanvas", ...props }: SidebarProps) {
   const { open } = useSidebar();
   
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 h-full bg-[#090a11] border-r border-white/5 transition-all duration-300 ease-in-out",
+        "fixed left-0 top-0 z-40 h-full bg-[#090a11] transition-all duration-300 ease-in-out",
         open ? "w-64" : "w-0 overflow-hidden",
         className
       )}
