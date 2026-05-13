@@ -1,8 +1,9 @@
 "use client"
 
+import Image from 'next/image';
 import Link from "next/link"
 import { useSession } from '@/components/providers/session-provider'
-import { ClipboardList, Settings } from "lucide-react"
+import { Settings } from "lucide-react"
 import { UserNav } from "@/components/auth/user-nav"
 import { NotificationBell } from "@/components/notifications/notification-bell"
 import { SidebarToggle } from "./sidebar-toggle"
@@ -15,6 +16,28 @@ export function Header() {
       <div className="flex h-16 items-center justify-between px-4 lg:px-8">
         <div className="flex items-center gap-4">
           <SidebarToggle />
+          
+          {/* Logo and Company Name */}
+          <Link href="/dashboard" className="flex items-center gap-2 ml-2 transition-opacity hover:opacity-80">
+            <div className="relative w-8 h-8 overflow-hidden rounded-lg bg-teal-500/10 flex items-center justify-center">
+              <Image
+                src="/CANSHIFTTT-02.png"
+                alt="CANSHIFT"
+                width={32}
+                height={32}
+                className="object-contain p-0.5"
+                priority
+              />
+            </div>
+            <div className="hidden sm:block">
+              <span className="text-white font-bold text-sm leading-tight block">
+                CANSHIFT
+              </span>
+              <span className="text-teal-400 text-[8px] font-medium tracking-wide block">
+                MARKETING & PRODUCTION
+              </span>
+            </div>
+          </Link>
         </div>
 
         <div className="flex items-center gap-3">
