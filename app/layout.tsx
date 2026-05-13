@@ -7,10 +7,22 @@ import { ReturnToAppHandler } from '@/components/auth/return-to-app-handler'
 import { NotificationManager } from '@/components/notifications/notification-manager'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
+import { headers } from 'next/headers'
 
 export const dynamic = "force-dynamic"
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const headersList = await headers()
+  const pathname = headersList.get('x-pathname') || ''
+  
+  // Routes where sidebar should NOT appear
+  const noSidebarRoutes = ['/login', '/auth/callback']
+  const showSidebar = !noSidebarRoutes.some(route => pathname === route || pathname.startsWith(route))
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="font-sans antialiased">
@@ -23,12 +35,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             <ReturnToAppHandler />
             <NotificationManager />
-            <SidebarProvider defaultOpen={true}>
-              <AppSidebar />
-              <SidebarInset>
+            {showSidebar ? (
+              <SidebarProvider defaultOpen={true}>
+                <AppSidebar />
+                <SidebarInset>
+                  {children}
+                </SidebarInset>
+              </SidebarProvider>
+            ) : (
+              <div className="min-h-screen">
                 {children}
-              </SidebarInset>
-            </SidebarProvider>
+              </div>
+            )}
             <Toaster position="top-right" richColors />
           </AuthProvider>
         </ThemeProvider>
