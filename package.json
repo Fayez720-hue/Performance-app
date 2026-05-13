@@ -21,7 +21,6 @@
     "@capacitor/filesystem": "^8.1.2",
     "@capacitor/local-notifications": "^8.0.2",
     "@capacitor/push-notifications": "^8.0.3",
-    "@capgo/inappbrowser": "^8.6.6",
     "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",
     "@hookform/resolvers": "^3.9.1",
     "@neondatabase/serverless": "^1.1.0",

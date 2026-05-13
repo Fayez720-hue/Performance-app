@@ -1,4 +1,3 @@
-// app/components/browser-handler.tsx
 'use client';
 
 import { useEffect } from 'react';
@@ -8,11 +7,17 @@ export function BrowserHandler() {
   useEffect(() => {
     const setupExternalLinkHandler = async () => {
       // Only run in native Capacitor app
-      if (!Capacitor.isNativePlatform()) return;
+      if (!Capacitor.isNativePlatform()) {
+        console.log('Not in native platform');
+        return;
+      }
+
+      console.log('Native platform detected, setting up browser handler');
 
       try {
-        // Dynamically import the InAppBrowser plugin
-        const { InAppBrowser } = await import('@capgo/inappbrowser');
+        // Use the official Capacitor Browser plugin
+        const { Browser } = await import('@capacitor/browser');
+        console.log('Browser plugin loaded successfully');
         
         // Handle clicks on anchor tags
         const handleExternalLinks = async (e: MouseEvent) => {
@@ -29,28 +34,16 @@ export function BrowserHandler() {
           const isExternal = url.hostname !== currentUrl.hostname;
           
           if (isExternal) {
+            console.log('Opening external link:', link.href);
             e.preventDefault();
             e.stopPropagation();
             
             try {
-              await InAppBrowser.open({
-                url: link.href,
-                toolbarColor: '#1A1A2E',  // Match your theme
-                showTitle: true,           // Show page title
-                showArrow: false,          // false = X button, true = back arrow
-                disableShare: true,        // Hide share button
-                disableDownload: true,     // Hide download button
-                // Android specific
-                navigationBarColor: '#1A1A2E',
-                // iOS specific
-                presentationStyle: 'popover'
-              });
+              await Browser.open({ url: link.href });
             } catch (error) {
-              console.error('Failed to open InAppBrowser:', error);
-              // Fallback for development
-              if (process.env.NODE_ENV === 'development') {
-                window.open(link.href, '_blank');
-              }
+              console.error('Failed to open browser:', error);
+              // Fallback
+              window.open(link.href, '_blank');
             }
           }
         };
@@ -58,36 +51,13 @@ export function BrowserHandler() {
         // Add global click listener
         document.addEventListener('click', handleExternalLinks, true);
         
-        // Also handle window.open calls
-        const originalWindowOpen = window.open;
-        window.open = function(url?: string, target?: string, features?: string) {
-          if (url && url.startsWith('http')) {
-            const currentUrl = new URL(window.location.href);
-            const urlObj = new URL(url);
-            
-            if (urlObj.hostname !== currentUrl.hostname) {
-              InAppBrowser.open({
-                url: url,
-                toolbarColor: '#1A1A2E',
-                showTitle: true,
-                showArrow: false,
-                disableShare: true,
-                disableDownload: true
-              }).catch(console.error);
-              return null;
-            }
-          }
-          return originalWindowOpen.call(window, url, target, features);
-        };
-        
         // Cleanup
         return () => {
           document.removeEventListener('click', handleExternalLinks, true);
-          window.open = originalWindowOpen;
         };
         
       } catch (error) {
-        console.error('Failed to load InAppBrowser plugin:', error);
+        console.error('Failed to load Browser plugin:', error);
       }
     };
     
