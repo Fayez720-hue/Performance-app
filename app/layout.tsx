@@ -19,10 +19,9 @@ export default async function RootLayout({
   const headersList = await headers()
   const pathname = headersList.get('x-pathname') || ''
   
-  // Routes where sidebar should NOT appear
-  const noSidebarRoutes = ['/login', '/auth/callback']
-  const showSidebar = !noSidebarRoutes.some(route => pathname === route || pathname.startsWith(route))
-
+  // Simple check - hide sidebar on login and callback pages
+  const isAuthPage = pathname === '/login' || pathname === '/auth/callback'
+  
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="font-sans antialiased">
@@ -35,7 +34,7 @@ export default async function RootLayout({
           <AuthProvider>
             <ReturnToAppHandler />
             <NotificationManager />
-            {showSidebar ? (
+            {!isAuthPage ? (
               <SidebarProvider defaultOpen={true}>
                 <AppSidebar />
                 <SidebarInset>
