@@ -4,64 +4,94 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    /* Light Mode - Enhanced Comfort */
+    --background: 210 20% 98%;        /* Softer off-white instead of pure white */
+    --foreground: 220 15% 12%;        /* Darker for better contrast */
+    
+    --card: 0 0% 100%;                /* Keep cards white for content clarity */
+    --card-foreground: 220 15% 12%;
+    
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 171 66% 44%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 171 66% 44%;
-    --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
+    --popover-foreground: 220 15% 12%;
+    
+    /* Primary - Slightly softer teal */
+    --primary: 171 70% 42%;           /* #0B8A7C - More comfortable teal */
+    --primary-foreground: 0 0% 100%;
+    
+    /* Secondary - Warmer gray */
+    --secondary: 30 10% 96%;          /* Slight warm tint for comfort */
+    --secondary-foreground: 220 15% 20%;
+    
+    /* Muted - Softer contrast for secondary text */
+    --muted: 210 15% 96%;
+    --muted-foreground: 220 10% 45%;   /* Softer gray for less eye strain */
+    
+    /* Accent - Warm amber for highlights */
+    --accent: 35 90% 96%;             /* Very light warm accent */
+    --accent-foreground: 30 60% 35%;   /* Warm amber text */
+    
+    --destructive: 0 75% 55%;         /* Slightly softer red */
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 220 13% 90%;            /* Softer border color */
+    --input: 220 13% 90%;
+    --ring: 171 70% 42%;
+    
+    --radius: 0.75rem;                /* Larger radius for softer feel */
+    
+    /* Sidebar specific - Light mode */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 15% 20%;
+    --sidebar-primary: 171 70% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 15% 96%;
+    --sidebar-accent-foreground: 220 15% 20%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 171 70% 42%;
   }
 
   .dark {
+    /* Dark Mode - Keep your existing but enhanced */
     --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 171 66% 44%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 171 66% 44%;
-    --sidebar-background: 240 10% 3.9%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 171 66% 44%;
+    --foreground: 210 20% 98%;        /* Slightly softer white */
+    
+    --card: 240 10% 4.5%;
+    --card-foreground: 210 20% 98%;
+    
+    --popover: 240 10% 4.5%;
+    --popover-foreground: 210 20% 98%;
+    
+    /* Primary - Slightly brighter in dark mode */
+    --primary: 171 70% 48%;           /* Brighter teal for dark mode */
+    --primary-foreground: 240 10% 3.9%;
+    
+    /* Secondary - Darker with subtle warmth */
+    --secondary: 240 5% 12%;
+    --secondary-foreground: 210 20% 98%;
+    
+    --muted: 240 5% 12%;
+    --muted-foreground: 240 5% 65%;
+    
+    /* Accent - Warmer in dark mode */
+    --accent: 30 30% 15%;
+    --accent-foreground: 35 90% 65%;
+    
+    --destructive: 0 65% 45%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 240 5% 15%;
+    --input: 240 5% 15%;
+    --ring: 171 70% 48%;
+    
+    /* Sidebar specific - Dark mode */
+    --sidebar-background: 240 10% 4.5%;
+    --sidebar-foreground: 210 20% 90%;
+    --sidebar-primary: 171 70% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 171 66% 44%;
+    --sidebar-accent: 240 5% 12%;
+    --sidebar-accent-foreground: 210 20% 90%;
+    --sidebar-border: 240 5% 15%;
+    --sidebar-ring: 171 70% 48%;
   }
 }
 
@@ -69,7 +99,68 @@
   * {
     @apply border-border;
   }
+  
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  /* Smooth transitions for theme switching */
+  * {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  /* Card hover effect */
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-lg hover:shadow-primary/5 hover:scale-[1.01];
+  }
+
+  /* Task card styling */
+  .task-card {
+    @apply bg-card border border-border rounded-xl p-4 transition-all duration-200;
+  }
+  
+  .task-card:hover {
+    @apply border-primary/30 shadow-md;
+  }
+
+  /* Button hover enhancements */
+  .btn-soft {
+    @apply transition-all duration-200 hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  /* Input focus styles */
+  input:focus, textarea:focus, select:focus {
+    @apply ring-2 ring-primary/20 ring-offset-2 ring-offset-background;
+  }
+
+  /* Scrollbar styling for better usability */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-muted rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full hover:bg-muted-foreground/50 transition-colors;
+  }
+}
+
+@layer utilities {
+  /* Text balance for better readability */
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Subtle gradient backgrounds */
+  .bg-subtle-gradient {
+    background: linear-gradient(135deg, var(--background) 0%, var(--muted) 100%);
   }
 }
