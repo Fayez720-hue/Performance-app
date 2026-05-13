@@ -1,4 +1,6 @@
-import type { Metadata } from 'next'
+'use client';
+
+import { usePathname } from 'next/navigation';
 import { AuthProvider } from '@/components/providers/session-provider'
 import { Toaster } from 'sonner'
 import './globals.css'
@@ -7,21 +9,30 @@ import { ReturnToAppHandler } from '@/components/auth/return-to-app-handler'
 import { NotificationManager } from '@/components/notifications/notification-manager'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
-import { headers } from 'next/headers'
 
-export const dynamic = "force-dynamic"
+function LayoutContent({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isLoginPage = pathname === '/login' || pathname === '/auth/callback';
+  
+  if (isLoginPage) {
+    return <div className="min-h-screen">{children}</div>;
+  }
+  
+  return (
+    <SidebarProvider defaultOpen={true}>
+      <AppSidebar />
+      <SidebarInset>
+        {children}
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const headersList = await headers()
-  const pathname = headersList.get('x-pathname') || ''
-  
-  // Routes where sidebar should NOT appear
-  const isAuthPage = pathname === '/login' || pathname === '/auth/callback'
-  
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="font-sans antialiased">
@@ -34,22 +45,13 @@ export default async function RootLayout({
           <AuthProvider>
             <ReturnToAppHandler />
             <NotificationManager />
-            {!isAuthPage ? (
-              <SidebarProvider defaultOpen={true}>
-                <AppSidebar />
-                <SidebarInset>
-                  {children}
-                </SidebarInset>
-              </SidebarProvider>
-            ) : (
-              <div className="min-h-screen">
-                {children}
-              </div>
-            )}
+            <LayoutContent>
+              {children}
+            </LayoutContent>
             <Toaster position="top-right" richColors />
           </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }
