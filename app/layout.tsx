@@ -9,6 +9,7 @@ import { ReturnToAppHandler } from '@/components/auth/return-to-app-handler'
 import { NotificationManager } from '@/components/notifications/notification-manager'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
+import { BrowserHandler } from '@/components/browser-handler';
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -45,6 +46,7 @@ export default function RootLayout({
           <AuthProvider>
             <ReturnToAppHandler />
             <NotificationManager />
+            <BrowserHandler />
             <LayoutContent>
               {children}
             </LayoutContent>
