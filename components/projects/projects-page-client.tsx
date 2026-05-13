@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { ROLE_PERMISSIONS, type UserRole } from '@/types/user'
 
 export default function ProjectsPageClient() {
   const { data: session, status } = useSession()
@@ -33,10 +34,11 @@ export default function ProjectsPageClient() {
   const [assignedTo, setAssignedTo] = useState("")
   const [editingProject, setEditingProject] = useState<any>(null)
   const [employees, setEmployees] = useState<any[]>([])
-  const userRole = (session?.user as any)?.role
-  const canManage = userRole === "Admin" || userRole === "Manager"
+  
+  const userRole = (session?.user as any)?.role as UserRole || "Team Member"
+  const permissions = ROLE_PERMISSIONS[userRole]
 
-    useEffect(() => {
+  useEffect(() => {
     fetch("/api/users")
       .then(res => res.json())
       .then(data => setEmployees(Array.isArray(data) ? data : []))
@@ -46,14 +48,23 @@ export default function ProjectsPageClient() {
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login")
-    } else if (status === "authenticated" && canManage) {
-      fetchProjects()
-    } else if (status === "authenticated" && !canManage) {
-      router.push("/dashboard")
+    } else if (status === "authenticated") {
+      // Allow both Admin and Manager to view projects
+      if (permissions.canViewAllProjects) {
+        fetchProjects()
+      } else {
+        router.push("/dashboard")
+      }
     }
-  }, [status])
+  }, [status, permissions.canViewAllProjects])
 
-    const handleDelete = async (id: number, name: string) => {
+  const handleDelete = async (id: number, name: string) => {
+    // Only allow if user has delete permissions
+    if (!permissions.canDeleteProjects) {
+      toast.error("You don't have permission to delete projects")
+      return
+    }
+    
     if (!confirm(`Delete project "${name}"? Tasks will not be deleted, just unlinked.`)) return
     try {
       const res = await fetch(`/api/projects/${id}`, { method: "DELETE" })
@@ -67,34 +78,35 @@ export default function ProjectsPageClient() {
       toast.error("Error deleting project")
     }
   }
+  
   const handleUpdate = async (e: React.FormEvent) => {
-  e.preventDefault()
-  if (!editingProject) return
-  setCreating(true)
-  try {
-    const res = await fetch(`/api/projects/${editingProject.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        name: editingProject.name, 
-        description: editingProject.description,
-        attachments: editingProject.attachments,
-        assignedTo: editingProject.assignedTo 
-      }),
-    })
-    if (res.ok) {
-      toast.success("Project updated")
-      setEditingProject(null)
-      fetchProjects()
-    } else {
-      toast.error("Failed to update project")
+    e.preventDefault()
+    if (!editingProject) return
+    setCreating(true)
+    try {
+      const res = await fetch(`/api/projects/${editingProject.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          name: editingProject.name, 
+          description: editingProject.description,
+          attachments: editingProject.attachments,
+          assignedTo: editingProject.assignedTo 
+        }),
+      })
+      if (res.ok) {
+        toast.success("Project updated")
+        setEditingProject(null)
+        fetchProjects()
+      } else {
+        toast.error("Failed to update project")
+      }
+    } catch (error) {
+      toast.error("Error updating project")
+    } finally {
+      setCreating(false)
     }
-  } catch (error) {
-    toast.error("Error updating project")
-  } finally {
-    setCreating(false)
   }
-}
 
   const fetchProjects = async () => {
     try {
@@ -155,7 +167,7 @@ export default function ProjectsPageClient() {
             <h1 className="text-3xl font-bold tracking-tight text-foreground">Projects</h1>
             <p className="text-muted-foreground text-sm">Manage project-based tasks</p>
           </div>
-          {canManage && (
+          {permissions.canCreateProjects && (
             <Button onClick={() => setShowCreate(!showCreate)}>
               <Plus className="mr-2 h-4 w-4" />
               New Project
@@ -163,7 +175,8 @@ export default function ProjectsPageClient() {
           )}
         </div>
 
-        {showCreate && (
+        {/* Create Project Form */}
+        {showCreate && permissions.canCreateProjects && (
           <Card className="mb-8 border-border">
             <CardHeader>
               <CardTitle>Create New Project</CardTitle>
@@ -207,7 +220,7 @@ export default function ProjectsPageClient() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">attachments</label>
+                  <label className="text-sm font-medium">Attachments</label>
                   <Textarea
                     placeholder="Add any references or links..."
                     className="min-h-[80px] resize-none"
@@ -221,18 +234,20 @@ export default function ProjectsPageClient() {
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" disabled={creating}>
-                    {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Create Project
                   </Button>
                   <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>
                     Cancel
                   </Button>
                 </div>
-               </form>
+              </form>
             </CardContent>
           </Card>
         )}
-                {editingProject && (
+        
+        {/* Edit Project Form */}
+        {editingProject && permissions.canEditProjects && (
           <Card className="mb-8 border-border">
             <CardHeader>
               <CardTitle>Edit Project</CardTitle>
@@ -296,12 +311,14 @@ export default function ProjectsPageClient() {
             </CardContent>
           </Card>
         )}
-         {projects.length === 0 ? (
+        
+        {/* Projects List */}
+        {projects.length === 0 ? (
           <div className="text-center py-20">
             <FolderKanban className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium text-muted-foreground">No projects yet</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              {canManage ? "Create your first project to get started" : "No projects available"}
+              {permissions.canCreateProjects ? "Create your first project to get started" : "No projects available"}
             </p>
           </div>
         ) : (
@@ -320,28 +337,32 @@ export default function ProjectsPageClient() {
                     )}
                   </div>
                   <div className="flex gap-1 flex-shrink-0 ml-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-primary"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setEditingProject(project)
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDelete(project.id, project.name)
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {permissions.canEditProjects && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setEditingProject(project)
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {permissions.canDeleteProjects && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDelete(project.id, project.name)
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
