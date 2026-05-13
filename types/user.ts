@@ -27,6 +27,7 @@ export type NotificationType =
   | "task_completed"
 
 export const ROLE_PERMISSIONS: Record<UserRole, {
+  // Task permissions
   canCreateTasks: boolean
   canEditAllTasks: boolean
   canEditOwnTasks: boolean
@@ -34,8 +35,14 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
   canManageUsers: boolean
   canViewAllTasks: boolean
   canReview: boolean
+  // Project permissions
+  canCreateProjects: boolean
+  canEditProjects: boolean
+  canDeleteProjects: boolean
+  canViewAllProjects: boolean
 }> = {
   Admin: {
+    // Task permissions
     canCreateTasks: true,
     canEditAllTasks: true,
     canEditOwnTasks: true,
@@ -43,8 +50,14 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     canManageUsers: true,
     canViewAllTasks: true,
     canReview: true,
+    // Project permissions
+    canCreateProjects: true,
+    canEditProjects: true,
+    canDeleteProjects: true,
+    canViewAllProjects: true,
   },
   Manager: {
+    // Task permissions
     canCreateTasks: true,
     canEditAllTasks: true,
     canEditOwnTasks: true,
@@ -52,8 +65,14 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     canManageUsers: false,
     canViewAllTasks: true,
     canReview: true,
+    // Project permissions - Manager can create/edit but NOT delete projects
+    canCreateProjects: true,
+    canEditProjects: true,
+    canDeleteProjects: true,  
+    canViewAllProjects: true,
   },
   "Team Member": {
+    // Task permissions
     canCreateTasks: false,
     canEditAllTasks: false,
     canEditOwnTasks: true,
@@ -61,8 +80,14 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     canManageUsers: false,
     canViewAllTasks: false,
     canReview: false,
+    // Project permissions
+    canCreateProjects: false,
+    canEditProjects: false,
+    canDeleteProjects: false,
+    canViewAllProjects: false,
   },
   Viewer: {
+    // Task permissions
     canCreateTasks: false,
     canEditAllTasks: false,
     canEditOwnTasks: false,
@@ -70,5 +95,10 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     canManageUsers: false,
     canViewAllTasks: true,
     canReview: false,
+    // Project permissions - Viewers can only view projects
+    canCreateProjects: false,
+    canEditProjects: false,
+    canDeleteProjects: false,
+    canViewAllProjects: true,
   },
 }
