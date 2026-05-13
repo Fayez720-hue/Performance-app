@@ -23,13 +23,14 @@ import { ROLE_PERMISSIONS } from "@/types/user";
 interface TaskDeckProps {
   user: User;
   projectId?: number;
+  reviewOnly?: boolean;  // Add this prop
 }
 
-export function TaskDeck({ user, projectId }: TaskDeckProps) {
+export function TaskDeck({ user, projectId, reviewOnly = false }: TaskDeckProps) {
   const userRole = user.role || "Team Member";
   const userName = user.name || "Guest";
 
-    const { data: tasks, error, isLoading, mutate } = useSWR<Task[]>(
+  const { data: tasks, error, isLoading, mutate } = useSWR<Task[]>(
     projectId ? `/api/projects/${projectId}` : "/api/tasks",
     async (url: string) => {
       const res = await fetch(url);
@@ -48,7 +49,7 @@ export function TaskDeck({ user, projectId }: TaskDeckProps) {
 
   const searchParams = useSearchParams();
 
-    // Handle auto-opening from notifications
+  // Handle auto-opening from notifications
   useEffect(() => {
     const taskIdParam = searchParams.get("taskId");
     const timestamp = searchParams.get("t");
@@ -81,7 +82,7 @@ export function TaskDeck({ user, projectId }: TaskDeckProps) {
       url.searchParams.delete("t");
       window.history.replaceState({}, "", url.toString());
     }
-  }, [searchParams]); // Re-run whenever searchParams changes
+  }, [searchParams]);
 
   const permissions = ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS.Viewer;
 
@@ -96,11 +97,16 @@ export function TaskDeck({ user, projectId }: TaskDeckProps) {
     return [];
   }, [tasks, users]);
 
-  // Filter tasks – no longer uses taskIdParam
+  // Filter tasks – now includes reviewOnly filter
   const filteredTasks = useMemo(() => {
     if (!Array.isArray(tasks)) return [];
 
     return tasks.filter((task) => {
+      // Apply reviewOnly filter first (if true, only show Review tasks)
+      if (reviewOnly && task.progress !== "Review") {
+        return false;
+      }
+
       const matchesSearch =
         task.task.toLowerCase().includes(search.toLowerCase()) ||
         task.name.toLowerCase().includes(search.toLowerCase());
@@ -110,7 +116,7 @@ export function TaskDeck({ user, projectId }: TaskDeckProps) {
 
       return matchesSearch && matchesProgress && matchesAssignee;
     });
-    }, [tasks, search, progressFilter, assigneeFilter, projectId]);
+  }, [tasks, search, progressFilter, assigneeFilter, projectId, reviewOnly]);
 
   // Group tasks by progress
   const groupedTasks = useMemo(() => {
@@ -158,18 +164,22 @@ export function TaskDeck({ user, projectId }: TaskDeckProps) {
 
   return (
     <div className="space-y-6">
-      {tasks && tasks.length > 0 && <TaskStats tasks={tasks} />}
+      {/* Only show stats if not in reviewOnly mode */}
+      {tasks && tasks.length > 0 && !reviewOnly && <TaskStats tasks={tasks} />}
 
-      <TaskFilters
-        search={search}
-        onSearchChange={setSearch}
-        progressFilter={progressFilter}
-        onProgressFilterChange={setProgressFilter}
-        assigneeFilter={assigneeFilter}
-        onAssigneeFilterChange={setAssigneeFilter}
-        assignees={assignees}
-        userRole={userRole}
-      />
+      {/* Only show filters if not in reviewOnly mode */}
+      {!reviewOnly && (
+        <TaskFilters
+          search={search}
+          onSearchChange={setSearch}
+          progressFilter={progressFilter}
+          onProgressFilterChange={setProgressFilter}
+          assigneeFilter={assigneeFilter}
+          onAssigneeFilterChange={setAssigneeFilter}
+          assignees={assignees}
+          userRole={userRole}
+        />
+      )}
 
       {tasks && tasks.length === 0 && (
         <Empty className="py-20">
@@ -194,7 +204,11 @@ export function TaskDeck({ user, projectId }: TaskDeckProps) {
               <ClipboardX />
             </EmptyMedia>
             <EmptyTitle>No matching tasks</EmptyTitle>
-            <EmptyDescription>Try adjusting your search or filters.</EmptyDescription>
+            <EmptyDescription>
+              {reviewOnly 
+                ? "No tasks waiting for review" 
+                : "Try adjusting your search or filters."}
+            </EmptyDescription>
           </EmptyHeader>
         </Empty>
       )}

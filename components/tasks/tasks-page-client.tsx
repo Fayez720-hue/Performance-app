@@ -1,11 +1,11 @@
 "use client"
 
 import { useSession } from '@/components/providers/session-provider'
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useState, useCallback } from "react"
 import { Header } from "@/components/layout/header"
 import { TaskDeck as TaskList } from "@/components/tasks/task-deck"
-import { Loader2, Plus } from "lucide-react"
+import { Loader2, Plus, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { User, UserRole } from "@/types/user"
 import { ROLE_PERMISSIONS } from "@/types/user"
@@ -13,6 +13,12 @@ import { ROLE_PERMISSIONS } from "@/types/user"
 export default function TasksPageClient() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const filter = searchParams.get('filter')
+  const statusFilter = searchParams.get('status')
+  
+  const isReviewFilter = filter === 'review' || statusFilter === 'REVIEW'
+  
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -84,24 +90,38 @@ export default function TasksPageClient() {
         </div>
       ) : (
         <main className="flex-1 container mx-auto px-4 py-8 max-w-7xl">
+          {/* Back button when in review mode */}
+          {isReviewFilter && (
+            <Button
+              variant="ghost"
+              onClick={() => router.push('/tasks')}
+              className="mb-4 gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to All Tasks
+            </Button>
+          )}
+
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-foreground">Tasks</h1>
-              <p className="text-muted-foreground">Manage and track team progress</p>
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                {isReviewFilter ? 'Review Tasks' : 'Tasks'}
+              </h1>
+              <p className="text-muted-foreground">
+                {isReviewFilter 
+                  ? 'Tasks that need your review and approval' 
+                  : 'Manage and track team progress'}
+              </p>
             </div>
-            {permissions.canCreateTasks && (
+            {!isReviewFilter && permissions.canCreateTasks && (
               <Button onClick={() => router.push("/tasks/new")} className="w-full md:w-auto">
                 <Plus className="mr-2 h-4 w-4" /> Create Task
               </Button>
             )}
           </div>
-          <Suspense fallback={
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          }>
-            <TaskList user={user} />
-          </Suspense>
+
+          {/* Pass the review filter to TaskList component */}
+          <TaskList reviewOnly={isReviewFilter} />
         </main>
       )}
     </div>
