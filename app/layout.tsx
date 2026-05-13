@@ -19,7 +19,7 @@ export default async function RootLayout({
   const headersList = await headers()
   const pathname = headersList.get('x-pathname') || ''
   
-  // Simple check - hide sidebar on login and callback pages
+  // Routes where sidebar should NOT appear
   const isAuthPage = pathname === '/login' || pathname === '/auth/callback'
   
   return (
