@@ -1,3 +1,4 @@
+// app/layout.tsx
 import type { Metadata } from 'next'
 import { AuthProvider } from '@/components/providers/session-provider'
 import { Toaster } from 'sonner'
@@ -8,6 +9,7 @@ import { NotificationManager } from '@/components/notifications/notification-man
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { SidebarTrigger } from '@/components/ui/sidebar-trigger'
+import { BrowserHandler } from '@/components/browser-handler'  // Import this
 
 export const dynamic = "force-dynamic"
 
@@ -24,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             <ReturnToAppHandler />
             <NotificationManager />
+            <BrowserHandler />  {/* Add this here */}
             <SidebarProvider defaultOpen={false}>
               <AppSidebar />
               <SidebarInset>

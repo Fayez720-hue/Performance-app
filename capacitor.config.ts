@@ -3,10 +3,11 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'performanceapp.canshift.com',
   appName: 'Performance App',
-  webDir: 'public',
+  webDir: 'www',  // Change from 'public' to 'www' (creates an empty dir)
   server: {
     url: 'https://performance-app-ivory.vercel.app',
     cleartext: true,
+    androidScheme: 'https',  // Add this for better Android compatibility
     allowNavigation: [
       'performance-app-ivory.vercel.app',
       '*.google.com',
