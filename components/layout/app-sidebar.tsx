@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
+import useSWR from 'swr';
 
 import {
   Sidebar,
@@ -35,6 +36,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import type { Task } from '@/types/task';
 
 export function AppSidebar() {
   const { data: session } = useSession();
@@ -47,31 +49,27 @@ export function AppSidebar() {
   const userRole = (session?.user as any)?.role || 'Team Member';
   const isAdminOrManager = userRole === 'Admin' || userRole === 'Manager';
 
-  // Fetch review tasks count
-  React.useEffect(() => {
-    const fetchReviewCount = async () => {
-      try {
-        const response = await fetch('/api/tasks/counts?status=Review');
-        if (response.ok) {
-          const data = await response.json();
-          setReviewCount(data.count || 0);
+  // Fetch tasks to get review count (only for Admin/Manager)
+  const { data: tasks } = useSWR<Task[]>(
+    isAdminOrManager && session?.user ? '/api/tasks' : null,
+    async (url: string) => {
+      const res = await fetch(url);
+      return res.json();
+    },
+    {
+      refreshInterval: 30000,
+      onSuccess: (data) => {
+        if (Array.isArray(data)) {
+          const count = data.filter((task: Task) => task.progress === 'Review').length;
+          setReviewCount(count);
         }
-      } catch (error) {
-        console.error('Failed to fetch review count:', error);
       }
-    };
-
-    if (session?.user) {
-      fetchReviewCount();
-      // Poll every 30 seconds for updates
-      const interval = setInterval(fetchReviewCount, 30000);
-      return () => clearInterval(interval);
     }
-  }, [session]);
+  );
 
   const navigate = (url: string) => {
     router.push(url);
-    setOpen(false); // Auto-close sidebar on click
+    setOpen(false);
   };
 
   const menuItems = [
@@ -90,12 +88,13 @@ export function AppSidebar() {
           icon: ClipboardList,
           url: '/tasks',
         },
-        {
+        // Only show Review sub-item for Admin or Manager
+        ...(isAdminOrManager ? [{
           title: 'Review',
           icon: ClipboardList,
           url: '/tasks?filter=review&status=REVIEW',
           badge: reviewCount,
-        },
+        }] : []),
       ],
     },
     ...(isAdminOrManager ? [{

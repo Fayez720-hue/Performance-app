@@ -8,9 +8,7 @@ import { TaskCard } from "./task-card";
 import { TaskFilters } from "./task-filters";
 import { TaskStats } from "./task-stats";
 import type { User } from "@/types/user";
-import { fetcher } from "@/lib/api";
 import type { Task, TaskProgress } from "@/types/task";
-import type { UserRole } from "@/types/user";
 import { ROLE_PERMISSIONS } from "@/types/user";
 
 interface TaskDeckProps {
@@ -24,7 +22,7 @@ export function TaskDeck({ user, projectId, reviewOnly = false }: TaskDeckProps)
   const userName = user.name || "Guest";
 
   const { data: tasks, error, isLoading, mutate } = useSWR<Task[]>(
-    projectId ? `/api/projects/${projectId}` : "/api/tasks",
+    user ? (projectId ? `/api/projects/${projectId}` : "/api/tasks") : null,
     async (url: string) => {
       const res = await fetch(url);
       const data = await res.json();
@@ -32,8 +30,6 @@ export function TaskDeck({ user, projectId, reviewOnly = false }: TaskDeckProps)
     },
     { refreshInterval: 30000 }
   );
-
-  const { data: users } = useSWR<User[]>("/api/users", fetcher);
 
   const [search, setSearch] = useState("");
   const [progressFilter, setProgressFilter] = useState<TaskProgress | "all">("all");
@@ -45,11 +41,8 @@ export function TaskDeck({ user, projectId, reviewOnly = false }: TaskDeckProps)
   // Handle auto-opening from notifications
   useEffect(() => {
     const taskIdParam = searchParams.get("taskId");
-    const timestamp = searchParams.get("t");
-    
     if (taskIdParam) {
       const id = parseInt(taskIdParam, 10);
-      
       setSearch("");
       setProgressFilter("all");
       setAssigneeFilter("all");
@@ -65,36 +58,28 @@ export function TaskDeck({ user, projectId, reviewOnly = false }: TaskDeckProps)
       setTimeout(() => {
         setHighlightedTaskId(null);
       }, 3000);
-
-      const url = new URL(window.location.href);
-      url.searchParams.delete("taskId");
-      url.searchParams.delete("t");
-      window.history.replaceState({}, "", url.toString());
     }
   }, [searchParams]);
 
-  const permissions = ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS.Viewer;
+  const permissions = ROLE_PERMISSIONS[userRole as keyof typeof ROLE_PERMISSIONS] || ROLE_PERMISSIONS.TeamMember;
 
+  // Get unique assignees from tasks
   const assignees = useMemo(() => {
-    if (Array.isArray(users) && users.length > 0) {
-      return [...new Set(users.map((u) => u.name).filter(Boolean))].sort();
-    }
-    if (Array.isArray(tasks)) {
-      return [...new Set(tasks.map((t) => t.name).filter(Boolean))].sort();
-    }
-    return [];
-  }, [tasks, users]);
+    if (!Array.isArray(tasks)) return [];
+    return [...new Set(tasks.map((t) => t.name).filter(Boolean))].sort();
+  }, [tasks]);
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
     if (!Array.isArray(tasks)) return [];
 
     return tasks.filter((task) => {
+      // Apply reviewOnly filter
       if (reviewOnly && task.progress !== "Review") {
         return false;
       }
 
-      const matchesSearch =
+      const matchesSearch = search === "" || 
         task.task.toLowerCase().includes(search.toLowerCase()) ||
         task.name.toLowerCase().includes(search.toLowerCase());
 
@@ -107,15 +92,15 @@ export function TaskDeck({ user, projectId, reviewOnly = false }: TaskDeckProps)
 
   // Group tasks by progress
   const groupedTasks = useMemo(() => {
-    const groups: Record<TaskProgress, Task[]> = {
+    const groups: Record<string, Task[]> = {
       "To-do": [],
       "In Progress": [],
-      Review: [],
-      Completed: [],
+      "Review": [],
+      "Completed": [],
     };
 
     filteredTasks.forEach((task) => {
-      const progress = task.progress as TaskProgress;
+      const progress = task.progress as string;
       if (groups[progress]) {
         groups[progress].push(task);
       } else {
@@ -125,6 +110,7 @@ export function TaskDeck({ user, projectId, reviewOnly = false }: TaskDeckProps)
     return groups;
   }, [filteredTasks]);
 
+  // Error state
   if (error) {
     return (
       <div className="py-20 text-center">
@@ -139,6 +125,7 @@ export function TaskDeck({ user, projectId, reviewOnly = false }: TaskDeckProps)
     );
   }
 
+  // Loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -147,6 +134,7 @@ export function TaskDeck({ user, projectId, reviewOnly = false }: TaskDeckProps)
     );
   }
 
+  // No tasks state
   if (!tasks || tasks.length === 0) {
     return (
       <div className="py-20 text-center">
@@ -155,7 +143,7 @@ export function TaskDeck({ user, projectId, reviewOnly = false }: TaskDeckProps)
         </div>
         <h3 className="mt-4 text-lg font-semibold">No tasks yet</h3>
         <p className="mt-2 text-sm text-muted-foreground">
-          {permissions.canCreateTasks
+          {permissions?.canCreateTasks
             ? "Create your first task to get started."
             : "No tasks have been assigned to you yet."}
         </p>
@@ -163,6 +151,7 @@ export function TaskDeck({ user, projectId, reviewOnly = false }: TaskDeckProps)
     );
   }
 
+  // No matching tasks state
   if (filteredTasks.length === 0) {
     return (
       <div className="py-20 text-center">
@@ -181,8 +170,12 @@ export function TaskDeck({ user, projectId, reviewOnly = false }: TaskDeckProps)
 
   return (
     <div className="space-y-6">
-      {tasks && tasks.length > 0 && !reviewOnly && <TaskStats tasks={tasks} />}
+      {/* Task Stats - only show when not in review mode */}
+      {!reviewOnly && tasks.length > 0 && (
+        <TaskStats tasks={tasks} />
+      )}
 
+      {/* Task Filters - only show when not in review mode */}
       {!reviewOnly && (
         <TaskFilters
           search={search}
@@ -192,52 +185,49 @@ export function TaskDeck({ user, projectId, reviewOnly = false }: TaskDeckProps)
           assigneeFilter={assigneeFilter}
           onAssigneeFilterChange={setAssigneeFilter}
           assignees={assignees}
-          userRole={userRole}
+          userRole={userRole as any}
         />
       )}
 
-      {filteredTasks.length > 0 && (
-        <div className="space-y-8">
-          {(Object.keys(groupedTasks) as TaskProgress[]).map((status) => {
-            const statusTasks = groupedTasks[status];
-            if (statusTasks.length === 0) return null;
+      {/* Task Groups */}
+      <div className="space-y-8">
+        {Object.entries(groupedTasks).map(([status, statusTasks]) => {
+          if (statusTasks.length === 0) return null;
 
-            return (
-              <div key={status}>
-                <div className="mb-4 flex items-center gap-2">
-                  <h2 className="text-lg font-semibold text-foreground">{status}</h2>
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                    {statusTasks.length}
-                  </span>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {statusTasks.map((task) => {
-                    const isUnderReview = task.progress === "Review" || task.progress === "Completed";
-                    const canEdit =
-                      permissions.canEditAllTasks ||
-                      (permissions.canEditOwnTasks &&
-                        !isUnderReview &&
-                        (task.name.toLowerCase() === userName.toLowerCase() ||
-                          (user.email && task.name.toLowerCase() === user.email.toLowerCase())));
-                    const canDelete = permissions.canDeleteTasks;
-
-                    return (
-                      <TaskCard
-                        key={task.id}
-                        task={task}
-                        canEdit={canEdit}
-                        canDelete={canDelete}
-                        onDelete={() => mutate()}
-                        autoExpand={highlightedTaskId === task.id}
-                      />
-                    );
-                  })}
-                </div>
+          return (
+            <div key={status}>
+              <div className="mb-4 flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-foreground">{status}</h2>
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                  {statusTasks.length}
+                </span>
               </div>
-            );
-          })}
-        </div>
-      )}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {statusTasks.map((task) => {
+                  const isUnderReview = task.progress === "Review" || task.progress === "Completed";
+                  const canEdit = permissions?.canEditAllTasks ||
+                    (permissions?.canEditOwnTasks &&
+                      !isUnderReview &&
+                      (task.name.toLowerCase() === userName.toLowerCase() ||
+                        (user.email && task.name.toLowerCase() === user.email.toLowerCase())));
+                  const canDelete = permissions?.canDeleteTasks || false;
+
+                  return (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      canEdit={canEdit || false}
+                      canDelete={canDelete}
+                      onDelete={() => mutate()}
+                      autoExpand={highlightedTaskId === task.id}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
