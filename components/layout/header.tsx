@@ -5,7 +5,7 @@ import { useSession } from '@/components/providers/session-provider'
 import { ClipboardList, Settings } from "lucide-react"
 import { UserNav } from "@/components/auth/user-nav"
 import { NotificationBell } from "@/components/notifications/notification-bell"
-import { SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarToggle } from "./sidebar-toggle"
 
 export function Header() {
   const { data: session } = useSession()
@@ -14,7 +14,7 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-white/5 bg-[#090a11]/80 backdrop-blur-xl supports-[backdrop-filter]:bg-[#090a11]/60">
       <div className="flex h-16 items-center justify-between px-4 lg:px-8">
         <div className="flex items-center gap-4">
-          <SidebarTrigger className="h-10 w-10 text-white/50 hover:text-teal-400 hover:bg-teal-500/10 rounded-xl transition-all" />
+          <SidebarToggle />
         </div>
 
         <div className="flex items-center gap-3">
