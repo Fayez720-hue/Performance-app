@@ -28,7 +28,7 @@ interface SidebarProviderProps {
   defaultOpen?: boolean;
 }
 
-export function SidebarProvider({ children, defaultOpen = false }: SidebarProviderProps) {
+export function SidebarProvider({ children, defaultOpen = true }: SidebarProviderProps) {
   const [open, setOpen] = React.useState(defaultOpen);
 
   const toggleSidebar = React.useCallback(() => {
@@ -53,8 +53,8 @@ export function Sidebar({ className, children, collapsible = "offcanvas", ...pro
   return (
     <div
       className={cn(
-        "fixed left-0 top-0 z-40 h-full bg-background transition-all duration-300 ease-in-out",
-        open ? "w-64" : "w-16",
+        "fixed left-0 top-0 z-40 h-full bg-[#090a11] transition-all duration-300 ease-in-out",
+        open ? "w-64" : "w-[70px]",
         className
       )}
       {...props}
@@ -88,9 +88,15 @@ export function SidebarGroup({ className, ...props }: React.HTMLAttributes<HTMLD
 
 // Sidebar Group Label
 export function SidebarGroupLabel({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  const { open } = useSidebar();
+  
   return (
     <div
-      className={cn("px-3 py-1 text-xs font-medium text-muted-foreground", className)}
+      className={cn(
+        "px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/30 transition-all duration-300",
+        !open && "opacity-0 hidden",
+        className
+      )}
       {...props}
     />
   );
@@ -152,8 +158,8 @@ export function SidebarInset({ className, ...props }: React.HTMLAttributes<HTMLD
   return (
     <div
       className={cn(
-        "flex-1 transition-all duration-300",
-        open ? "ml-64" : "ml-16",
+        "flex-1 transition-all duration-300 ease-in-out",
+        open ? "ml-64" : "ml-[70px]",
         className
       )}
       {...props}

@@ -7,7 +7,6 @@ import {
   Clock,
   LayoutGrid,
   Settings,
-  User,
   Users,
   LogOut,
   ChevronRight,
@@ -16,9 +15,8 @@ import {
   FolderKanban,
 } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import useSWR from 'swr';
-import { fetcher } from '@/lib/api';
 
 import {
   Sidebar,
@@ -31,7 +29,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSeparator,
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
@@ -43,23 +40,31 @@ export function AppSidebar() {
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const { setOpen } = useSidebar();
+  const { open, setOpen } = useSidebar();
   const [isTasksExpanded, setIsTasksExpanded] = React.useState(true);
+  const [reviewCount, setReviewCount] = React.useState(0);
 
   const userRole = (session?.user as any)?.role || 'Team Member';
   const isAdminOrManager = userRole === 'Admin' || userRole === 'Manager';
 
-  // Fetch tasks to get review count (only for Admin/Manager)
+  // Fetch tasks to get review count
   const { data: tasks } = useSWR<Task[]>(
-    isAdminOrManager && session?.user ? '/api/tasks' : null,
-    fetcher,
-    { refreshInterval: 30000 }
+    session?.user ? '/api/tasks' : null,
+    async (url: string) => {
+      const res = await fetch(url);
+      const data = await res.json();
+      return data;
+    },
+    {
+      refreshInterval: 30000,
+      onSuccess: (data) => {
+        if (Array.isArray(data)) {
+          const count = data.filter((task: Task) => task.progress === 'Review').length;
+          setReviewCount(count);
+        }
+      }
+    }
   );
-
-  const reviewCount = React.useMemo(() => {
-    return tasks?.filter((task: Task) => task.progress === 'Review').length || 0;
-  }, [tasks]);
 
   const navigate = (url: string) => {
     router.push(url);
@@ -82,7 +87,6 @@ export function AppSidebar() {
           icon: ClipboardList,
           url: '/tasks',
         },
-        // Only show Review sub-item for Admin or Manager
         ...(isAdminOrManager ? [{
           title: 'Review',
           icon: ClipboardList,
@@ -156,56 +160,47 @@ export function AppSidebar() {
                               "h-5 w-5 transition-transform duration-300 group-hover/btn:scale-110",
                               pathname === item.url ? "text-teal-400" : "text-white/40"
                             )} />
-                            <span className="text-base">{item.title}</span>
+                            <span className={cn(
+                              "text-base transition-all duration-300",
+                              !open && "hidden"
+                            )}>
+                              {item.title}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {!isTasksExpanded && isAdminOrManager && reviewCount > 0 && (
-                              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
-                                {reviewCount > 99 ? '99+' : reviewCount}
-                              </span>
-                            )}
-                            {isTasksExpanded ? (
-                              <ChevronDown className="h-4 w-4 text-white/40" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 text-white/40" />
-                            )}
-                          </div>
+                          {open && (isTasksExpanded ? (
+                            <ChevronDown className="h-4 w-4 text-white/40" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-white/40" />
+                          ))}
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                       
                       {/* Sub-items (All Tasks & Review) */}
-                      {isTasksExpanded && item.subItems && (
+                      {open && isTasksExpanded && item.subItems && (
                         <div className="ml-6 space-y-1">
-                          {item.subItems.map((subItem) => {
-                            const isReview = subItem.url.includes('filter=review');
-                            const isActive = isReview
-                              ? searchParams?.get('filter') === 'review'
-                              : pathname === subItem.url && searchParams?.get('filter') !== 'review';
-
-                            return (
-                              <SidebarMenuItem key={subItem.title}>
-                                <SidebarMenuButton
-                                  onClick={() => navigate(subItem.url)}
-                                  className={cn(
-                                    "h-10 px-3 rounded-xl transition-all duration-200 group/btn w-full justify-between",
-                                    isActive
-                                      ? "bg-teal-500/10 text-teal-400 font-medium border border-teal-500/10"
-                                      : "hover:bg-white/5 text-white/50 hover:text-white"
-                                  )}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <subItem.icon className="h-4 w-4" />
-                                    <span className="text-sm">{subItem.title}</span>
-                                  </div>
-                                  {subItem.badge !== undefined && subItem.badge > 0 && (
-                                    <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
-                                      {subItem.badge > 99 ? '99+' : subItem.badge}
-                                    </span>
-                                  )}
-                                </SidebarMenuButton>
-                              </SidebarMenuItem>
-                            );
-                          })}
+                          {item.subItems.map((subItem) => (
+                            <SidebarMenuItem key={subItem.title}>
+                              <SidebarMenuButton
+                                onClick={() => navigate(subItem.url)}
+                                className={cn(
+                                  "h-10 px-3 rounded-xl transition-all duration-200 group/btn w-full justify-between",
+                                  pathname === subItem.url.split('?')[0] && !subItem.url.includes('?')
+                                    ? "bg-teal-500/10 text-teal-400 font-medium border border-teal-500/10"
+                                    : "hover:bg-white/5 text-white/50 hover:text-white"
+                                )}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <subItem.icon className="h-4 w-4" />
+                                  <span className="text-sm">{subItem.title}</span>
+                                </div>
+                                {subItem.badge !== undefined && subItem.badge > 0 && (
+                                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+                                    {subItem.badge > 99 ? '99+' : subItem.badge}
+                                  </span>
+                                )}
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          ))}
                         </div>
                       )}
                     </>
@@ -225,7 +220,12 @@ export function AppSidebar() {
                           "h-5 w-5 transition-transform duration-300 group-hover/btn:scale-110",
                           pathname === item.url ? "text-teal-400" : "text-white/40"
                         )} />
-                        <span className="ml-2 text-base">{item.title}</span>
+                        <span className={cn(
+                          "ml-2 text-base transition-all duration-300",
+                          !open && "hidden"
+                        )}>
+                          {item.title}
+                        </span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   )}
@@ -258,7 +258,12 @@ export function AppSidebar() {
                         "h-5 w-5 transition-transform duration-300 group-hover/btn:scale-110",
                         pathname === item.url ? "text-teal-400" : "text-white/40"
                       )} />
-                      <span className="ml-2 text-base">{item.title}</span>
+                      <span className={cn(
+                        "ml-2 text-base transition-all duration-300",
+                        !open && "hidden"
+                      )}>
+                        {item.title}
+                      </span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -289,7 +294,12 @@ export function AppSidebar() {
                       "h-5 w-5 transition-transform duration-300 group-hover/btn:scale-110",
                       pathname === item.url ? "text-teal-400" : "text-white/40"
                     )} />
-                    <span className="ml-2 text-base">{item.title}</span>
+                    <span className={cn(
+                      "ml-2 text-base transition-all duration-300",
+                      !open && "hidden"
+                    )}>
+                      {item.title}
+                    </span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -303,10 +313,13 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
-              className="w-full h-14 flex items-center justify-between hover:bg-white/5 rounded-2xl px-3 transition-all duration-300 border border-transparent hover:border-white/5"
+              className={cn(
+                "w-full h-14 flex items-center justify-between hover:bg-white/5 rounded-2xl px-3 transition-all duration-300 border border-transparent hover:border-white/5",
+                !open && "justify-center"
+              )}
               onClick={() => navigate('/settings')}
             >
-              <div className="flex items-center gap-3">
+              <div className={cn("flex items-center gap-3", !open && "justify-center")}>
                 <div className="relative">
                   <Avatar className="h-9 w-9 border-2 border-teal-500/20 shadow-[0_0_10px_rgba(45,212,191,0.1)]">
                     <AvatarImage src={session?.user?.image || ''} />
@@ -316,16 +329,20 @@ export function AppSidebar() {
                   </Avatar>
                   <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-[#090a11] rounded-full" />
                 </div>
-                <div className="flex flex-col text-left overflow-hidden">
-                  <span className="text-sm font-bold text-white truncate max-w-[120px]">
-                    {session?.user?.name || session?.user?.email?.split('@')[0] || 'User'}
-                  </span>
-                  <span className="text-[11px] text-teal-500/60 font-bold uppercase tracking-wider">
-                    {userRole}
-                  </span>
-                </div>
+                {open && (
+                  <>
+                    <div className="flex flex-col text-left overflow-hidden">
+                      <span className="text-sm font-bold text-white truncate max-w-[120px]">
+                        {session?.user?.name || session?.user?.email?.split('@')[0] || 'User'}
+                      </span>
+                      <span className="text-[11px] text-teal-500/60 font-bold uppercase tracking-wider">
+                        {userRole}
+                      </span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-white/20 group-hover:translate-x-0.5 transition-transform" />
+                  </>
+                )}
               </div>
-              <ChevronRight className="h-4 w-4 text-white/20 group-hover:translate-x-0.5 transition-transform" />
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
@@ -337,11 +354,14 @@ export function AppSidebar() {
                 }
                 await signOut({ callbackUrl: '/login' });
               }}
-              className="w-full h-11 px-3 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-xl transition-all duration-300 border border-transparent hover:border-rose-500/10"
+              className={cn(
+                "w-full h-11 px-3 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-xl transition-all duration-300 border border-transparent hover:border-rose-500/10",
+                !open && "justify-center"
+              )}
               tooltip="Sign Out"
             >
               <LogOut className="h-5 w-5" />
-              <span className="font-bold text-sm tracking-wide">Sign Out</span>
+              {open && <span className="font-bold text-sm tracking-wide">Sign Out</span>}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
