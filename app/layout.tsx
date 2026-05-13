@@ -7,7 +7,6 @@ import { ReturnToAppHandler } from '@/components/auth/return-to-app-handler'
 import { NotificationManager } from '@/components/notifications/notification-manager'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
-import { Suspense } from 'react'
 
 export const dynamic = "force-dynamic"
 
@@ -24,10 +23,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             <ReturnToAppHandler />
             <NotificationManager />
-            <SidebarProvider defaultOpen={false}>
-              <Suspense fallback={<div className="w-64 bg-[#090a11]" />}>
-                <AppSidebar />
-              </Suspense>
+            <SidebarProvider defaultOpen={true}>
+              <AppSidebar />
               <SidebarInset>
                 {children}
               </SidebarInset>

@@ -2,8 +2,6 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
 
 // Context
 type SidebarContextType = {
@@ -37,24 +35,22 @@ export function SidebarProvider({ children, defaultOpen = true }: SidebarProvide
 
   return (
     <SidebarContext.Provider value={{ open, setOpen, toggleSidebar }}>
-      {children}
+      <div className="flex min-h-screen">
+        {children}
+      </div>
     </SidebarContext.Provider>
   );
 }
 
 // Sidebar Component
-interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
-  collapsible?: "offcanvas" | "icon" | "none";
-}
-
-export function Sidebar({ className, children, collapsible = "offcanvas", ...props }: SidebarProps) {
+export function Sidebar({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   const { open } = useSidebar();
   
   return (
-    <div
+    <aside
       className={cn(
-        "fixed left-0 top-0 z-40 h-full bg-[#090a11] transition-all duration-300 ease-in-out",
-        open ? "w-64" : "w-[70px]",
+        "fixed left-0 top-0 z-40 h-full bg-[#090a11] border-r border-white/5 transition-all duration-300 ease-in-out",
+        open ? "w-64" : "w-0 overflow-hidden",
         className
       )}
       {...props}
@@ -62,7 +58,7 @@ export function Sidebar({ className, children, collapsible = "offcanvas", ...pro
       <div className="flex h-full flex-col overflow-y-auto">
         {children}
       </div>
-    </div>
+    </aside>
   );
 }
 
@@ -88,15 +84,9 @@ export function SidebarGroup({ className, ...props }: React.HTMLAttributes<HTMLD
 
 // Sidebar Group Label
 export function SidebarGroupLabel({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  const { open } = useSidebar();
-  
   return (
     <div
-      className={cn(
-        "px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/30 transition-all duration-300",
-        !open && "opacity-0 hidden",
-        className
-      )}
+      className={cn("px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/30", className)}
       {...props}
     />
   );
@@ -136,10 +126,10 @@ export function SidebarMenuButton({
     <button
       title={tooltip}
       className={cn(
-        "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+        "flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200",
         isActive
-          ? "bg-primary text-primary-foreground"
-          : "hover:bg-accent hover:text-accent-foreground",
+          ? "bg-teal-500/10 text-teal-400 font-bold border border-teal-500/10"
+          : "hover:bg-white/5 text-white/60 hover:text-white",
         size === "lg" && "py-3",
         size === "sm" && "py-1 text-xs",
         className
@@ -156,31 +146,13 @@ export function SidebarInset({ className, ...props }: React.HTMLAttributes<HTMLD
   const { open } = useSidebar();
   
   return (
-    <div
+    <main
       className={cn(
         "flex-1 transition-all duration-300 ease-in-out",
-        open ? "ml-64" : "ml-[70px]",
+        open ? "ml-64" : "ml-0",
         className
       )}
       {...props}
     />
-  );
-}
-
-// Sidebar Trigger Component
-export function SidebarTrigger({ className, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  const { open, setOpen } = useSidebar();
-  
-  return (
-    <Button 
-      variant="ghost" 
-      size="icon" 
-      onClick={() => setOpen(!open)}
-      className={cn("h-10 w-10", className)}
-      {...props}
-    >
-      <Menu className="h-5 w-5" />
-      <span className="sr-only">Toggle sidebar</span>
-    </Button>
   );
 }

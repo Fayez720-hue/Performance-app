@@ -29,18 +29,16 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
-  useSidebar,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import type { Task } from '@/types/task';
+import { SidebarToggle } from './sidebar-toggle';
 
 export function AppSidebar() {
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
-  const { open, setOpen } = useSidebar();
   const [isTasksExpanded, setIsTasksExpanded] = React.useState(true);
   const [reviewCount, setReviewCount] = React.useState(0);
 
@@ -68,7 +66,6 @@ export function AppSidebar() {
 
   const navigate = (url: string) => {
     router.push(url);
-    setOpen(false);
   };
 
   const menuItems = [
@@ -129,11 +126,11 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar collapsible="offcanvas" className="bg-[#090a11] border-r border-white/5">
+    <Sidebar className="bg-[#090a11] border-r border-white/5">
       <SidebarHeader className="h-16 flex items-center px-4 border-b border-white/5">
-        <SidebarTrigger className="h-10 w-10 text-white/50 hover:text-teal-400 hover:bg-teal-500/10 rounded-xl transition-all -ml-1" />
+        <SidebarToggle />
       </SidebarHeader>
-      <SidebarContent className="px-3 py-10 gap-6 custom-scrollbar">
+      <SidebarContent className="px-3 py-10 gap-6">
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] font-bold px-3 mb-3 uppercase tracking-[0.2em] text-white/30">
             Navigation
@@ -148,46 +145,29 @@ export function AppSidebar() {
                       <SidebarMenuItem>
                         <SidebarMenuButton
                           onClick={() => setIsTasksExpanded(!isTasksExpanded)}
-                          className={cn(
-                            "h-12 px-3 rounded-xl transition-all duration-200 group/btn w-full justify-between",
-                            pathname === item.url
-                              ? "bg-teal-500/10 text-teal-400 font-bold border border-teal-500/10"
-                              : "hover:bg-white/5 text-white/60 hover:text-white"
-                          )}
+                          className="h-12 px-3 rounded-xl transition-all duration-200 group/btn w-full justify-between"
                         >
                           <div className="flex items-center gap-3">
-                            <item.icon className={cn(
-                              "h-5 w-5 transition-transform duration-300 group-hover/btn:scale-110",
-                              pathname === item.url ? "text-teal-400" : "text-white/40"
-                            )} />
-                            <span className={cn(
-                              "text-base transition-all duration-300",
-                              !open && "hidden"
-                            )}>
-                              {item.title}
-                            </span>
+                            <item.icon className="h-5 w-5 text-white/40" />
+                            <span className="text-base">{item.title}</span>
                           </div>
-                          {open && (isTasksExpanded ? (
+                          {isTasksExpanded ? (
                             <ChevronDown className="h-4 w-4 text-white/40" />
                           ) : (
                             <ChevronRight className="h-4 w-4 text-white/40" />
-                          ))}
+                          )}
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                       
                       {/* Sub-items (All Tasks & Review) */}
-                      {open && isTasksExpanded && item.subItems && (
+                      {isTasksExpanded && item.subItems && (
                         <div className="ml-6 space-y-1">
                           {item.subItems.map((subItem) => (
                             <SidebarMenuItem key={subItem.title}>
                               <SidebarMenuButton
                                 onClick={() => navigate(subItem.url)}
-                                className={cn(
-                                  "h-10 px-3 rounded-xl transition-all duration-200 group/btn w-full justify-between",
-                                  pathname === subItem.url.split('?')[0] && !subItem.url.includes('?')
-                                    ? "bg-teal-500/10 text-teal-400 font-medium border border-teal-500/10"
-                                    : "hover:bg-white/5 text-white/50 hover:text-white"
-                                )}
+                                isActive={pathname === subItem.url.split('?')[0] && !subItem.url.includes('?')}
+                                className="h-10 px-3 rounded-xl transition-all duration-200 group/btn w-full justify-between"
                               >
                                 <div className="flex items-center gap-3">
                                   <subItem.icon className="h-4 w-4" />
@@ -209,23 +189,10 @@ export function AppSidebar() {
                       <SidebarMenuButton
                         isActive={pathname === item.url}
                         onClick={() => navigate(item.url)}
-                        className={cn(
-                          "h-12 px-3 rounded-xl transition-all duration-200 group/btn",
-                          pathname === item.url
-                            ? "bg-teal-500/10 text-teal-400 font-bold border border-teal-500/10"
-                            : "hover:bg-white/5 text-white/60 hover:text-white"
-                        )}
+                        className="h-12 px-3 rounded-xl transition-all duration-200 group/btn"
                       >
-                        <item.icon className={cn(
-                          "h-5 w-5 transition-transform duration-300 group-hover/btn:scale-110",
-                          pathname === item.url ? "text-teal-400" : "text-white/40"
-                        )} />
-                        <span className={cn(
-                          "ml-2 text-base transition-all duration-300",
-                          !open && "hidden"
-                        )}>
-                          {item.title}
-                        </span>
+                        <item.icon className="h-5 w-5 text-white/40" />
+                        <span className="ml-2 text-base">{item.title}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   )}
@@ -247,23 +214,10 @@ export function AppSidebar() {
                     <SidebarMenuButton
                       isActive={pathname === item.url}
                       onClick={() => navigate(item.url)}
-                      className={cn(
-                        "h-12 px-3 rounded-xl transition-all duration-200 group/btn",
-                        pathname === item.url
-                          ? "bg-teal-500/10 text-teal-400 font-bold border border-teal-500/10"
-                          : "hover:bg-white/5 text-white/60 hover:text-white"
-                      )}
+                      className="h-12 px-3 rounded-xl transition-all duration-200 group/btn"
                     >
-                      <item.icon className={cn(
-                        "h-5 w-5 transition-transform duration-300 group-hover/btn:scale-110",
-                        pathname === item.url ? "text-teal-400" : "text-white/40"
-                      )} />
-                      <span className={cn(
-                        "ml-2 text-base transition-all duration-300",
-                        !open && "hidden"
-                      )}>
-                        {item.title}
-                      </span>
+                      <item.icon className="h-5 w-5 text-white/40" />
+                      <span className="ml-2 text-base">{item.title}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -283,23 +237,10 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     isActive={pathname === item.url}
                     onClick={() => navigate(item.url)}
-                    className={cn(
-                      "h-12 px-3 rounded-xl transition-all duration-200 group/btn",
-                      pathname === item.url
-                        ? "bg-teal-500/10 text-teal-400 font-bold border border-teal-500/10"
-                        : "hover:bg-white/5 text-white/60 hover:text-white"
-                    )}
+                    className="h-12 px-3 rounded-xl transition-all duration-200 group/btn"
                   >
-                    <item.icon className={cn(
-                      "h-5 w-5 transition-transform duration-300 group-hover/btn:scale-110",
-                      pathname === item.url ? "text-teal-400" : "text-white/40"
-                    )} />
-                    <span className={cn(
-                      "ml-2 text-base transition-all duration-300",
-                      !open && "hidden"
-                    )}>
-                      {item.title}
-                    </span>
+                    <item.icon className="h-5 w-5 text-white/40" />
+                    <span className="ml-2 text-base">{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -313,15 +254,12 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
-              className={cn(
-                "w-full h-14 flex items-center justify-between hover:bg-white/5 rounded-2xl px-3 transition-all duration-300 border border-transparent hover:border-white/5",
-                !open && "justify-center"
-              )}
+              className="w-full h-14 flex items-center justify-between hover:bg-white/5 rounded-2xl px-3 transition-all duration-300"
               onClick={() => navigate('/settings')}
             >
-              <div className={cn("flex items-center gap-3", !open && "justify-center")}>
+              <div className="flex items-center gap-3">
                 <div className="relative">
-                  <Avatar className="h-9 w-9 border-2 border-teal-500/20 shadow-[0_0_10px_rgba(45,212,191,0.1)]">
+                  <Avatar className="h-9 w-9 border-2 border-teal-500/20">
                     <AvatarImage src={session?.user?.image || ''} />
                     <AvatarFallback className="bg-teal-500/10 text-teal-400 text-xs font-bold">
                       {session?.user?.name?.charAt(0) || session?.user?.email?.charAt(0)?.toUpperCase() || 'U'}
@@ -329,39 +267,28 @@ export function AppSidebar() {
                   </Avatar>
                   <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-[#090a11] rounded-full" />
                 </div>
-                {open && (
-                  <>
-                    <div className="flex flex-col text-left overflow-hidden">
-                      <span className="text-sm font-bold text-white truncate max-w-[120px]">
-                        {session?.user?.name || session?.user?.email?.split('@')[0] || 'User'}
-                      </span>
-                      <span className="text-[11px] text-teal-500/60 font-bold uppercase tracking-wider">
-                        {userRole}
-                      </span>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-white/20 group-hover:translate-x-0.5 transition-transform" />
-                  </>
-                )}
+                <div className="flex flex-col text-left overflow-hidden">
+                  <span className="text-sm font-bold text-white truncate max-w-[120px]">
+                    {session?.user?.name || session?.user?.email?.split('@')[0] || 'User'}
+                  </span>
+                  <span className="text-[11px] text-teal-500/60 font-bold uppercase tracking-wider">
+                    {userRole}
+                  </span>
+                </div>
               </div>
+              <ChevronRight className="h-4 w-4 text-white/20" />
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={async () => {
-                if (typeof window !== 'undefined') {
-                  localStorage.removeItem('last_notification_time');
-                  sessionStorage.clear();
-                }
                 await signOut({ callbackUrl: '/login' });
               }}
-              className={cn(
-                "w-full h-11 px-3 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-xl transition-all duration-300 border border-transparent hover:border-rose-500/10",
-                !open && "justify-center"
-              )}
+              className="w-full h-11 px-3 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-xl"
               tooltip="Sign Out"
             >
               <LogOut className="h-5 w-5" />
-              {open && <span className="font-bold text-sm tracking-wide">Sign Out</span>}
+              <span className="font-bold text-sm tracking-wide">Sign Out</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
