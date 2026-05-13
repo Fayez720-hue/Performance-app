@@ -1,260 +1,147 @@
-"use client";
+"use client"
 
-import { useState, useMemo, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
-import useSWR from "swr";
-import { ClipboardX, Loader2 } from "lucide-react";
-import { TaskCard } from "./task-card";
-import { TaskFilters } from "./task-filters";
-import { TaskStats } from "./task-stats";
-import type { User } from "@/types/user";
-import { fetcher } from "@/lib/api";
-import {
-  Empty,
-  EmptyHeader,
-  EmptyTitle,
-  EmptyDescription,
-  EmptyMedia,
-} from "@/components/ui/empty";
-import type { Task, TaskProgress } from "@/types/task";
-import type { UserRole } from "@/types/user";
-import { ROLE_PERMISSIONS } from "@/types/user";
+import { useSession } from '@/components/providers/session-provider'
+import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense, useEffect, useState, useCallback } from "react"
+import { Header } from "@/components/layout/header"
+import { TaskDeck } from "@/components/tasks/task-deck"
+import { Loader2, Plus, ArrowLeft } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import type { User, UserRole } from "@/types/user"
+import { ROLE_PERMISSIONS } from "@/types/user"
 
-interface TaskDeckProps {
-  user: User;
-  projectId?: number;
-  reviewOnly?: boolean;  // Add this prop
-}
+function TasksPageContent() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const filter = searchParams?.get('filter')
+  const statusFilter = searchParams?.get('status')
+  
+  const isReviewFilter = filter === 'review' || statusFilter === 'REVIEW'
+  
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
-export function TaskDeck({ user, projectId, reviewOnly = false }: TaskDeckProps) {
-  const userRole = user.role || "Team Member";
-  const userName = user.name || "Guest";
+  const fetchUser = useCallback(async () => {
+    if (!session?.user?.email) return
 
-  const { data: tasks, error, isLoading, mutate } = useSWR<Task[]>(
-    projectId ? `/api/projects/${projectId}` : "/api/tasks",
-    async (url: string) => {
-      const res = await fetch(url);
-      const data = await res.json();
-      return projectId ? data.tasks : data;
-    },
-    { refreshInterval: 30000 }
-  );
+    try {
+      const res = await fetch("/api/employees")
+      let currentUser: User | undefined
 
-  const { data: users } = useSWR<User[]>("/api/users", fetcher);
-
-  const [search, setSearch] = useState("");
-  const [progressFilter, setProgressFilter] = useState<TaskProgress | "all">("all");
-  const [assigneeFilter, setAssigneeFilter] = useState("all");
-  const [highlightedTaskId, setHighlightedTaskId] = useState<number | null>(null);
-
-  const searchParams = useSearchParams();
-
-  // Handle auto-opening from notifications
-  useEffect(() => {
-    const taskIdParam = searchParams.get("taskId");
-    const timestamp = searchParams.get("t");
-    
-    if (taskIdParam) {
-      const id = parseInt(taskIdParam, 10);
-      
-      // Clear filters so the task is visible
-      setSearch("");
-      setProgressFilter("all");
-      setAssigneeFilter("all");
-
-      // Scroll to and highlight the task
-      setTimeout(() => {
-        setHighlightedTaskId(id);
-        const element = document.getElementById(`task-${id}`);
-        if (element) {
-          element.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (res.ok) {
+        const users = await res.json()
+        if (Array.isArray(users)) {
+          currentUser = users.find((u: User) => u.email.toLowerCase() === session.user?.email?.toLowerCase())
         }
-      }, 300);
-
-      // Reset highlight after delay
-      setTimeout(() => {
-        setHighlightedTaskId(null);
-      }, 3000);
-
-      // Clean URL
-      const url = new URL(window.location.href);
-      url.searchParams.delete("taskId");
-      url.searchParams.delete("t");
-      window.history.replaceState({}, "", url.toString());
-    }
-  }, [searchParams]);
-
-  const permissions = ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS.Viewer;
-
-  // Unique assignees
-  const assignees = useMemo(() => {
-    if (Array.isArray(users) && users.length > 0) {
-      return [...new Set(users.map((u) => u.name).filter(Boolean))].sort();
-    }
-    if (Array.isArray(tasks)) {
-      return [...new Set(tasks.map((t) => t.name).filter(Boolean))].sort();
-    }
-    return [];
-  }, [tasks, users]);
-
-  // Filter tasks – now includes reviewOnly filter
-  const filteredTasks = useMemo(() => {
-    if (!Array.isArray(tasks)) return [];
-
-    return tasks.filter((task) => {
-      // Apply reviewOnly filter first (if true, only show Review tasks)
-      if (reviewOnly && task.progress !== "Review") {
-        return false;
       }
 
-      const matchesSearch =
-        task.task.toLowerCase().includes(search.toLowerCase()) ||
-        task.name.toLowerCase().includes(search.toLowerCase());
-
-      const matchesProgress = progressFilter === "all" || task.progress === progressFilter;
-      const matchesAssignee = assigneeFilter === "all" || task.name === assigneeFilter;
-
-      return matchesSearch && matchesProgress && matchesAssignee;
-    });
-  }, [tasks, search, progressFilter, assigneeFilter, projectId, reviewOnly]);
-
-  // Group tasks by progress
-  const groupedTasks = useMemo(() => {
-    const groups: Record<TaskProgress, Task[]> = {
-      "To-do": [],
-      "In Progress": [],
-      Review: [],
-      Completed: [],
-    };
-
-    filteredTasks.forEach((task) => {
-      const progress = task.progress as TaskProgress;
-      if (groups[progress]) {
-        groups[progress].push(task);
+      if (currentUser) {
+        setUser(currentUser)
       } else {
-        groups["To-do"].push(task);
+        const rawRole = (session?.user as any)?.role || "Team Member"
+        const finalRole = (ROLE_PERMISSIONS[rawRole as UserRole] ? rawRole : "Team Member") as UserRole
+        setUser({
+          email: session.user.email,
+          name: session.user.name || "Guest",
+          role: finalRole
+        })
       }
-    });
-    return groups;
-  }, [filteredTasks]);
+    } catch (error) {
+      console.error("Error fetching user:", error)
+      const rawRole = (session?.user as any)?.role || "Team Member"
+      const finalRole = (ROLE_PERMISSIONS[rawRole as UserRole] ? rawRole : "Team Member") as UserRole
+      setUser({
+        email: session?.user?.email || "",
+        name: session?.user?.name || "Guest",
+        role: finalRole
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [session])
 
-  if (error) {
-    return (
-      <Empty className="py-20">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <ClipboardX />
-          </EmptyMedia>
-          <EmptyTitle>Failed to load tasks</EmptyTitle>
-          <EmptyDescription>
-            There was an error loading the tasks. Please try again.
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    );
-  }
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login")
+    } else if (status === "authenticated") {
+      fetchUser()
+    }
+  }, [status, router, fetchUser])
 
-  if (isLoading) {
+  if (status === "loading") {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
-    );
+    )
   }
 
+  // Safe permission access
+  const userRole = (user?.role || (session?.user as any)?.role || "Viewer") as UserRole
+  const permissions = ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS["Viewer"]
+
   return (
-    <div className="space-y-6">
-      {/* Only show stats if not in reviewOnly mode */}
-      {tasks && tasks.length > 0 && !reviewOnly && <TaskStats tasks={tasks} />}
-
-      {/* Only show filters if not in reviewOnly mode */}
-      {!reviewOnly && (
-        <TaskFilters
-          search={search}
-          onSearchChange={setSearch}
-          progressFilter={progressFilter}
-          onProgressFilterChange={setProgressFilter}
-          assigneeFilter={assigneeFilter}
-          onAssigneeFilterChange={setAssigneeFilter}
-          assignees={assignees}
-          userRole={userRole}
-        />
-      )}
-
-      {tasks && tasks.length === 0 && (
-        <Empty className="py-20">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <ClipboardX />
-            </EmptyMedia>
-            <EmptyTitle>No tasks yet</EmptyTitle>
-            <EmptyDescription>
-              {permissions.canCreateTasks
-                ? "Create your first task to get started."
-                : "No tasks have been assigned to you yet."}
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      )}
-
-      {tasks && tasks.length > 0 && filteredTasks.length === 0 && (
-        <Empty className="py-20">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <ClipboardX />
-            </EmptyMedia>
-            <EmptyTitle>No matching tasks</EmptyTitle>
-            <EmptyDescription>
-              {reviewOnly 
-                ? "No tasks waiting for review" 
-                : "Try adjusting your search or filters."}
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      )}
-
-      {filteredTasks.length > 0 && (
-        <div className="space-y-8">
-          {(Object.keys(groupedTasks) as TaskProgress[]).map((status) => {
-            const statusTasks = groupedTasks[status];
-            if (statusTasks.length === 0) return null;
-
-            return (
-              <div key={status}>
-                <div className="mb-4 flex items-center gap-2">
-                  <h2 className="text-lg font-semibold text-foreground">{status}</h2>
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                    {statusTasks.length}
-                  </span>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {statusTasks.map((task) => {
-                    const isUnderReview = task.progress === "Review" || task.progress === "Completed";
-                    const canEdit =
-                      permissions.canEditAllTasks ||
-                      (permissions.canEditOwnTasks &&
-                        !isUnderReview &&
-                        (task.name.toLowerCase() === userName.toLowerCase() ||
-                          (user.email && task.name.toLowerCase() === user.email.toLowerCase())));
-                    const canDelete = permissions.canDeleteTasks;
-
-                    return (
-                      <TaskCard
-                        key={task.id}
-                        task={task}
-                        canEdit={canEdit}
-                        canDelete={canDelete}
-                        onDelete={() => mutate()}
-                        autoExpand={highlightedTaskId === task.id}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
+    <div className="flex-1 flex flex-col">
+      <Header />
+      {loading || !user ? (
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
+      ) : (
+        <main className="flex-1 container mx-auto px-4 py-8 max-w-7xl">
+          {/* Back button when in review mode */}
+          {isReviewFilter && (
+            <Button
+              variant="ghost"
+              onClick={() => router.push('/tasks')}
+              className="mb-4 gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to All Tasks
+            </Button>
+          )}
+
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                {isReviewFilter ? 'Review Tasks' : 'Tasks'}
+              </h1>
+              <p className="text-muted-foreground">
+                {isReviewFilter 
+                  ? 'Tasks that need your review and approval' 
+                  : 'Manage and track team progress'}
+              </p>
+            </div>
+            {!isReviewFilter && permissions.canCreateTasks && (
+              <Button onClick={() => router.push("/tasks/new")} className="w-full md:w-auto">
+                <Plus className="mr-2 h-4 w-4" /> Create Task
+              </Button>
+            )}
+          </div>
+
+          {/* Wrap TaskDeck in Suspense since it uses useSearchParams */}
+          <Suspense fallback={
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          }>
+            <TaskDeck user={user} reviewOnly={isReviewFilter} />
+          </Suspense>
+        </main>
       )}
     </div>
+  );
+}
+
+export default function TasksPageClient() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <TasksPageContent />
+    </Suspense>
   );
 }

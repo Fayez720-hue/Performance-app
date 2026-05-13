@@ -4,18 +4,18 @@ import { useSession } from '@/components/providers/session-provider'
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useState, useCallback } from "react"
 import { Header } from "@/components/layout/header"
-import { TaskDeck as TaskList } from "@/components/tasks/task-deck"
+import { TaskDeck } from "@/components/tasks/task-deck"
 import { Loader2, Plus, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { User, UserRole } from "@/types/user"
 import { ROLE_PERMISSIONS } from "@/types/user"
 
-export default function TasksPageClient() {
+function TasksPageContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const filter = searchParams.get('filter')
-  const statusFilter = searchParams.get('status')
+  const filter = searchParams?.get('filter')
+  const statusFilter = searchParams?.get('status')
   
   const isReviewFilter = filter === 'review' || statusFilter === 'REVIEW'
   
@@ -121,9 +121,21 @@ export default function TasksPageClient() {
           </div>
 
           {/* Pass the review filter to TaskList component */}
-          <TaskList reviewOnly={isReviewFilter} />
+          <TaskDeck user={user} reviewOnly={isReviewFilter} />
         </main>
       )}
     </div>
-  )
+  );
+}
+
+export default function TasksPageClient() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <TasksPageContent />
+    </Suspense>
+  );
 }
