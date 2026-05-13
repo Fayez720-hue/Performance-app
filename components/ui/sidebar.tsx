@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Menu } from "lucide-react";
 
 // Context
 type SidebarContextType = {
@@ -156,5 +158,23 @@ export function SidebarInset({ className, ...props }: React.HTMLAttributes<HTMLD
       )}
       {...props}
     />
+  );
+}
+
+// Sidebar Trigger Component
+export function SidebarTrigger({ className, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  const { open, setOpen } = useSidebar();
+  
+  return (
+    <Button 
+      variant="ghost" 
+      size="icon" 
+      onClick={() => setOpen(!open)}
+      className={cn("h-10 w-10", className)}
+      {...props}
+    >
+      <Menu className="h-5 w-5" />
+      <span className="sr-only">Toggle sidebar</span>
+    </Button>
   );
 }
