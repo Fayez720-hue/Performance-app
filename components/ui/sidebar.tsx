@@ -53,7 +53,7 @@ export function Sidebar({ className, children, collapsible = "offcanvas", ...pro
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 h-full bg-[#090a11] transition-all duration-300 ease-in-out",
+        "fixed left-0 top-0 z-40 h-full bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out",
         open ? "w-64" : "w-0 overflow-hidden",
         className
       )}
@@ -90,7 +90,7 @@ export function SidebarGroup({ className, ...props }: React.HTMLAttributes<HTMLD
 export function SidebarGroupLabel({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/30", className)}
+      className={cn("px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-sidebar-foreground/30", className)}
       {...props}
     />
   );
@@ -132,8 +132,8 @@ export function SidebarMenuButton({
       className={cn(
         "flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200",
         isActive
-          ? "bg-teal-500/10 text-teal-400 font-bold border border-teal-500/10"
-          : "hover:bg-white/5 text-white/60 hover:text-white",
+          ? "bg-sidebar-primary text-sidebar-primary-foreground"
+          : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         size === "lg" && "py-3",
         size === "sm" && "py-1 text-xs",
         className
