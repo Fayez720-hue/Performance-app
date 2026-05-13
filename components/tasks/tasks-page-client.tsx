@@ -131,11 +131,11 @@ function TasksPageContent() {
 export default function TasksPageClient() {
   return (
     <Suspense fallback={
-      <div className="flex h-screen w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    }>
-      <TasksPageContent />
-    </Suspense>
+  <div className="flex items-center justify-center py-20">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>
+}>
+  <TaskDeck user={user} reviewOnly={isReviewFilter} />
+</Suspense>
   );
 }
