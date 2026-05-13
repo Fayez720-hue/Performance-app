@@ -40,6 +40,7 @@ export function AppSidebar() {
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const { open } = useSidebar();
   const [isTasksExpanded, setIsTasksExpanded] = React.useState(true);
   const [reviewCount, setReviewCount] = React.useState(0);
 
@@ -127,14 +128,13 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar className="bg-[#090a11] border-r border-white/5">
-      <SidebarHeader className="h-16 flex items-center px-4 border-b border-white/5">
-  {/* Remove SidebarToggle - keep only empty space or logo */}
-  <div className="w-10" /> {/* Spacer to maintain height */}
-</SidebarHeader>
+    <Sidebar className="bg-sidebar border-r border-sidebar-border">
+      <SidebarHeader className="h-16 flex items-center px-4 border-b border-sidebar-border">
+        <SidebarToggle />
+      </SidebarHeader>
       <SidebarContent className="px-3 py-10 gap-6">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] font-bold px-3 mb-3 uppercase tracking-[0.2em] text-white/30">
+          <SidebarGroupLabel className="text-[10px] font-bold px-3 mb-3 uppercase tracking-[0.2em] text-sidebar-foreground/30">
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -147,16 +147,16 @@ export function AppSidebar() {
                       <SidebarMenuItem>
                         <SidebarMenuButton
                           onClick={() => setIsTasksExpanded(!isTasksExpanded)}
-                          className="h-12 px-3 rounded-xl transition-all duration-200 group/btn w-full justify-between"
+                          className="h-12 px-3 rounded-xl transition-all duration-200 group/btn w-full justify-between text-sidebar-foreground hover:bg-sidebar-accent"
                         >
                           <div className="flex items-center gap-3">
-                            <item.icon className="h-5 w-5 text-white/40" />
+                            <item.icon className="h-5 w-5 text-sidebar-foreground/60" />
                             <span className="text-base">{item.title}</span>
                           </div>
                           {isTasksExpanded ? (
-                            <ChevronDown className="h-4 w-4 text-white/40" />
+                            <ChevronDown className="h-4 w-4 text-sidebar-foreground/40" />
                           ) : (
-                            <ChevronRight className="h-4 w-4 text-white/40" />
+                            <ChevronRight className="h-4 w-4 text-sidebar-foreground/40" />
                           )}
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -176,7 +176,7 @@ export function AppSidebar() {
                                   <span className="text-sm">{subItem.title}</span>
                                 </div>
                                 {subItem.badge !== undefined && subItem.badge > 0 && (
-                                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+                                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-bold text-destructive-foreground">
                                     {subItem.badge > 99 ? '99+' : subItem.badge}
                                   </span>
                                 )}
@@ -191,9 +191,9 @@ export function AppSidebar() {
                       <SidebarMenuButton
                         isActive={pathname === item.url}
                         onClick={() => navigate(item.url)}
-                        className="h-12 px-3 rounded-xl transition-all duration-200 group/btn"
+                        className="h-12 px-3 rounded-xl transition-all duration-200 group/btn text-sidebar-foreground hover:bg-sidebar-accent"
                       >
-                        <item.icon className="h-5 w-5 text-white/40" />
+                        <item.icon className="h-5 w-5 text-sidebar-foreground/60" />
                         <span className="ml-2 text-base">{item.title}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -206,7 +206,7 @@ export function AppSidebar() {
 
         {isAdminOrManager && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-[10px] font-bold px-3 mb-3 uppercase tracking-[0.2em] text-white/30">
+            <SidebarGroupLabel className="text-[10px] font-bold px-3 mb-3 uppercase tracking-[0.2em] text-sidebar-foreground/30">
               Administration
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -216,9 +216,9 @@ export function AppSidebar() {
                     <SidebarMenuButton
                       isActive={pathname === item.url}
                       onClick={() => navigate(item.url)}
-                      className="h-12 px-3 rounded-xl transition-all duration-200 group/btn"
+                      className="h-12 px-3 rounded-xl transition-all duration-200 group/btn text-sidebar-foreground hover:bg-sidebar-accent"
                     >
-                      <item.icon className="h-5 w-5 text-white/40" />
+                      <item.icon className="h-5 w-5 text-sidebar-foreground/60" />
                       <span className="ml-2 text-base">{item.title}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -229,7 +229,7 @@ export function AppSidebar() {
         )}
 
         <SidebarGroup className="mt-auto">
-          <SidebarGroupLabel className="text-[10px] font-bold px-3 mb-3 uppercase tracking-[0.2em] text-white/30">
+          <SidebarGroupLabel className="text-[10px] font-bold px-3 mb-3 uppercase tracking-[0.2em] text-sidebar-foreground/30">
             Settings
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -239,9 +239,9 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     isActive={pathname === item.url}
                     onClick={() => navigate(item.url)}
-                    className="h-12 px-3 rounded-xl transition-all duration-200 group/btn"
+                    className="h-12 px-3 rounded-xl transition-all duration-200 group/btn text-sidebar-foreground hover:bg-sidebar-accent"
                   >
-                    <item.icon className="h-5 w-5 text-white/40" />
+                    <item.icon className="h-5 w-5 text-sidebar-foreground/60" />
                     <span className="ml-2 text-base">{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -251,34 +251,34 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-white/5">
+      <SidebarFooter className="p-4 border-t border-sidebar-border">
         <SidebarMenu className="gap-3">
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
-              className="w-full h-14 flex items-center justify-between hover:bg-white/5 rounded-2xl px-3 transition-all duration-300"
+              className="w-full h-14 flex items-center justify-between hover:bg-sidebar-accent rounded-2xl px-3 transition-all duration-300 text-sidebar-foreground"
               onClick={() => navigate('/settings')}
             >
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <Avatar className="h-9 w-9 border-2 border-teal-500/20">
+                  <Avatar className="h-9 w-9 border-2 border-primary/20">
                     <AvatarImage src={session?.user?.image || ''} />
-                    <AvatarFallback className="bg-teal-500/10 text-teal-400 text-xs font-bold">
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
                       {session?.user?.name?.charAt(0) || session?.user?.email?.charAt(0)?.toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-[#090a11] rounded-full" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-background rounded-full" />
                 </div>
                 <div className="flex flex-col text-left overflow-hidden">
-                  <span className="text-sm font-bold text-white truncate max-w-[120px]">
+                  <span className="text-sm font-bold truncate max-w-[120px]">
                     {session?.user?.name || session?.user?.email?.split('@')[0] || 'User'}
                   </span>
-                  <span className="text-[11px] text-teal-500/60 font-bold uppercase tracking-wider">
+                  <span className="text-[11px] text-primary/60 font-bold uppercase tracking-wider">
                     {userRole}
                   </span>
                 </div>
               </div>
-              <ChevronRight className="h-4 w-4 text-white/20" />
+              <ChevronRight className="h-4 w-4 text-sidebar-foreground/20" />
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
@@ -286,7 +286,7 @@ export function AppSidebar() {
               onClick={async () => {
                 await signOut({ callbackUrl: '/login' });
               }}
-              className="w-full h-11 px-3 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-xl"
+              className="w-full h-11 px-3 text-destructive hover:bg-destructive/10 hover:text-destructive rounded-xl"
               tooltip="Sign Out"
             >
               <LogOut className="h-5 w-5" />
