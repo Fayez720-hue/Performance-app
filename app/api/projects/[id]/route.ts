@@ -44,8 +44,9 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const userRole = (session.user as any)?.role
-    if (userRole !== "Admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    // ✅ Allow both Admin AND Manager to delete projects
+    if (userRole !== "Admin" && userRole !== "Manager") {
+      return NextResponse.json({ error: "Forbidden - Only Admins and Managers can delete projects" }, { status: 403 })
     }
 
     const projectId = parseInt(params.id)
@@ -93,6 +94,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    console.error("Failed to delete project:", error)
     return NextResponse.json({ error: "Failed to delete project" }, { status: 500 })
   }
 }
