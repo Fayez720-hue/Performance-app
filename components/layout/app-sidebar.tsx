@@ -11,6 +11,7 @@ import {
   Users,
   LogOut,
   ChevronRight,
+  ChevronDown,
   ClipboardList,
   FolderKanban,
 } from 'lucide-react';
@@ -40,9 +41,33 @@ export function AppSidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const { setOpen } = useSidebar();
+  const [isTasksExpanded, setIsTasksExpanded] = React.useState(true);
+  const [reviewCount, setReviewCount] = React.useState(0);
 
   const userRole = (session?.user as any)?.role || 'Team Member';
   const isAdminOrManager = userRole === 'Admin' || userRole === 'Manager';
+
+  // Fetch review tasks count
+  React.useEffect(() => {
+    const fetchReviewCount = async () => {
+      try {
+        const response = await fetch('/api/tasks/counts?status=Review');
+        if (response.ok) {
+          const data = await response.json();
+          setReviewCount(data.count || 0);
+        }
+      } catch (error) {
+        console.error('Failed to fetch review count:', error);
+      }
+    };
+
+    if (session?.user) {
+      fetchReviewCount();
+      // Poll every 30 seconds for updates
+      const interval = setInterval(fetchReviewCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [session]);
 
   const navigate = (url: string) => {
     router.push(url);
@@ -58,7 +83,20 @@ export function AppSidebar() {
     {
       title: 'Tasks',
       icon: CheckSquare,
-      url: '/tasks',
+      hasSubItems: true,
+      subItems: [
+        {
+          title: 'All Tasks',
+          icon: ClipboardList,
+          url: '/tasks',
+        },
+        {
+          title: 'Review',
+          icon: ClipboardList,
+          url: '/tasks?filter=review&status=REVIEW',
+          badge: reviewCount,
+        },
+      ],
     },
     ...(isAdminOrManager ? [{
       title: 'Projects',
@@ -106,24 +144,85 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="gap-2">
               {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    isActive={pathname === item.url}
-                    onClick={() => navigate(item.url)}
-                    className={cn(
-                      "h-12 px-3 rounded-xl transition-all duration-200 group/btn",
-                      pathname === item.url
-                        ? "bg-teal-500/10 text-teal-400 font-bold border border-teal-500/10"
-                        : "hover:bg-white/5 text-white/60 hover:text-white"
-                    )}
-                  >
-                    <item.icon className={cn(
-                      "h-5 w-5 transition-transform duration-300 group-hover/btn:scale-110",
-                      pathname === item.url ? "text-teal-400" : "text-white/40"
-                    )} />
-                    <span className="ml-2 text-base">{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <React.Fragment key={item.title}>
+                  {item.hasSubItems ? (
+                    <>
+                      {/* Tasks Main Button with Expand/Collapse */}
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => setIsTasksExpanded(!isTasksExpanded)}
+                          className={cn(
+                            "h-12 px-3 rounded-xl transition-all duration-200 group/btn w-full justify-between",
+                            pathname === item.url
+                              ? "bg-teal-500/10 text-teal-400 font-bold border border-teal-500/10"
+                              : "hover:bg-white/5 text-white/60 hover:text-white"
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <item.icon className={cn(
+                              "h-5 w-5 transition-transform duration-300 group-hover/btn:scale-110",
+                              pathname === item.url ? "text-teal-400" : "text-white/40"
+                            )} />
+                            <span className="text-base">{item.title}</span>
+                          </div>
+                          {isTasksExpanded ? (
+                            <ChevronDown className="h-4 w-4 text-white/40" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-white/40" />
+                          )}
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      
+                      {/* Sub-items (All Tasks & Review) */}
+                      {isTasksExpanded && item.subItems && (
+                        <div className="ml-6 space-y-1">
+                          {item.subItems.map((subItem) => (
+                            <SidebarMenuItem key={subItem.title}>
+                              <SidebarMenuButton
+                                onClick={() => navigate(subItem.url)}
+                                className={cn(
+                                  "h-10 px-3 rounded-xl transition-all duration-200 group/btn w-full justify-between",
+                                  pathname === subItem.url.split('?')[0] && !subItem.url.includes('?') 
+                                    ? "bg-teal-500/10 text-teal-400 font-medium border border-teal-500/10"
+                                    : "hover:bg-white/5 text-white/50 hover:text-white"
+                                )}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <subItem.icon className="h-4 w-4" />
+                                  <span className="text-sm">{subItem.title}</span>
+                                </div>
+                                {subItem.badge !== undefined && subItem.badge > 0 && (
+                                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+                                    {subItem.badge > 99 ? '99+' : subItem.badge}
+                                  </span>
+                                )}
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        isActive={pathname === item.url}
+                        onClick={() => navigate(item.url)}
+                        className={cn(
+                          "h-12 px-3 rounded-xl transition-all duration-200 group/btn",
+                          pathname === item.url
+                            ? "bg-teal-500/10 text-teal-400 font-bold border border-teal-500/10"
+                            : "hover:bg-white/5 text-white/60 hover:text-white"
+                        )}
+                      >
+                        <item.icon className={cn(
+                          "h-5 w-5 transition-transform duration-300 group-hover/btn:scale-110",
+                          pathname === item.url ? "text-teal-400" : "text-white/40"
+                        )} />
+                        <span className="ml-2 text-base">{item.title}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
+                </React.Fragment>
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
