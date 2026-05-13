@@ -129,8 +129,9 @@ export function AppSidebar() {
   return (
     <Sidebar className="bg-[#090a11] border-r border-white/5">
       <SidebarHeader className="h-16 flex items-center px-4 border-b border-white/5">
-        <SidebarToggle />
-      </SidebarHeader>
+  {/* Remove SidebarToggle - keep only empty space or logo */}
+  <div className="w-10" /> {/* Spacer to maintain height */}
+</SidebarHeader>
       <SidebarContent className="px-3 py-10 gap-6">
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] font-bold px-3 mb-3 uppercase tracking-[0.2em] text-white/30">
