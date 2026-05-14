@@ -40,6 +40,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
   canEditProjects: boolean
   canDeleteProjects: boolean
   canViewAllProjects: boolean
+  // Calendar permissions
+  canViewCalendar: boolean
 }> = {
   Admin: {
     // Task permissions
@@ -55,6 +57,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     canEditProjects: true,
     canDeleteProjects: true,
     canViewAllProjects: true,
+    // Calendar permissions
+    canViewCalendar: true,
   },
   Manager: {
     // Task permissions
@@ -65,11 +69,13 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     canManageUsers: false,
     canViewAllTasks: true,
     canReview: true,
-    // Project permissions - Manager can create/edit but NOT delete projects
+    // Project permissions - Manager can create/edit/delete projects
     canCreateProjects: true,
     canEditProjects: true,
     canDeleteProjects: true,  
     canViewAllProjects: true,
+    // Calendar permissions
+    canViewCalendar: true,
   },
   "Team Member": {
     // Task permissions
@@ -85,6 +91,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     canEditProjects: false,
     canDeleteProjects: false,
     canViewAllProjects: false,
+    // Calendar permissions
+    canViewCalendar: false,
   },
   Viewer: {
     // Task permissions
@@ -100,5 +108,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     canEditProjects: false,
     canDeleteProjects: false,
     canViewAllProjects: true,
+    // Calendar permissions
+    canViewCalendar: false,
   },
 }

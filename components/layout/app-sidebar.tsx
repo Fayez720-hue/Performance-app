@@ -1,5 +1,5 @@
 'use client';
-
+import { Calendar as CalendarIcon } from 'lucide-react';
 import * as React from 'react';
 import {
   BarChart3,
@@ -76,6 +76,12 @@ export function AppSidebar() {
       icon: LayoutGrid,
       url: '/dashboard',
     },
+    // Add Calendar to menuItems for Admin and Manager
+... (isAdminOrManager ? [{
+  title: 'Calendar',
+  icon: CalendarIcon,
+  url: '/calendar',
+}] : []),
     {
       title: 'Tasks',
       icon: CheckSquare,
