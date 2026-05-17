@@ -40,12 +40,20 @@ export function AppSidebar() {
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
-  const { open } = useSidebar();
+  const { open, setOpen } = useSidebar();
   const [isTasksExpanded, setIsTasksExpanded] = React.useState(true);
   const [reviewCount, setReviewCount] = React.useState(0);
 
   const userRole = (session?.user as any)?.role || 'Team Member';
   const isAdminOrManager = userRole === 'Admin' || userRole === 'Manager';
+const [sidebarInitialized, setSidebarInitialized] = React.useState(false);
+
+React.useEffect(() => {
+  if (!sidebarInitialized && open) {
+    setOpen(false);
+    setSidebarInitialized(true);
+  }
+}, [open, sidebarInitialized, setOpen]);
 
   // Fetch tasks to get review count
   const { data: tasks } = useSWR<Task[]>(
@@ -134,7 +142,7 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar collapsible="icon" defaultOpen={false} className="bg-sidebar border-r border-sidebar-border">
+    <Sidebar collapsible="offcanvas" className="bg-sidebar border-r border-sidebar-border">
       <SidebarHeader className="h-16 flex items-center px-4 border-b border-sidebar-border">
         <SidebarToggle />
       </SidebarHeader>
