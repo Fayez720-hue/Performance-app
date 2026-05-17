@@ -22,7 +22,7 @@ export function Header() {
             <div className="relative w-8 h-8 overflow-hidden rounded-lg bg-primary/10 flex items-center justify-center">
               <Image
                 src="/CANSHIFTTT-02.png"
-                alt="CANSHIFT"
+                alt="CAN SHIFT"
                 width={32}
                 height={32}
                 className="object-contain p-0.5"
