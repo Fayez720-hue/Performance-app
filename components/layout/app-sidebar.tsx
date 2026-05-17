@@ -134,7 +134,7 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar className="bg-sidebar border-r border-sidebar-border">
+    <Sidebar collapsible="icon" defaultOpen={false} className="bg-sidebar border-r border-sidebar-border">
       <SidebarHeader className="h-16 flex items-center px-4 border-b border-sidebar-border">
         <SidebarToggle />
       </SidebarHeader>
