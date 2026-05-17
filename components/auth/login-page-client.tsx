@@ -99,7 +99,7 @@ export default function LoginPageClient() {
             <ClipboardList className="h-8 w-8 text-teal-400" />
           </div>
           <CardTitle className="text-3xl font-bold text-white tracking-tight">
-            Task Manager
+            Can Shift
           </CardTitle>
           <CardDescription className="text-white/40 mt-2 font-medium">
             Sign in to manage tasks and track progress

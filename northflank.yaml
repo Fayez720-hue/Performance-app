@@ -1,6 +1,6 @@
 # Northflank Service Configuration
 kind: combined
-name: performance-app
+name: Can shift
 description: "Can Shift Performance Dashboard"
 billing_plan: free
 build:
